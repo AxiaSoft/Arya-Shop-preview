@@ -180,6 +180,12 @@
           اطلاعات دیتابیس را از پنل هاست یا phpMyAdmin بگیرید. بعد از اتصال، جداول و یک حساب مدیر ساخته می‌شود.
           رمزهای عبور در هیچ جایی ذخیره یا لاگ نمی‌شوند.
         </p>
+        <p style="text-align:center;margin-top:.75rem">
+          <button type="button" onclick="window.__aryaSkipSetup&&window.__aryaSkipSetup()"
+            style="background:none;border:none;color:rgba(255,255,255,.45);font-size:.75rem;text-decoration:underline;cursor:pointer;font-family:inherit">
+            فعلاً نمی‌خواهم متصل کنم — مشاهده سایت در حالت نمایشی (محلی)
+          </button>
+        </p>
       </div>
     </div>
   </div>
@@ -325,7 +331,7 @@
         const json = await res.json();
         if (json && json.ok && json.data && json.data.configured === false) {
           showDbSetupScreen();
-          return false; // منتظر تکمیل ویزارد بمان، رندر سایت را شروع نکن
+          return await __setupGate; // با «اتصال موفق» یا «رد کردن» باز می‌شود
         }
         return true;
       } catch (e) {
@@ -333,6 +339,16 @@
         return true;
       }
     }
+    let __resolveSetupGate = null;
+    const __setupGate = new Promise(res => { __resolveSetupGate = res; });
+    window.__aryaSkipSetup = function () {
+      const setupEl = document.getElementById('db-setup-screen');
+      const appEl = document.getElementById('app');
+      if (setupEl) setupEl.style.display = 'none';
+      if (appEl) appEl.style.display = '';
+      if (__resolveSetupGate) __resolveSetupGate(true);
+    };
+
 
     function showDbSetupScreen() {
       const setupEl = document.getElementById('db-setup-screen');
@@ -499,6 +515,8 @@
                   '<br><a href="admin.html" style="color:#93c5fd;text-decoration:underline">ورود به پنل مدیریت →</a>' : '');
         }
         btn.textContent = '✅ انجام شد';
+        if (__resolveSetupGate) __resolveSetupGate(true);
+        setTimeout(() => location.reload(), 2500);
       } catch (e) {
         $setupErr('ارتباط با سرور برقرار نشد. (اتصال اینترنت/سرور PHP را بررسی کنید)');
         btn.disabled = false; btn.textContent = 'اتصال و راه‌اندازی';
