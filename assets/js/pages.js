@@ -2194,15 +2194,42 @@ function addToCartFromProduct(product) {
 }
 
 // ========== بخش ویدیو محصول (بی‌رنگ) ==========
+
+// استخراج آدرس و MIME از آیتم ویدیو (رشته، dataURL یا آبجکت {name,url})
+// نکته: نوع مدیا هرگز هاردکد نمی‌شود؛ اگر قابل‌تشخیص نبود خالی می‌ماند
+// تا خودِ مرورگر فرمت را استنتاج کند (رفع باگ پخش نشدن webm/mov)
+function videoSrcInfo(v) {
+  let url = '';
+  if (typeof v === 'string') url = v;
+  else if (v && typeof v === 'object') url = v.url || v.src || '';
+  let mime = '';
+  const dm = /^data:(video\/[a-z0-9.+-]+)[;,]/i.exec(url);
+  if (dm) mime = dm[1].toLowerCase();
+  else {
+    const ext = ((url.split(/[?#]/)[0] || '').match(/\.([a-z0-9]+)$/i) || [])[1];
+    if (ext) {
+      const map = { mp4: 'video/mp4', m4v: 'video/mp4', webm: 'video/webm',
+                    ogv: 'video/ogg', ogg: 'video/ogg', mov: 'video/quicktime' };
+      mime = map[ext.toLowerCase()] || '';
+    }
+  }
+  return { url, mime };
+}
+
 function openVideoPlayer(videoIndex, videos) {
-  state.videoPlayer = { 
-    index: videoIndex, 
-    videos: videos,
-    currentVideo: videos[videoIndex]
-  };
+  const list = (Array.isArray(videos) && videos.length)
+    ? videos
+    : (Array.isArray(state.productVideos) ? state.productVideos : []);
+  const idx = Number.isInteger(videoIndex) ? videoIndex : 0;
+  if (!list.length || !list[idx]) {
+    if (window.toast) toast('ویدیویی برای پخش یافت نشد', 'warning');
+    return;
+  }
+  state.videoPlayer = { index: idx, videos: list, currentVideo: list[idx] };
   openGlobalModal();
   preserveScrollAndRender();
 }
+window.openVideoPlayer = openVideoPlayer;
 
 function closeVideoPlayer() {
   const videoElement = document.querySelector('video');
@@ -2229,14 +2256,9 @@ function changeVideo(delta) {
   state.videoPlayer.currentVideo = videos[newIndex];
   
   const videoElement = document.querySelector('video');
-  const sourceElement = videoElement?.querySelector('source');
-  
-  if (videoElement && sourceElement) {
-    const videoUrl = typeof videos[newIndex] === 'string' 
-      ? videos[newIndex] 
-      : (videos[newIndex].url || '');
-    
-    sourceElement.src = videoUrl;
+  if (videoElement) {
+    const info = videoSrcInfo(videos[newIndex]);
+    videoElement.src = info.url;
     videoElement.load();
     videoElement.play().catch(() => {});
   }
@@ -2256,14 +2278,9 @@ function renderVideoPlayerModal() {
   
   if (!currentVideo) return '';
   
-  let videoUrl = '';
-  if (typeof currentVideo === 'string') {
-    videoUrl = currentVideo;
-  } else if (currentVideo instanceof File) {
-    videoUrl = URL.createObjectURL(currentVideo);
-  } else if (currentVideo.url) {
-    videoUrl = currentVideo.url;
-  }
+  const srcInfo = videoSrcInfo(currentVideo);
+  const videoUrl = srcInfo.url;
+  if (!videoUrl) return '';
   
   const videoTitle = typeof currentVideo === 'object' && currentVideo.name 
     ? currentVideo.name 
@@ -2278,7 +2295,7 @@ function renderVideoPlayerModal() {
         
         <div class="flex items-center justify-between mb-3 text-white px-2">
           <span class="text-sm text-white/70 truncate max-w-[200px] md:max-w-md">
-            ${videoTitle}
+            ${aryEsc(videoTitle)}
           </span>
           <div class="flex items-center gap-3">
             <span class="text-xs bg-white/20 px-2 py-1 rounded-full video-counter">
@@ -2296,12 +2313,14 @@ function renderVideoPlayerModal() {
         </div>
 
         <div class="relative bg-black/60 rounded-2xl overflow-hidden" style="height: 70vh;">
-          <video 
-            controls 
+          <video
+            controls
+            playsinline
+            preload="metadata"
             class="w-full h-full object-contain"
             autoplay
+            src="${aryEsc(videoUrl)}"
           >
-            <source src="${videoUrl}" type="video/mp4">
             مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
           </video>
 
@@ -2385,12 +2404,10 @@ function renderProductVideos(product) {
             ? video.name 
             : `ویدیو ${index + 1}`;
           
-          const videoData = encodeURIComponent(JSON.stringify(videos));
-          
           return `
             <div 
               class="glass rounded-xl overflow-hidden cursor-pointer group hover:shadow-lg hover:shadow-white/10 transition-all border border-white/10 hover:border-white/30"
-              onclick="openVideoPlayer(${index}, JSON.parse(decodeURIComponent('${videoData}')))"
+              onclick="openVideoPlayer(${index})"
             >
               <div class="relative aspect-video bg-white/5 flex items-center justify-center">
                 <div class="text-3xl text-white/20">🎥</div>
@@ -2410,7 +2427,7 @@ function renderProductVideos(product) {
               </div>
               
               <div class="p-2">
-                <h3 class="font-semibold text-xs truncate">${videoTitle}</h3>
+                <h3 class="font-semibold text-xs truncate">${aryEsc(videoTitle)}</h3>
                 <p class="text-white/40 text-[10px] mt-0.5">برای پخش کلیک کنید</p>
               </div>
             </div>
@@ -2421,7 +2438,7 @@ function renderProductVideos(product) {
       ${videos.length > 2 ? `
         <div class="text-center mt-4">
           <button 
-            onclick="openVideoPlayer(0, JSON.parse(decodeURIComponent('${encodeURIComponent(JSON.stringify(videos))}')))"
+            onclick="openVideoPlayer(0)"
             class="btn-ghost px-6 py-2 rounded-xl text-sm inline-flex items-center gap-2"
           >
             <span>مشاهده همه ${videos.length} ویدیو</span>

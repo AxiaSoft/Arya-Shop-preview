@@ -2331,8 +2331,7 @@ function renderAdminVideoPreviewModal() {
           <button onclick="closeAdminVideoPreview()" class="text-white/70 hover:text-white text-xl" type="button"><i class="ri-close-line text-xl"></i></button>
         </div>
         <div class="w-full">
-          <video controls class="w-full rounded-xl">
-            <source src="${url}" type="${file && file.type ? file.type : 'video/mp4'}">
+          <video controls playsinline preload="metadata" class="w-full rounded-xl" src="${escapeHtml(url)}">
             مرورگر شما از پخش این ویدیو پشتیبانی نمی‌کند.
           </video>
         </div>
