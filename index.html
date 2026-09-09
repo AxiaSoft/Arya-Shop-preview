@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="fa" dir="rtl" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>وب سایت فروشگاهی آریا</title>
+  
+  <!-- SDK ها (با try/catch در کد مدیریت می‌شوند) -->
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  
+  <!-- ====== DATABASE ====== -->
+  <script src="assets/js/Arya_db.js"></script>
+
+  <!-- ====== CORE ====== -->
+  <script src="assets/js/configuration.js"></script>
+  <script src="assets/js/global_state_management.js"></script>
+  <script src="assets/js/functions.js"></script>
+  <script src="assets/js/navigation.js"></script>
+  <script src="assets/js/toast_notifications.js"></script>
+  
+  <!-- ====== CRUD ====== -->
+  <script src="assets/js/crud_operations_products.js"></script>
+  <script src="assets/js/crud_operations_orders.js"></script>
+  
+  <!-- ====== COMPONENTS ====== -->
+  <script src="assets/js/components.js"></script>
+  
+  <!-- ====== PAGES ====== -->
+  <script src="assets/js/confirm_modal.js"></script>
+  <script src="assets/js/pages.js"></script>
+  
+  <!-- ====== ADMIN ====== -->
+  <script src="assets/js/adminP.js"></script>
+  
+  <!-- ====== STYLES ====== -->
+  <script src="assets/js/tailwind-cdn.js"></script>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  
+</head>
+<body class="bg-main text-white overflow-auto">
+  <!-- صفحه اتصال دیتابیس (فقط وقتی Db.php در دسترس باشد ولی هنوز پیکربندی نشده باشد نمایش داده می‌شود) -->
+  <div id="db-setup-screen" style="display:none; min-height:100vh; align-items:center; justify-content:center; padding:1rem;">
+    <div style="width:100%; max-width:460px;">
+      <div style="text-align:center; margin-bottom:2rem;">
+        <div style="width:80px;height:80px;border-radius:24px;background:linear-gradient(135deg,#2a8dff,#005aff);display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 1rem;box-shadow:0 20px 40px rgba(0,90,255,0.4)">🗄️</div>
+        <h1 style="font-size:1.5rem;font-weight:900;margin-bottom:.25rem">اتصال دیتابیس</h1>
+        <p style="color:rgba(255,255,255,0.5);font-size:.85rem">برای راه‌اندازی سایت، ابتدا باید یک دیتابیس MySQL متصل کنید</p>
+      </div>
+      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:1.75rem">
+        <form id="db-setup-form" onsubmit="handleDbSetupSubmit(event)" style="display:flex;flex-direction:column;gap:1rem">
+          <div>
+            <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">میزبان دیتابیس (Host)</label>
+            <input name="host" class="input-style" dir="ltr" placeholder="localhost" value="localhost" required>
+          </div>
+          <div>
+            <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">نام دیتابیس</label>
+            <input name="dbname" class="input-style" dir="ltr" placeholder="arya_store" value="arya_store" required>
+          </div>
+          <div>
+            <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">نام کاربری MySQL</label>
+            <input name="dbuser" class="input-style" dir="ltr" placeholder="root" required>
+          </div>
+          <div>
+            <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">رمز عبور MySQL</label>
+            <input name="dbpass" type="password" class="input-style" dir="ltr" placeholder="(در صورت وجود)">
+          </div>
+          <div id="db-setup-error" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:.75rem 1rem;color:#fca5a5;font-size:.85rem"></div>
+          <button id="db-setup-submit-btn" type="submit" class="btn-primary" style="padding:14px;border-radius:12px;font-weight:700;">اتصال و راه‌اندازی</button>
+        </form>
+        <p style="text-align:center;color:rgba(255,255,255,.35);font-size:.72rem;margin-top:1rem">
+          این اطلاعات را از پنل هاست یا phpMyAdmin خود دریافت کنید. بعد از اتصال موفق،
+          یک دیتابیس و حساب مدیر پیش‌فرض به‌صورت خودکار ساخته می‌شود.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" class="min-h-screen w-full"></div>
+  
+  <div id="toast-container" class="fixed top-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+  
+  <script>
+    // ============================================================
+    // DATA HANDLER (برای SDK)
+    // ============================================================
+    const dataHandler = {
+      onDataChanged(data) {
+        if (!data) return;
+        
+        // Parse products
+        state.products = data
+          .filter(d => d.type === 'product')
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        // Parse orders
+        state.orders = data
+          .filter(d => d.type === 'order')
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        // Parse tickets
+        state.tickets = data
+          .filter(d => d.type === 'ticket')
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        
+        // Parse categories
+        const backendCategories = data.filter(d => d.type === 'category');
+        if (backendCategories.length) {
+          state.categories = backendCategories;
+        }
+        
+        render();
+      }
+    };
+    
+    // ============================================================
+    // FALLBACK: اگر توابع renderHeader/Footer تعریف نشده بودند
+    // ============================================================
+    if (typeof renderHeader === 'undefined') {
+      window.renderHeader = function() {
+        return `
+          <header class="glass-dark sticky top-0 z-50 border-b border-white/5">
+            <div class="max-w-7xl mx-auto px-4 lg:px-8">
+              <div class="flex items-center justify-between h-16 lg:h-20">
+                <button onclick="goTo('home')" class="flex items-center gap-3" type="button">
+                  <span class="text-2xl">🏪</span>
+                  <span class="font-black text-lg gradient-text">${config?.store_name || 'فروشگاه'}</span>
+                </button>
+                <div class="flex items-center gap-2">
+                  <button onclick="goTo('shop')" class="text-white/80 hover:text-white text-sm font-medium transition-colors px-3 py-2 rounded-xl glass" type="button">فروشگاه</button>
+                  <button onclick="goTo('cart')" class="relative p-2.5 glass rounded-xl hover:bg-white/10" type="button">🛒</button>
+                  <button onclick="goTo('login')" class="btn-primary px-4 py-2 rounded-xl text-sm" type="button">ورود</button>
+                </div>
+              </div>
+            </div>
+          </header>
+        `;
+      };
+    }
+    
+    if (typeof renderFooter === 'undefined') {
+      window.renderFooter = function() {
+        return `
+          <footer class="glass border-t border-white/5 mt-auto">
+            <div class="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+              <div class="text-center text-white/40 text-sm">
+                © ${new Date().getFullYear()} ${config?.store_name || 'فروشگاه'} - تمامی حقوق محفوظ است
+              </div>
+            </div>
+          </footer>
+        `;
+      };
+    }
+    
+    // ============================================================
+    // FALLBACK RENDER (اگر تابع render در functions.js تعریف نشده بود)
+    // ============================================================
+    if (typeof render === 'undefined') {
+      window.render = function() {
+        console.log('🔄 Fallback render called');
+        const appEl = document.querySelector('#app');
+        if (!appEl) return;
+        
+        try {
+          const header = typeof renderHeader === 'function' ? renderHeader() : '';
+          let content = '';
+          
+          if (state.page === 'home' && typeof renderHomePage === 'function') {
+            content = renderHomePage();
+          } else if (state.page === 'shop' && typeof renderShopPage === 'function') {
+            content = renderShopPage();
+          } else if (state.page === 'product' && typeof renderProductPage === 'function') {
+            content = renderProductPage();
+          } else if (state.page === 'cart' && typeof renderCartPage === 'function') {
+            content = renderCartPage();
+          } else if (state.page === 'login' && typeof renderLoginPage === 'function') {
+            content = renderLoginPage();
+          } else if (state.page === 'profile' && typeof renderProfilePage === 'function') {
+            content = renderProfilePage();
+          } else if (state.page === 'admin' && typeof renderAdminPanel === 'function') {
+            content = renderAdminPanel();
+          } else {
+            content = `
+              <main class="max-w-7xl mx-auto px-4 py-16 text-center">
+                <h1 class="text-4xl font-black gradient-text">🚀 خوش آمدید!</h1>
+                <p class="text-white/60 mt-4">سایت فروشگاهی آریا آماده خدمت رسانی است</p>
+                <button onclick="goTo('shop')" class="btn-primary px-8 py-4 rounded-2xl font-bold text-lg mt-8">شروع خرید</button>
+              </main>
+            `;
+          }
+          
+          const footer = typeof renderFooter === 'function' ? renderFooter() : '';
+          appEl.innerHTML = header + content + footer;
+        } catch (e) {
+          console.error('❌ Render error:', e);
+          appEl.innerHTML = `
+            <div class="p-8 text-center">
+              <h1 class="text-4xl">⚠️ خطا در رندر</h1>
+              <p class="text-white/60 mt-4">${e.message}</p>
+              <button onclick="location.reload()" class="btn-primary px-6 py-3 rounded-xl mt-4">رفرش صفحه</button>
+            </div>
+          `;
+        }
+      };
+    }
+    
+    // ============================================================
+    // بررسی وضعیت اتصال دیتابیس (Db.php)
+    // ============================================================
+    async function checkDbStatusAndMaybeShowSetup() {
+      // اگر آدرس فایل به‌صورت کامل باز شده باشد (نه از طریق سرور PHP)
+      // یا هیچ سرور PHP در دسترس نباشد، این fetch خطا می‌دهد؛ در آن
+      // حالت به‌صورت شفاف روی حالت قبلی (فقط IndexedDB) ادامه می‌دهیم.
+      try {
+        const res = await fetch('Db.php?action=status', { credentials: 'same-origin' });
+        if (!res.ok) return true; // بک‌اند در دسترس نیست، ادامه بده
+        const json = await res.json();
+        if (json && json.ok && json.data && json.data.configured === false) {
+          showDbSetupScreen();
+          return false; // منتظر تکمیل ویزارد بمان، رندر سایت را شروع نکن
+        }
+        return true;
+      } catch (e) {
+        // بدون بک‌اند PHP (مثلاً تست محلی) — به‌صورت عادی با IndexedDB ادامه بده
+        return true;
+      }
+    }
+
+    function showDbSetupScreen() {
+      const setupEl = document.getElementById('db-setup-screen');
+      const appEl = document.getElementById('app');
+      if (setupEl) setupEl.style.display = 'flex';
+      if (appEl) appEl.style.display = 'none';
+    }
+
+    function hideDbSetupScreen() {
+      const setupEl = document.getElementById('db-setup-screen');
+      const appEl = document.getElementById('app');
+      if (setupEl) setupEl.style.display = 'none';
+      if (appEl) appEl.style.display = '';
+    }
+
+    async function handleDbSetupSubmit(event) {
+      event.preventDefault();
+      const form = event.target;
+      const btn = document.getElementById('db-setup-submit-btn');
+      const errEl = document.getElementById('db-setup-error');
+      errEl.style.display = 'none';
+
+      const payload = {
+        host: form.host.value.trim(),
+        dbname: form.dbname.value.trim(),
+        dbuser: form.dbuser.value.trim(),
+        dbpass: form.dbpass.value
+      };
+
+      btn.disabled = true;
+      btn.textContent = 'در حال اتصال...';
+
+      try {
+        const res = await fetch('Db.php?action=setup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'same-origin',
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (!json.ok) {
+          errEl.textContent = json.msg || 'اتصال به دیتابیس ناموفق بود.';
+          errEl.style.display = 'block';
+          btn.disabled = false;
+          btn.textContent = 'اتصال و راه‌اندازی';
+          return;
+        }
+
+        hideDbSetupScreen();
+        if (typeof toast === 'function') {
+          toast('✅ دیتابیس با موفقیت متصل شد! در حال بارگذاری سایت...', 'success');
+        }
+        setTimeout(() => location.reload(), 1200);
+      } catch (e) {
+        errEl.textContent = 'ارتباط با سرور برقرار نشد. اتصال اینترنت/سرور را بررسی کنید.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'اتصال و راه‌اندازی';
+      }
+    }
+    window.handleDbSetupSubmit = handleDbSetupSubmit;
+
+    // ============================================================
+    // INITIALIZATION
+    // ============================================================
+    async function init() {
+      console.log('🚀 Initializing application...');
+
+      // ابتدا بررسی کن آیا دیتابیس نیاز به راه‌اندازی دارد
+      const shouldContinue = await checkDbStatusAndMaybeShowSetup();
+      if (!shouldContinue) return; // صفحه اتصال دیتابیس نمایش داده شد
+
+      // Load from IndexedDB on startup
+      if (window.AryaDB) {
+        await AryaDB.init();
+        await AryaDB.loadToState();
+      }
+
+      // Admin panel is on admin.html — index.html is user-only
+      // Reset any stale isAdmin flag from user session
+      if (typeof state !== 'undefined') state.isAdmin = false;
+      
+      
+      // Element SDK
+      try {
+        if (window.elementSdk) {
+          await window.elementSdk.init({
+            defaultConfig: config || {},
+            onConfigChange: async (cfg) => {
+              if (typeof config !== 'undefined') {
+                config = { ...defaultConfig, ...cfg };
+              }
+              render();
+            },
+            mapToCapabilities: () => ({
+              recolorables: [],
+              borderables: [],
+              fontEditable: undefined,
+              fontSizeable: undefined
+            }),
+            mapToEditPanelValues: (cfg) => new Map([
+              ['store_name', cfg?.store_name || config?.store_name || 'فروشگاه'],
+              ['hero_title', cfg?.hero_title || config?.hero_title || ''],
+              ['hero_subtitle', cfg?.hero_subtitle || config?.hero_subtitle || '']
+            ])
+          });
+          console.log('✅ Element SDK initialized');
+        }
+      } catch (e) {
+        console.warn('⚠️ Element SDK:', e.message);
+      }
+      
+      // Data SDK
+      try {
+        if (window.dataSdk) {
+          const result = await window.dataSdk.init(dataHandler);
+          if (result?.isOk) {
+            console.log('✅ Data SDK initialized');
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Data SDK:', e.message);
+      }
+      
+      // رندر نهایی
+      setTimeout(() => {
+        console.log('🎨 Rendering...');
+        render();
+        console.log('✅ App ready!');
+      }, 50);
+    }
+    
+    // ============================================================
+    // START
+    // ============================================================
+    if (typeof state !== 'undefined' && state) {
+      init();
+    } else {
+      document.addEventListener('DOMContentLoaded', init);
+    }
+  </script>
+</body>
+</html>
