@@ -69,7 +69,7 @@ function renderAdminDashboard() {
                   .map(
                     p => `
                   <div class="glass rounded-xl p-4 flex items-center justify-between">
-                    <span class="text-sm font-medium">${p.title}</span>
+                    <span class="text-sm font-medium">${escapeHtml(p.title)}</span>
                     <span class="text-emerald-400 font-bold">${p.qty} عدد</span>
                   </div>
                 `
@@ -834,7 +834,7 @@ function renderCategoryModal() {
             <input 
               type="text"
               class="w-full input-style"
-              value="${m.title}"
+              value="${escapeHtml(m.title)}"
               oninput="state.categoryModal.title=this.value"
               placeholder="نام دسته را وارد کنید"
             >
@@ -874,7 +874,7 @@ function renderCategoryModal() {
                             render();
                           "
                         >
-                        <span class="text-xs line-clamp-2">${p.title}</span>
+                        <span class="text-xs line-clamp-2">${escapeHtml(p.title)}</span>
                       </div>
                     </label>
                   `
@@ -980,6 +980,13 @@ function setReviewStatus(id, status) {
   if (!r) return;
   r.status = status;
   render();
+  // ذخیره روی سرور: اکشن اختصاصی مدیریت نظرات (و کش محلی)
+  if (window.AryaServer && AryaServer.isConfigured()) {
+    adminApiCall('admin_review_moderate', { id: String(id), status }).then(j => {
+      if (!j.ok) toast(j.msg || 'ثبت وضعیت نظر روی سرور ناموفق بود', 'error');
+    });
+  }
+  if (window.AryaDB) { try { AryaDB.upsert('reviews', { ...r }); } catch (e) {} }
 }
 
 function reactToReview(id, reaction) {
@@ -991,6 +998,7 @@ function reactToReview(id, reaction) {
 
   const prev = r._adminReaction || null;
 
+  if (window.AryaDB) { setTimeout(() => { try { AryaDB.upsert('reviews', { ...r }); } catch (e) {} }, 0); }
   if (reaction === 'like') {
     if (prev === 'like') {
       r.likes = Math.max(0, r.likes - 1);
@@ -1071,7 +1079,7 @@ function renderAdminReviews() {
                         class="w-full text-right px-3 py-2 rounded-xl text-xs mb-1 flex items-center justify-between ${activeProductId === pid ? 'bg-white/10' : 'glass hover:bg-white/10'}"
                         onclick="state.adminReviewsSelectedProductId='${pid}'; render()"
                       >
-                        <span class="line-clamp-1">${p.title}</span>
+                        <span class="line-clamp-1">${escapeHtml(p.title)}</span>
                         <span class="flex items-center gap-1 text-[10px] text-white/60">
                           <span>${p.reviews.length} نظر</span>
                           ${
@@ -1131,7 +1139,7 @@ function renderAdminReviews() {
                           </div>
                         </div>
 
-                        <p class="text-sm text-white/80 whitespace-pre-line mb-3">${r.text || r.comment || ''}</p>
+                        <p class="text-sm text-white/80 whitespace-pre-line mb-3">${escapeHtml(r.text || r.comment || '')}</p>
 
                         <div class="flex items-center justify-between gap-3">
                           <div class="flex items-center gap-2 text-[11px]">
@@ -1665,7 +1673,7 @@ function renderAdminSupportSafe() {
                                 ${isAdmin ? 'پشتیبانی' : (activeTicket.user_name || activeTicket.userName || 'کاربر')}
                                 • ${utils.formatDateTime(m.at || '')}
                               </div>
-                              <div class="whitespace-pre-line">${m.text}</div>
+                              <div class="whitespace-pre-line">${escapeHtml(m.text)}</div>
                             </div>
                           </div>
                         `;
@@ -3641,8 +3649,13 @@ function showDbExportPanel() {
         </div>
 
         <div class="glass rounded-xl p-4 bg-blue-500/10 border border-blue-500/20">
-          <div class="font-semibold text-blue-300 mb-2">🔗 اتصال به MySQL</div>
-          <p class="text-xs text-white/60">برای اتصال به MySQL واقعی، فایل <code class="text-violet-300">api/db.php</code> را روی سرور قرار دهید و در <code class="text-violet-300">arya_db.js</code> مقدار <code class="text-violet-300">USE_BACKEND = true</code> کنید.</p>
+          <div class="font-semibold text-blue-300 mb-2">🔗 وضعیت سرور و دیتابیس</div>
+          <div id="sys-status-box" class="text-xs text-white/60">در حال دریافت...</div>
+          <p class="text-[11px] text-white/40 mt-2 leading-relaxed">
+            اتصال از طریق ویزارد نصب صفحه اصلی انجام می‌شود (MySQL/MariaDB، PostgreSQL، SQLite، SQL Server)
+            و پشتیبانی از پنل‌های cPanel/DirectAdmin/Plesk برای ساخت خودکار دیتابیس.
+            نمونه تنظیمات دستی: <code class="text-violet-300">config.sample.php</code>
+          </p>
         </div>
 
         <div class="glass rounded-xl p-4 bg-emerald-500/10 border border-emerald-500/20">
@@ -3662,6 +3675,22 @@ function showDbExportPanel() {
     onConfirm: () => { state.confirmModal = null; render(); }
   };
   render();
+
+  // وضعیت سرور (php -m، درایور، نسخه) از اکشن system_status
+  setTimeout(async () => {
+    const box = document.getElementById('sys-status-box');
+    if (!box) return;
+    if (!(window.AryaServer && AryaServer.isConfigured())) { box.innerHTML = 'حالت محلی (بدون سرور) — داده‌ها فقط در مرورگر این مرورگر ذخیره می‌شوند.'; return; }
+    try {
+      const j = await adminApiCall('system_status', {});
+      if (j.ok && j.data) {
+        const d = j.data;
+        const ext = Object.entries(d.extensions || {}).map(([k, v]) => `<span class="${v ? 'text-emerald-400' : 'text-rose-400'}">${k}:${v ? '✓' : '✗'}</span>`).join(' · ');
+        box.innerHTML = `موتور فعال: <b class="text-white/85">${escapeHtml(String(d.label || d.driver))}</b> · نسخه: ${escapeHtml(String(d.server_version || '?'))}<br>PHP ${escapeHtml(String(d.php || '?'))} — ${ext}` +
+          (d.demo_mode ? '<br><span class="text-amber-300">⚠️ DEMO_MODE روشن است — کدهای OTP در پاسخ API برمی‌گردند؛ پیش از انتشار غیرفعالش کنید.</span>' : '');
+      } else box.textContent = 'دریافت وضعیت ناموفق بود.';
+    } catch (e) { box.textContent = 'دریافت وضعیت ناموفق بود.'; }
+  }, 120);
 
   // Load DB stats after render
   setTimeout(async () => {
@@ -3789,6 +3818,37 @@ window.downloadDbJSON = downloadDbJSON;
 // هیچ فرم ثبت‌نام عمومی‌ای در سایت وجود ندارد.
 // ═══════════════════════════════════════════════════════════════
 
+// ── فراخوان امن Db.php با CSRF (توکن از admin.html / AryaServer) ──
+async function adminApiCall(action, body) {
+  if (window.aryaAdminCall) return window.aryaAdminCall(action, body);
+  const isGet = body === null || body === undefined;
+  const headers = isGet ? {} : { 'Content-Type': 'application/json' };
+  if (!isGet && window.ARYA_CSRF) headers['X-CSRF-Token'] = ARYA_CSRF;
+  let res;
+  try {
+    res = await fetch('Db.php?action=' + action, {
+      method: isGet ? 'GET' : 'POST', credentials: 'same-origin', headers,
+      body: isGet ? undefined : JSON.stringify(body),
+    });
+  } catch (e) { return { ok: false, msg: 'ارتباط با سرور برقرار نشد' }; }
+  let json;
+  try { json = await res.json(); } catch (e) { return { ok: false, msg: 'پاسخ نامعتبر سرور' }; }
+  if (json.ok && json.data && json.data.csrf) window.ARYA_CSRF = json.data.csrf;
+  if (!json.ok && res.status === 403 && /CSRF/.test(String(json.msg || ''))) {
+    try {
+      const c = await fetch('Db.php?action=csrf', { credentials: 'same-origin' }).then(r => r.json());
+      if (c && c.ok && c.data && c.data.csrf) {
+        window.ARYA_CSRF = c.data.csrf;
+        headers['X-CSRF-Token'] = ARYA_CSRF;
+        res = await fetch('Db.php?action=' + action, { method: 'POST', credentials: 'same-origin', headers, body: JSON.stringify(body) });
+        json = await res.json();
+      }
+    } catch (e) {}
+  }
+  json._status = res.status;
+  return json;
+}
+
 state.adminUsersList = state.adminUsersList || [];
 state.adminUsersLoading = state.adminUsersLoading || false;
 state.adminUserFormOpen = state.adminUserFormOpen || false;
@@ -3797,8 +3857,7 @@ async function loadAdminUsersList() {
   state.adminUsersLoading = true;
   render();
   try {
-    const res = await fetch('Db.php?action=admin_list', { credentials: 'same-origin' });
-    const json = await res.json();
+    const json = await adminApiCall('admin_list', null);
     if (json.ok) {
       state.adminUsersList = json.data || [];
     } else {
@@ -3881,7 +3940,7 @@ function renderAdminUsersManagement() {
           <tbody>
             ${list.map(u => `
               <tr class="border-b border-white/5 hover:bg-white/5">
-                <td class="p-3">${u.name || ''}</td>
+                <td class="p-3">${escapeHtml(u.name || '')}</td>
                 <td class="p-3 text-white/60">${u.email || ''}</td>
                 <td class="p-3 text-white/60">${u.phone || '-'}</td>
                 <td class="p-3">${u.role === 'superadmin' ? '👑 مدیر اصلی' : 'مدیر'}</td>
@@ -3889,7 +3948,7 @@ function renderAdminUsersManagement() {
                 <td class="p-3">
                   <div class="flex gap-2">
                     <button onclick="openEditAdminUserModal('${u.id}')" type="button" class="btn-ghost px-3 py-1.5 rounded-lg text-xs">ویرایش</button>
-                    <button onclick="deleteAdminUserConfirm('${u.id}', '${(u.name || '').replace(/'/g, '')}')" type="button" class="btn-ghost text-rose-400 px-3 py-1.5 rounded-lg text-xs">حذف</button>
+                    <button onclick="deleteAdminUserConfirm('${u.id}', '${escapeJs(u.name || '')}')" type="button" class="btn-ghost text-rose-400 px-3 py-1.5 rounded-lg text-xs">حذف</button>
                   </div>
                 </td>
               </tr>
@@ -3913,13 +3972,7 @@ async function submitNewAdminUser(event) {
   };
 
   try {
-    const res = await fetch('Db.php?action=admin_create', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json();
+    const json = await adminApiCall('admin_create', payload);
     if (!json.ok) { toast(json.msg || 'ایجاد حساب ناموفق بود', 'error'); return; }
     toast('✅ حساب مدیر جدید ایجاد شد');
     state.adminUserFormOpen = false;
@@ -3940,11 +3993,11 @@ function openEditAdminUserModal(id) {
       <div class="space-y-3 text-right text-sm">
         <div>
           <label class="block text-white/60 mb-1 text-xs">نام</label>
-          <input id="edit-admin-name" class="input-style w-full" value="${u.name || ''}">
+          <input id="edit-admin-name" class="input-style w-full" value="${escapeHtml(u.name || '')}">
         </div>
         <div>
           <label class="block text-white/60 mb-1 text-xs">شماره موبایل</label>
-          <input id="edit-admin-phone" class="input-style w-full" dir="ltr" value="${u.phone || ''}">
+          <input id="edit-admin-phone" class="input-style w-full" dir="ltr" value="${escapeHtml(u.phone || '')}">
         </div>
         <div>
           <label class="block text-white/60 mb-1 text-xs">رمز عبور جدید (اختیاری)</label>
@@ -3976,13 +4029,7 @@ async function saveEditedAdminUser(id) {
   if (tfaEl) payload.two_factor_password = tfaEl.value || '';
 
   try {
-    const res = await fetch('Db.php?action=admin_update', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin',
-      body: JSON.stringify(payload)
-    });
-    const json = await res.json();
+    const json = await adminApiCall('admin_update', payload);
     state.confirmModal = null;
     if (!json.ok) { toast(json.msg || 'ویرایش ناموفق بود', 'error'); render(); return; }
     toast('✅ حساب بروزرسانی شد');
@@ -3998,18 +4045,12 @@ function deleteAdminUserConfirm(id, name) {
   state.confirmModal = {
     title: 'حذف حساب مدیر',
     icon: '🗑️',
-    message: `آیا از حذف حساب «${name}» مطمئن هستید؟`,
+    message: `آیا از حذف حساب «${escapeHtml(name)}» مطمئن هستید؟`,
     confirmText: 'حذف',
     confirmClass: 'btn-danger',
     onConfirm: async () => {
       try {
-        const res = await fetch('Db.php?action=admin_delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'same-origin',
-          body: JSON.stringify({ id })
-        });
-        const json = await res.json();
+        const json = await adminApiCall('admin_delete', { id });
         state.confirmModal = null;
         if (!json.ok) { toast(json.msg || 'حذف ناموفق بود', 'error'); render(); return; }
         toast('حساب حذف شد');

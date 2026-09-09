@@ -22,9 +22,9 @@
     settings: { keyPath: 'key', indexes: [] },
   };
 
-  // ── PHP backend config (اگر سرور داشتید) ──
-  const BACKEND_URL = 'Db.php'; // مثال: 'https://yoursite.com/api/db.php'
-  const USE_BACKEND = true; // true = از PHP/MySQL استفاده کن
+  // ── همگام‌سازی با سرور (Arya_api.js) — در صورت نبود config، فقط محلی ──
+  const SERVER_SYNC_TABLES = ['products', 'categories', 'orders', 'reviews'];
+  function serverOn() { return !!(window.AryaServer && AryaServer.isConfigured()); }
 
   let db = null;
   let _ready = false;
@@ -195,8 +195,46 @@
   // ──────────────────────────────────────────
   // SYNC: IndexedDB → state (on load)
   // ──────────────────────────────────────────
+  function _mapServerProduct(p) {
+    if (typeof p.images === 'string') { try { p.images = JSON.parse(p.images); } catch { p.images = []; } }
+    if (typeof p.videos === 'string') { try { p.videos = JSON.parse(p.videos); } catch { p.videos = []; } }
+    return p;
+  }
+
+  // در حالت سرور: محصولات/دسته‌ها/نظرات از سرور (مرجع) و کش در IndexedDB
+  async function loadFromServer() {
+    const isAdminPage = /admin\.html/.test(location.pathname) || location.hash.includes('admin');
+    const wanted = [['products'], ['categories'], ['reviews']];
+    if (isAdminPage) wanted.push(['orders']);
+    for (const [table] of wanted) {
+      try {
+        const r = await AryaServer.crud.getAll(table, isAdminPage && table === 'reviews' ? { include_all: 1 } : {});
+        if (r && r.ok && Array.isArray(r.data)) {
+          const rows = r.data.map(x => ({ ...x }));
+          if (typeof getAll === 'function' && db) {
+            await Promise.all(rows.map(row => upsert(table, row).catch(() => {})));
+          }
+          if (table === 'products') state.products = rows.map(_mapServerProduct).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          if (table === 'categories') state.categories = rows;
+          if (table === 'reviews') state.reviews = rows;
+          if (table === 'orders') state.orders = rows.map(o => {
+            if (typeof o.items === 'string') { try { o.items = JSON.parse(o.items); } catch { o.items = []; } }
+            return o;
+          }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        }
+      } catch (e) { console.warn('[AryaDB] server load failed for', table, e); }
+    }
+  }
+
   async function loadToState() {
-    if (!db || typeof state === 'undefined') return;
+    if (typeof state === 'undefined') return;
+    try { await AryaServer.ready; } catch (e) {}
+    if (typeof AryaServer !== 'undefined' && AryaServer.isConfigured()) {
+      await loadFromServer();
+      if (typeof render === 'function') render();
+      return;
+    }
+    if (!db) return;
 
     const [products, orders, categories, tickets, reviews] = await Promise.all([
       getAll('products'),
@@ -478,20 +516,25 @@
   // PHP BACKEND SYNC (اختیاری - با سرور PHP)
   // ──────────────────────────────────────────
   async function syncToBackend(table, action, record) {
-    if (!USE_BACKEND || !BACKEND_URL) return;
+    // اکشن‌های عمومی CRUD روی سرور (فقط در حالت پیکربندی‌شده)
+    if (!serverOn()) return { skipped: true };
     try {
-      await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table, action, record })
-      });
-    } catch(e) {}
+      if (action === 'upsert') return await AryaServer.crud.upsert(table, _cleanRecord({ ...record }));
+      if (action === 'delete') return await AryaServer.crud.remove(table, record && record.id ? record.id : record);
+    } catch (e) { console.warn('[AryaDB] sync failed:', e); return { ok: false, msg: String(e) }; }
+    return { skipped: true };
   }
 
   // ──────────────────────────────────────────
   // DB STATS (for admin panel)
   // ──────────────────────────────────────────
   async function getStats() {
+    if (serverOn()) {
+      try {
+        const r = await AryaServer.crud.stats();
+        if (r && r.ok && r.data && r.data.counts) return { ...r.data.counts };
+      } catch (e) {}
+    }
     const stats = {};
     for (const name of Object.keys(STORES)) {
       const rows = await getAll(name);
@@ -503,12 +546,27 @@
   // ──────────────────────────────────────────
   // PUBLIC API
   // ──────────────────────────────────────────
+  async function upsertS(table, record) {
+    const r = await upsert(table, record);
+    if (serverOn() && SERVER_SYNC_TABLES.includes(table)) {
+      try { await syncToBackend(table, 'upsert', record); } catch (e) {}
+    }
+    return r;
+  }
+  async function removeS(table, id) {
+    const r = await remove(table, id);
+    if (serverOn() && SERVER_SYNC_TABLES.includes(table)) {
+      try { await syncToBackend(table, 'delete', { id }); } catch (e) {}
+    }
+    return r;
+  }
+
   window.AryaDB = {
     init,
-    upsert,
+    upsert: upsertS,
     getAll,
     getById,
-    remove,
+    remove: removeS,
     clearStore,
     loadToState,
     syncState: _syncStateToDb,

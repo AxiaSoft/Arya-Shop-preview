@@ -1,0 +1,13 @@
+# فایل تنظیمات واقعی سایت — هرگز در ریپو نباید قرار بگیرد
+config.php
+config.local.php
+
+# داده‌های محلی و نرخ‌محدودساز
+storage/*
+!storage/.gitkeep
+!storage/.htaccess
+
+# فایل‌های موقت
+*.log
+*.sql.bak
+.DS_Store

@@ -1,3 +1,11 @@
+// ── اسکیپ محتوای کاربر پیش از درج در HTML (ضد XSS) ──
+function aryEsc(v) {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+window.aryEsc = window.aryEsc || aryEsc;
+
 // ═══════════════════════════════════════════════════════════════
 // HOME PAGE (ری‌دیزاین‌شده - همان استایل سایت با انیمیشن و جزئیات بیشتر)
 // File: assets/js/pages.js
@@ -310,7 +318,7 @@ function renderHomePage() {
 
                 <div class="text-right ${i % 2 === 1 ? 'md:order-1' : ''}">
                   <h3 class="text-xl lg:text-2xl font-black mb-4">${b.title}</h3>
-                  <p class="text-white/70 leading-relaxed">${b.text}</p>
+                  <p class="text-white/70 leading-relaxed">${aryEsc(b.text)}</p>
                 </div>
 
               </div>
@@ -370,6 +378,10 @@ function renderHomePage() {
   function hashPass(p) { return btoa(unescape(encodeURIComponent(p || ''))); }
   function verifyPass(plain, hash) { return hashPass(plain) === hash; }
 
+  // حالت سرور: وقتی Db.php پیکربندی است، همه‌ی مسیرهای احراز هویت سمت سرور می‌روند
+  function serverAuth() { return !!(window.AryaServer && AryaServer.isConfigured()); }
+  window.serverAuth = serverAuth;
+
   // تبدیل ارقام فارسی/عربی به انگلیسی (برخی کیبوردهای فارسی حتی در فیلدهای
   // عددی رقم فارسی/عربی تایپ می‌کنند و اعتبارسنجی کد تایید را خراب می‌کردند)
   function normalizeDigits(str) {
@@ -387,6 +399,7 @@ function renderHomePage() {
 
   // ثبت/بروزرسانی کاربر در دیتابیس واقعی MySQL (best-effort، بدون مسدود کردن رابط کاربری)
   function persistUserToServer(record) {
+    if (serverAuth()) return Promise.resolve({ ok: true, skipped: true }); // مسیرهای اختصاصی user_* جای این را گرفته‌اند
     try {
       fetch('Db.php?action=upsert&table=users', {
         method: 'POST',
@@ -421,6 +434,7 @@ function renderHomePage() {
   state.authOtpTimer    = state.authOtpTimer    || 0;
   state.authOtpInterval = state.authOtpInterval || null;
   state.pendingLoginUser = state.pendingLoginUser || null;
+  let resendCred = null; // فقط در حافظه‌ی لحظه‌ای برای «ارسال مجدد» (در state نمی‌نشیند)
 
   // ── Toggle password visibility ──
   function togglePassVis(inputId, btn) {
@@ -435,6 +449,24 @@ function renderHomePage() {
   function handleUserLogin(form) {
     const id = (form.identifier?.value || '').trim();
     const pass = form.password?.value || '';
+
+    if (serverAuth()) {
+      state.authError = '';
+      AryaServer.login1(id, pass).then(r => {
+        if (!r.ok) { state.authError = r.msg || 'خطا در ورود.'; render(); return; }
+        resendCred = { id, pass };
+        state.authOtpMode = 'login';
+        state.pendingLoginUser = { phone: r.data.target_masked || id, email: '' };
+        state.authOtp = r.data.otp_demo || '';
+        state.authOtpStep = true;
+        startLoginOtpCountdown(120);
+        if (r.data.otp_demo) toast(`کد تایید (حالت نمایشی): ${r.data.otp_demo} — هدف ${r.data.target_masked || ''}`, 'info', 8000);
+        else toast(`کد تایید به ${r.data.target_masked || id} ارسال شد.`, 'info', 6000);
+        render();
+      }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
+      return;
+    }
+
     const users = getUsers();
 
     const user = users.find(u =>
@@ -506,8 +538,23 @@ function renderHomePage() {
 
   function resendLoginOtp() {
     if (state.authOtpTimer > 0) return;
+    if (serverAuth()) {
+      const mode = state.authOtpMode || 'login';
+      const req = mode === 'forgot'
+        ? AryaServer.reset1(state.forgotIdentifier || '')
+        : AryaServer.login1(resendCred ? resendCred.id : '', resendCred ? resendCred.pass : '');
+      req.then(r => {
+        if (!r.ok) { state.authError = r.msg || 'ارسال مجدد ناموفق.'; render(); return; }
+        state.authOtp = r.data.otp_demo || '';
+        startLoginOtpCountdown(120);
+        if (r.data.otp_demo) toast(`کد جدید (نمایشی): ${r.data.otp_demo}`, 'info', 6000);
+        render();
+      }).catch(() => {});
+      return;
+    }
     startLoginOtpStep();
   }
+  window.resendLoginOtp = resendLoginOtp;
 
   // ── LOGIN (مرحله ۲: تایید کد ۶ رقمی) ──
   function handleVerifyLoginOtp(form) {
@@ -515,6 +562,39 @@ function renderHomePage() {
     if (!/^\d{6}$/.test(code)) {
       state.authError = 'کد تایید باید دقیقاً ۶ رقم باشد.';
       render();
+      return;
+    }
+
+    if (serverAuth()) {
+      const mode = state.authOtpMode || 'login';
+      const req = mode === 'forgot'
+        ? AryaServer.reset2(code, state.pendingForgotPass || '')
+        : AryaServer.login2(code);
+      req.then(r => {
+        if (!r.ok) { state.authError = r.msg || 'کد نامعتبر است.'; render(); return; }
+        if (state.authOtpInterval) { clearInterval(state.authOtpInterval); state.authOtpInterval = null; }
+        state.authOtpStep = false; state.authOtp = ''; state.authOtpTimer = 0;
+        state.pendingForgotPass = ''; state.forgotIdentifier = ''; resendCred = null;
+        if (mode === 'forgot') {
+          state.authTab = 'login'; state.authError = '';
+          toast('✅ رمز عبور بازنشانی شد؛ اکنون وارد شوید.');
+          render(); return;
+        }
+        const u = r.data.user || {};
+        let addr = u.addresses;
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { addr = []; } }
+        if (addr && !Array.isArray(addr)) addr = Object.values(addr);
+        const userObj = {
+          id: u.id, name: u.name || '', phone: u.phone || '', email: u.email || '',
+          addresses: Array.isArray(addr) ? addr : [], avatar: u.avatar || '',
+          nationalId: u.national_id || u.nationalId || '',
+        };
+        state.currentUser = userObj; state.user = userObj; state.isAdmin = false; state.authError = '';
+        if (window.AppState) AppState.set({ loggedIn: true, currentUser: userObj, user: userObj, isAdmin: false });
+        toast('✅ با موفقیت وارد شدید');
+        goTo('profile');
+        render();
+      }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
       return;
     }
     if (code !== state.authOtp) {
@@ -566,9 +646,11 @@ function renderHomePage() {
     state.authOtp = '';
     state.authOtpTimer = 0;
     state.pendingLoginUser = null;
+    state.authOtpMode = null; state.pendingForgotPass = ''; resendCred = null;
     state.authError = '';
     render();
   }
+  window.cancelLoginOtpStep = cancelLoginOtpStep;
 
   // ── REGISTER ──
   function handleUserRegister(form) {
@@ -585,6 +667,16 @@ function renderHomePage() {
     if (!/[A-Z]/.test(pass)) { state.authError = 'رمز باید حداقل یک حرف بزرگ داشته باشد.'; render(); return; }
     if (!/\d/.test(pass)) { state.authError = 'رمز باید حداقل یک عدد داشته باشد.'; render(); return; }
     if (pass !== pass2) { state.authError = 'رمزهای عبور یکسان نیستند.'; render(); return; }
+
+    if (serverAuth()) {
+      AryaServer.register({ name, email, phone, password: pass }).then(r => {
+        if (!r.ok) { state.authError = r.msg || 'خطا در ثبت‌نام.'; render(); return; }
+        state.authError = ''; state.authTab = 'login';
+        toast('✅ ثبت‌نام انجام شد. برای ادامه وارد حساب شوید.');
+        render();
+      }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
+      return;
+    }
 
     const users = getUsers();
     if (users.find(u => u.email === email)) { state.authError = 'این ایمیل قبلاً ثبت شده است.'; render(); return; }
@@ -628,6 +720,22 @@ function renderHomePage() {
 
     if (newpass.length < 8) { state.authError = 'رمز جدید باید حداقل ۸ کاراکتر باشد.'; render(); return; }
     if (newpass !== newpass2) { state.authError = 'رمزهای عبور یکسان نیستند.'; render(); return; }
+
+    if (serverAuth()) {
+      AryaServer.reset1(id).then(r => {
+        if (!r.ok) { state.authError = r.msg || 'خطا در ارسال کد.'; render(); return; }
+        state.pendingForgotPass = newpass;
+        state.forgotIdentifier = id;
+        state.authOtpMode = 'forgot';
+        state.authOtp = r.data.otp_demo || '';
+        state.pendingLoginUser = { phone: r.data.target_masked || id, email: '' };
+        state.authOtpStep = true; state.authError = '';
+        startLoginOtpCountdown(120);
+        if (r.data.otp_demo) toast(`کد بازیابی (نمایشی): ${r.data.otp_demo}`, 'info', 8000);
+        render();
+      }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
+      return;
+    }
 
     const users = getUsers();
     const idx = users.findIndex(u =>
@@ -678,7 +786,7 @@ function renderHomePage() {
         <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
           <div class="text-center mb-8">
             <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">🔒</div>
-            <h1 class="text-2xl font-black mb-1">تایید هویت</h1>
+            <h1 class="text-2xl font-black mb-1">${state.authOtpMode === 'forgot' ? 'بازیابی رمز عبور' : 'تایید هویت'}</h1>
             <p class="text-white/50 text-sm">کد ۶ رقمی ارسال‌شده به ${target} را وارد کنید</p>
           </div>
           <div class="glass-strong rounded-3xl p-7 animate-scale">
@@ -693,7 +801,7 @@ function renderHomePage() {
                 <span id="login-otp-timer">${timerHtml}</span>
               </div>
               ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
-              <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">تایید و ورود</button>
+              <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">${state.authOtpMode === 'forgot' ? 'تایید کد و بازنشانی رمز' : 'تایید و ورود'}</button>
               <button type="button" onclick="cancelLoginOtpStep()" class="w-full py-3 btn-ghost rounded-xl text-sm text-white/60">← بازگشت</button>
             </form>
           </div>
@@ -1415,6 +1523,24 @@ function submitReview(event, productId) {
     return;
   }
 
+  if (window.serverAuth && serverAuth()) {
+    AryaServer.createReview({ product_id: productId, user_name: state.currentUser.name, rating, text })
+      .then(r => {
+        if (!r.ok) { toast(r.msg || 'خطا در ثبت نظر', 'warning'); return; }
+        state.reviews.push({
+          id: r.data.id, product_id: productId, user_name: state.currentUser.name,
+          rating, text, likes: 0, dislikes: 0, status: 'pending', parent: null,
+          created_at: Date.now(),
+        });
+        toast('نظر شما ثبت شد و پس از تأیید مدیر نمایش داده می‌شود', 'success');
+        form.reset();
+        state.reviewDraftRatings[productId] = 0;
+        render();
+      })
+      .catch(() => toast('ارتباط با سرور برقرار نشد', 'warning'));
+    return;
+  }
+
   safeActionWithRender(() => {
     state.reviews.push({
       id: 'rev_' + utils.generateId(),
@@ -1448,6 +1574,23 @@ function submitReply(event, productId, parentId) {
 
   if (!text) {
     toast('متن پاسخ الزامی است', 'warning');
+    return;
+  }
+
+  if (window.serverAuth && serverAuth()) {
+    AryaServer.createReview({ product_id: productId, user_name: state.currentUser.name, rating: 0, text, parent: parentId })
+      .then(r => {
+        if (!r.ok) { toast(r.msg || 'خطا در ثبت پاسخ', 'warning'); return; }
+        state.reviews.push({
+          id: r.data.id, product_id: productId, user_name: state.currentUser.name,
+          rating: 0, text, likes: 0, dislikes: 0, status: 'pending', parent: parentId,
+          created_at: Date.now(),
+        });
+        toast('پاسخ شما ثبت شد و پس از تأیید مدیر نمایش داده می‌شود', 'success');
+        form.reset();
+        render();
+      })
+      .catch(() => toast('ارتباط با سرور برقرار نشد', 'warning'));
     return;
   }
 
@@ -1505,6 +1648,14 @@ function toggleReviewVote(reviewId, type) {
       r.dislikes += 1;
       r._clientReaction = 'dislike';
     }
+  }
+
+  if (window.serverAuth && serverAuth()) {
+    const acts = [];
+    if (prev) acts.push(prev === 'like' ? 'unlike' : 'undislike');
+    if (prev !== type) acts.push(type === 'like' ? 'like' : 'dislike');
+    acts.reduce((p, k) => p.then(() => AryaServer.voteReview(reviewId, k)), Promise.resolve())
+        .catch(() => {});
   }
 
   if (typeof document !== 'undefined') {
@@ -1615,7 +1766,7 @@ function renderReviewRepliesModal(productId) {
               </div>
               <div class="bg-white/5 rounded-2xl rounded-bl-sm px-3 py-2 text-xs sm:text-sm text-white/90 shadow-sm">
                 <div class="flex items-center justify-between gap-2 mb-1">
-                  <span class="font-semibold text-[11px] sm:text-xs">${root.user_name}</span>
+                  <span class="font-semibold text-[11px] sm:text-xs">${aryEsc(root.user_name)}</span>
                   <span class="text-[10px] text-white/40">${utils.formatDateTime(root.created_at)}</span>
                 </div>
                 ${
@@ -1626,7 +1777,7 @@ function renderReviewRepliesModal(productId) {
                        </div>`
                     : ''
                 }
-                <p class="leading-relaxed">${root.text}</p>
+                <p class="leading-relaxed">${aryEsc(root.text)}</p>
               </div>
             </div>
           </div>
@@ -1643,10 +1794,10 @@ function renderReviewRepliesModal(productId) {
                   </div>
                   <div class="bg-violet-500/20 border border-violet-400/40 rounded-2xl rounded-br-sm px-3 py-2 text-xs sm:text-sm text-white shadow-sm">
                     <div class="flex items-center justify-between gap-2 mb-1">
-                      <span class="font-semibold text-[11px] sm:text-xs">${c.user_name}</span>
+                      <span class="font-semibold text-[11px] sm:text-xs">${aryEsc(c.user_name)}</span>
                       <span class="text-[10px] text-white/50">${utils.formatDateTime(c.created_at)}</span>
                     </div>
-                    <p class="leading-relaxed">${c.text}</p>
+                    <p class="leading-relaxed">${aryEsc(c.text)}</p>
                     <div class="mt-1 flex items-center gap-2 text-[10px] text-white/50">
                       <button 
                         type="button"
@@ -1688,7 +1839,7 @@ function renderReviewRepliesModal(productId) {
             ? `
           <form class="mt-3 space-y-2" onsubmit="submitReply(event, '${productId}', '${root.id}')">
             <div class="text-[11px] text-white/50 mb-1">
-              در حال پاسخ به نظر <span class="font-semibold text-white/80">${root.user_name}</span>
+              در حال پاسخ به نظر <span class="font-semibold text-white/80">${aryEsc(root.user_name)}</span>
             </div>
             <textarea name="text" class="input-style w-full text-xs sm:text-sm" rows="2" placeholder="پاسخ خود را درباره این نظر بنویسید..."></textarea>
             <div class="flex justify-end">
@@ -1724,7 +1875,7 @@ function renderReviewItem(review, depth, productId, options) {
             ${(review.user_name || 'ک')[0]}
           </div>
           <div>
-            <div class="text-sm font-semibold">${review.user_name}</div>
+            <div class="text-sm font-semibold">${aryEsc(review.user_name)}</div>
             <div class="text-[11px] text-white/40">${utils.formatDateTime(review.created_at)}</div>
           </div>
         </div>
@@ -1739,7 +1890,7 @@ function renderReviewItem(review, depth, productId, options) {
         }
       </div>
 
-      <p class="text-sm text-white/80 mb-3 leading-relaxed">${review.text}</p>
+      <p class="text-sm text-white/80 mb-3 leading-relaxed">${aryEsc(review.text)}</p>
 
       <div class="flex items-center justify-between text-xs text-white/50 mb-2">
         <div class="flex items-center gap-2">
@@ -2976,6 +3127,7 @@ function renderProductPage() {
       confirmText: 'خروج',
       confirmClass: 'btn-danger',
       onConfirm: () => {
+        if (serverAuth()) { try { AryaServer.logout().catch(() => {}); } catch (e) {} }
         state.user = null;
         state.currentUser = null;
         state.isAdmin = false;
@@ -3026,6 +3178,11 @@ function renderProductPage() {
     if (name.length < 3) return toast('نام و نام خانوادگی باید حداقل ۳ کاراکتر باشد', 'warning');
     if (phone && !/^09[0-9]{9}$/.test(phone)) return toast('شماره موبایل نامعتبر است', 'warning');
 
+    if (serverAuth()) {
+      AryaServer.update({ name, ...(phone ? { phone } : {}) }).then(r => {
+        if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
+      });
+    }
     state.user.name = name;
     if (phone) state.user.phone = phone;
 
@@ -3051,6 +3208,11 @@ function renderProductPage() {
     const nationalId = String(document.getElementById('settings-nid')?.value || '').trim();
     if (nationalId && nationalId.length !== 10) return toast('کد ملی باید دقیقاً ۱۰ رقم باشد', 'warning');
 
+    if (serverAuth()) {
+      AryaServer.update({ national_id: nationalId }).then(r => {
+        if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
+      });
+    }
     state.user.nationalId = nationalId;
     state.currentUser = { ...(state.currentUser || {}), nationalId };
 
@@ -3103,7 +3265,12 @@ function renderProductPage() {
     state.confirmModal = null;
     render();
 
-    try {
+    if (serverAuth()) {
+      try {
+        const r = await AryaServer.removeAccount();
+        if (!r.ok) { toast(r.msg || 'حذف حساب روی سرور ناموفق بود', 'warning'); render(); return; }
+      } catch (e) { toast('حذف حساب روی سرور ناموفق بود', 'warning'); render(); return; }
+    } else try {
       await fetch('Db.php?action=user_delete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -3131,6 +3298,16 @@ function renderProductPage() {
   }
 
   // ───────── Addresses ─────────
+  let _addrSyncT = null;
+  function syncAddressesSoon() {
+    if (!serverAuth() || !state.user) return;
+    clearTimeout(_addrSyncT);
+    _addrSyncT = setTimeout(() => {
+      AryaServer.update({ addresses: (state.user.addresses || []).slice(0, 20) })
+        .then(r => { if (!r.ok) toast(r.msg || 'همگام‌سازی نشانی‌ها روی سرور ناموفق بود', 'warning'); });
+    }, 800);
+  }
+
   function addAddressFromForm() {
     if (!state.user) return;
 
@@ -3149,6 +3326,7 @@ function renderProductPage() {
     if (!full) return toast('آدرس کامل را وارد کنید', 'warning');
 
     arr.push({ title, full, postal, plaque, unit });
+    syncAddressesSoon();
 
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
 
@@ -3221,6 +3399,7 @@ function renderProductPage() {
     if (!full) return toast('آدرس کامل را وارد کنید', 'warning');
 
     state.user.addresses[i] = { title, full, postal, plaque, unit };
+    syncAddressesSoon();
 
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
 
@@ -3237,6 +3416,7 @@ function renderProductPage() {
     if (i < 0 || i >= arr.length) return;
 
     arr.splice(i, 1);
+    syncAddressesSoon();
 
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
 
@@ -3319,6 +3499,15 @@ function renderProductPage() {
     state.tickets = Array.isArray(state.tickets) ? state.tickets : [];
     state.tickets.unshift(ticket);
 
+    if (serverAuth()) {
+      AryaServer.createTicket({ user_phone: ticket.user_phone, user_name: ticket.user_name, subject, message })
+        .then(r => {
+          if (r.ok) { ticket.id = r.data.id; persistTickets(); }
+          else toast(r.msg || 'ثبت تیکت روی سرور ناموفق بود', 'warning');
+        })
+        .catch(() => toast('ثبت تیکت روی سرور ناموفق بود', 'warning'));
+    }
+
     persistTickets();
 
     toast('✅ تیکت ثبت شد');
@@ -3340,6 +3529,12 @@ function renderProductPage() {
       at: new Date().toISOString()
     });
     t.messages = msgs;
+
+    if (serverAuth()) {
+      AryaServer.replyTicket({ id: String(ticketId), reply: msg, user_phone: (state.user && state.user.phone) || '' })
+        .then(r => { if (!r.ok) toast(r.msg || 'پاسخ روی سرور ثبت نشد', 'warning'); })
+        .catch(() => toast('پاسخ روی سرور ثبت نشد', 'warning'));
+    }
 
     persistTickets();
 
@@ -3732,7 +3927,7 @@ function renderProductPage() {
                         </span>
                       </div>
                     </div>
-                    <div class="text-sm font-semibold mb-1">${t.subject || ''}</div>
+                    <div class="text-sm font-semibold mb-1">${aryEsc(t.subject || '')}</div>
                     ${
                       lastMsg
                         ? `<div class="text-xs text-white/60 mb-2 line-clamp-1">
@@ -3742,7 +3937,7 @@ function renderProductPage() {
                                 : lastMsg.from === 'admin'
                                 ? 'مدیر: '
                                 : 'AI: '
-                            }${lastMsg.text}
+                            }${aryEsc(lastMsg.text)}
                           </div>`
                         : ''
                     }
@@ -3767,7 +3962,7 @@ function renderProductPage() {
                                   : 'مدیر'
                               }:
                             </span>
-                            <span>${m.text}</span>
+                            <span>${aryEsc(m.text)}</span>
                             <span class="text-white/30">
                               - ${
                                 window.utils && utils.formatDateTime
@@ -4287,4 +4482,45 @@ async function startPayment(amount) {
     state.loading = false;
     render();
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// بازگردانی نشست کاربر از سرور (کوکی) + همگام‌سازی تیکت/سفارش‌های خود کاربر
+// ═══════════════════════════════════════════════════════════════
+if (window.AryaServer && typeof state !== 'undefined') {
+  AryaServer.ready.then(() => {
+    if (!AryaServer.isConfigured()) return;
+    AryaServer.me().then(r => {
+      if (r && r.ok && r.data && r.data.loggedIn && r.data.user) {
+        const u = r.data.user;
+        let addr = u.addresses;
+        if (typeof addr === 'string') { try { addr = JSON.parse(addr); } catch { addr = []; } }
+        if (addr && !Array.isArray(addr)) addr = Object.values(addr);
+        const userObj = {
+          id: u.id, name: u.name || '', phone: u.phone || '', email: u.email || '',
+          addresses: Array.isArray(addr) ? addr : [], avatar: u.avatar || '',
+          nationalId: u.national_id || u.nationalId || '',
+        };
+        state.user = userObj;
+        state.currentUser = userObj;
+        if (window.AppState) AppState.set({ loggedIn: true, user: userObj, currentUser: userObj });
+        if (userObj.phone) {
+          AryaServer.crud.getAll('tickets', { user_phone: userObj.phone }).then(t => {
+            if (t && t.ok && Array.isArray(t.data)) {
+              state.tickets = t.data.map(x => {
+                if (typeof x.messages === 'string') { try { x.messages = JSON.parse(x.messages); } catch { x.messages = []; } }
+                return x;
+              });
+              if (typeof render === 'function') render();
+            }
+          });
+        }
+      } else if (r && r.ok && state.user) {
+        // سشن سرور منقضی شده — تمیز کردن وضعیت محلی
+        state.user = null; state.currentUser = null;
+        if (window.AppState) AppState.set({ loggedIn: false, user: null, currentUser: null });
+      }
+      if (typeof render === 'function') render();
+    }).catch(() => {});
+  });
 }
