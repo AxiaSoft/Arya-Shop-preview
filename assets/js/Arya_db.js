@@ -226,6 +226,31 @@
     }
   }
 
+  // ── حالت دمو بدون سرور (GitHub Pages/فایل محلی): اگر IndexedDB خالی بود، کاتالوگ نمونه را بارگذاری کن ──
+  // منبع یکی است با سید سمت سرور: assets/data/demo-catalog.json — بعد از اولین اتصال PHP، دیتابیس مرجع است.
+  async function ensureDemoSeed() {
+    try {
+      if (typeof state === 'undefined') return;
+      if ((state.products || []).length || (state.categories || []).length) return;
+      const res = await fetch('assets/data/demo-catalog.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const cat = await res.json();
+      if (!cat || !Array.isArray(cat.products) || !cat.products.length) return;
+      const cats = Array.isArray(cat.categories) ? cat.categories : [];
+      const prods = cat.products.map(function (p) { return Object.assign({}, p); });
+      state.categories = cats;
+      state.products = prods.sort(function (a, b) { return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+      if (db) {
+        const stamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+        await Promise.all(
+          cats.map(function (c) { return upsert('categories', Object.assign({ created_at: stamp }, c)).catch(function () {}); })
+             .concat(prods.map(function (pr) { return upsert('products', Object.assign({ created_at: stamp }, pr)).catch(function () {}); }))
+        );
+      }
+      if (typeof toast === 'function') toast('حالت دمو (بدون سرور): کاتالوگ نمونه بارگذاری شد', 'info');
+    } catch (e) { /* فایل نبود یا آفلاین — فروشگاه خالی می‌ماند */ }
+  }
+
   async function loadToState() {
     if (typeof state === 'undefined') return;
     try { await AryaServer.ready; } catch (e) {}
@@ -234,7 +259,7 @@
       if (typeof render === 'function') render();
       return;
     }
-    if (!db) return;
+    if (!db) { await ensureDemoSeed(); if (typeof render === 'function') render(); return; }
 
     const [products, orders, categories, tickets, reviews] = await Promise.all([
       getAll('products'),
@@ -260,6 +285,8 @@
     }
 
     if (categories.length > 0) state.categories = categories;
+
+    if (!products.length && !categories.length) { await ensureDemoSeed(); if (typeof render === 'function') render(); }
 
     if (tickets.length > 0) {
       state.tickets = tickets.map(t => {
@@ -569,6 +596,7 @@
     remove: removeS,
     clearStore,
     loadToState,
+    seedDemoCatalog: ensureDemoSeed,
     syncState: _syncStateToDb,
     downloadSQL,
     downloadJSON,

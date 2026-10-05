@@ -203,6 +203,9 @@
             <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.75rem">
               <input type="checkbox" name="demo_mode"> حالت نمایشی (DEMO_MODE) — کدهای تایید OTP در پاسخ API برگردانده می‌شوند؛ فقط روی تست!
             </label>
+            <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.35rem">
+              <input type="checkbox" name="demo_seed" checked> ساخت کاتالوگ نمونه — ۶ محصول + ۵ دسته‌بندی (با تصویر و ویدیو) داخل دیتابیس درج می‌شود؛ بعداً از پنل قابل ویرایش/حذف است
+            </label>
           </div>
 
           <div id="db-setup-error" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:.75rem 1rem;color:#fca5a5;font-size:.85rem"></div>
@@ -519,7 +522,7 @@
       const btn = document.getElementById('db-setup-submit-btn');
       $setupErr('');
       const driver = $setupVal('driver', 'mysql');
-      const payload = { driver, demo_mode: $setupChk('demo_mode') };
+      const payload = { driver, demo_mode: $setupChk('demo_mode'), demo_seed: $setupChk('demo_seed') };
       const ae = $setupVal('admin_email'); if (ae) payload.admin_email = ae;
       const ap = ($setupField('admin_pass') || {}).value || ''; if (ap) payload.admin_pass = ap;
       if (driver === 'sqlite') {
@@ -575,6 +578,7 @@
                   (da.password && String(da.password).indexOf('(رمزی که خودتان') === -1
                     ? '<br>رمز عبور موقت (فقط همین یک‌بار): <b dir="ltr" style="user-select:all">' + da.password + '</b>'
                     : '<br>با همان رمزی که وارد کردید وارد شوید') +
+                  (json.data && json.data.demo_seed ? '<br>کاتالوگ نمونه: <b>' + json.data.demo_seed.products + '</b> محصول و <b>' + json.data.demo_seed.categories + '</b> دسته‌بندی در دیتابیس ذخیره شد' : '') +
                   '<br><a href="admin.html" style="color:#93c5fd;text-decoration:underline">ورود به پنل مدیریت →</a>' : '');
         }
         btn.textContent = '✅ انجام شد';

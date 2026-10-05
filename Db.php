@@ -474,8 +474,25 @@ if ($action === 'setup') {
         fail('ساخت حساب مدیر اولیه ناموفق بود: ' . $e->getMessage(), 500);
     }
 
+    // مرحله ۶ (اختیاری): نمونه‌سازی کاتالوگ — منبع: assets/data/demo-catalog.json
+    $seedInfo = null;
+    if (!empty($rawBody['demo_seed'])) {
+        $seedFile = __DIR__ . '/includes/demo_catalog.php';
+        if (is_file($seedFile)) {
+            require_once $seedFile;
+            try {
+                $seedInfo = arya_seed_demo($eng);
+            } catch (Throwable $e) {
+                // نصب موفق بوده؛ سید ناموفق نباید نصب را خراب کند
+                ary_log('setup', 'demo seed failed: ' . $e->getMessage());
+                $seedInfo = ['categories' => 0, 'products' => 0, 'error' => ary_demo_mode() ? $e->getMessage() : 'خطای نامشخص (لاگ را ببینید)'];
+            }
+        }
+    }
+
     ok([
         'connected' => true,
+        'demo_seed' => $seedInfo,
         'db' => ['driver' => $driver, 'name' => $driver === 'sqlite' ? basename($sqlitePath) : $dbname],
         'default_admin' => [
             'email'    => $adminEmail,

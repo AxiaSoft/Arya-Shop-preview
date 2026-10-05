@@ -124,5 +124,21 @@ contains($ddlSupa, 'CREATE TABLE IF NOT EXISTS "products"', 'supa DDL = pg DDL')
 contains($E::upsertSqlFor('supabase', 'products', ['id', 'title']), 'ON CONFLICT ("id") DO UPDATE', 'supa upsert = pg upsert');
 is_ok(in_array('supabase', array_keys($E::SUPPORTED), true) && $E::SUPPORTED['supabase']['needs'][0] === 'pdo_pgsql', 'supabase registered in SUPPORTED');
 
+// ── demo catalog seeder روی SQLite واقعی (منبع واحد JSON) ──
+require_once $root . '/includes/demo_catalog.php';
+$dbFile2 = tempnam(sys_get_temp_dir(), 'aryasup') . '.sqlite';
+$eng2 = new AryaDbEngine(['driver' => 'sqlite', 'sqlite_path' => $dbFile2]);
+$eng2->createSchema();
+$c1 = arya_seed_demo($eng2);
+is_ok($c1['products'] === 6 && $c1['categories'] === 5, 'demo seed inserts 6/5');
+$c2 = arya_seed_demo($eng2);
+is_ok($c2['products'] === 6 && $eng2->countRows('products') === 6, 'demo seed idempotent (no dupes)');
+$r = $eng2->pdo()->query("SELECT * FROM \"products\" WHERE id='p_sonic_pro'")->fetch(PDO::FETCH_ASSOC);
+$im = json_decode((string)($r['images'] ?? '[]'), true);
+$vd = json_decode((string)($r['videos'] ?? '[]'), true);
+is_ok($r && is_array($im) && count($im) === 2 && is_array($vd) && $vd[0] === 'assets/media/videos/demo-headphone.mp4', 'seeded row keeps images/videos JSON');
+is_ok(is_file(arya_demo_catalog_path()), 'demo-catalog.json present in repo');
+@unlink($dbFile2);
+
 echo "\nPASS=$PASS FAIL=$FAIL\n";
 exit($FAIL === 0 ? 0 : 1);
