@@ -31,6 +31,8 @@ function dbConfigForSeed(): array {
         'charset'     => defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4',
         'sqlite_path' => (defined('DB_SQLITE_PATH') && DB_SQLITE_PATH) ? DB_SQLITE_PATH : (dirname(__DIR__) . '/storage/arya_store.sqlite'),
         'schema'      => defined('DB_SCHEMA') ? DB_SCHEMA : null,
+        'sslmode'     => defined('DB_SSLMODE') ? DB_SSLMODE : null,
+        'sslrootcert' => defined('DB_SSLROOTCERT') ? DB_SSLROOTCERT : null,
     ];
 }
 

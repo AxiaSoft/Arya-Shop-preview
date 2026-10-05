@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>وب سایت فروشگاهی آریا</title>
-  
-  <!-- SDK ها (با try/catch در کد مدیریت می‌شوند) -->
-  <script src="/_sdk/data_sdk.js"></script>
-  <script src="/_sdk/element_sdk.js"></script>
+
   
   <!-- ====== DATABASE ====== -->
   <script src="assets/js/Arya_api.js"></script>
@@ -114,6 +111,7 @@
               <option value="mysql">MySQL / MariaDB (پیش‌فرض هاست‌های ایرانی)</option>
               <option value="pgsql">PostgreSQL</option>
               <option value="sqlite">SQLite (فایل محلی — تست و استجینگ)</option>
+              <option value="supabase">Supabase — Postgres ابری (TLS اجباری)</option>
               <option value="sqlsrv">SQL Server (pdo_sqlsrv)</option>
             </select>
           </div>
@@ -147,6 +145,41 @@
                 <input name="dbpass" type="password" class="input-style" dir="ltr" placeholder="(در صورت وجود)" autocomplete="new-password">
               </div>
             </div>
+          </div>
+
+          <div id="db-supabase-fields" style="display:none;flex-direction:column;gap:.75rem">
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:.75rem">
+              <div>
+                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">Project Ref (از کنسول Supabase)</label>
+                <input name="project_ref" class="input-style" dir="ltr" placeholder="abcdefghijklmnop" autocomplete="off" spellcheck="false">
+              </div>
+              <div>
+                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">نوع اتصال</label>
+                <select name="pool_mode" class="input-style" dir="ltr" onchange="var r=document.getElementById('supa_region_row'); if(r) r.style.display=(this.value==='pooler'?'block':'none')">
+                  <option value="direct">Direct — 5432 (DDL و اپ)</option>
+                  <option value="pooler">Pooler — 6543 (اپ پرترافیک)</option>
+                </select>
+              </div>
+            </div>
+            <div id="supa_region_row" style="display:none">
+              <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">Region استخر (از Connection string در کنسول)</label>
+              <input name="region" class="input-style" dir="ltr" placeholder="ap-southeast-1" autocomplete="off" spellcheck="false">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:.75rem">
+              <div>
+                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">SSL Mode</label>
+                <select name="sslmode" class="input-style" dir="ltr">
+                  <option value="">require (پیش‌فرض)</option>
+                  <option value="verify-ca">verify-ca</option>
+                  <option value="verify-full">verify-full</option>
+                </select>
+              </div>
+              <div>
+                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">مسیر فایل CA (فقط برای verify-*)</label>
+                <input name="sslrootcert" class="input-style" dir="ltr" placeholder="/home/USER/supabase-root-cert.pem" autocomplete="off" spellcheck="false">
+              </div>
+            </div>
+            <p style="font-size:.72rem;color:rgba(255,255,255,.45);line-height:1.7">میزبان و نام کاربری خودکار ساخته می‌شوند: <span dir="ltr">db.REF.supabase.co:5432</span> با کاربر <span dir="ltr">postgres</span> (Direct) یا <span dir="ltr">aws-0-REGION.pooler.supabase.com:6543</span> با کاربر <span dir="ltr">postgres.REF</span> (Pooler). فیلدهای پیشرفته (Host/Port/User) را فقط برای Self-host یا دامنه دلخواه پر کنید. رمز = Database password در Settings → Database. دیتابیس <span dir="ltr">postgres</span> از قبل وجود دارد و جداول در اسکیمای public ساخته می‌شوند.</p>
           </div>
 
           <div id="db-sqlite-fields" style="display:none">
@@ -389,19 +422,36 @@
       el.style.color = kind === 'err' ? '#fca5a5' : (kind === 'ok' ? '#6ee7b7' : 'rgba(255,255,255,.7)');
     }
 
+    var SETUP_LAST_DRIVER = 'mysql';
     window.arySetupDriverChange = function (driver) {
       const server = document.getElementById('db-server-fields');
       const sqlite = document.getElementById('db-sqlite-fields');
       const pgRow = document.getElementById('pg_schema_row');
-      if (server) server.style.display = driver === 'sqlite' ? 'none' : 'flex';
-      if (sqlite) sqlite.style.display = driver === 'sqlite' ? 'block' : 'none';
+      const supa = document.getElementById('db-supabase-fields');
+      const isSqlite = driver === 'sqlite';
+      const isSupa = driver === 'supabase';
+      if (server) server.style.display = isSqlite ? 'none' : 'flex';
+      if (sqlite) sqlite.style.display = isSqlite ? 'block' : 'none';
+      if (supa) supa.style.display = isSupa ? 'flex' : 'none';
       if (pgRow) pgRow.style.display = driver === 'pgsql' ? 'block' : 'none';
       const port = $setupField('port');
-      if (port) port.placeholder = driver === 'pgsql' ? '5432' : (driver === 'sqlsrv' ? '1433' : '3306');
-      const user = $setupField('dbuser'), pass = $setupField('dbpass'), dbn = $setupField('dbname');
-      const isSqlite = driver === 'sqlite';
-      [user, pass].forEach(el => { if (el) el.required = !isSqlite; });
-      if (dbn) dbn.required = !isSqlite;
+      const host = $setupField('host'), user = $setupField('dbuser'), pass = $setupField('dbpass'), dbn = $setupField('dbname');
+      // ورود/خروج از Supabase: مقادیر پیش‌فرض generic را پاک/بازگردانی کن تا با ref تداخل نکنند
+      if (isSupa && SETUP_LAST_DRIVER !== 'supabase') {
+        if (host) { host.dataset.aryaPrev = host.value; host.value = ''; host.placeholder = 'خالی = db.REF.supabase.co'; }
+        if (dbn)  { dbn.dataset.aryaPrev = dbn.value;   dbn.value = '';  dbn.placeholder = 'postgres (پیش‌فرض)'; }
+        if (user) { user.dataset.aryaPrev = user.value; user.value = ''; user.placeholder = 'postgres (خودکار)'; }
+        if (port) { port.dataset.aryaPrev = port.value; port.value = ''; }
+      } else if (!isSupa && SETUP_LAST_DRIVER === 'supabase') {
+        [[host, 'localhost'], [dbn, 'arya_store'], [user, ''], [port, '']].forEach(([el, def]) => {
+          if (!el) return; el.value = (el.dataset.aryaPrev !== undefined && el.dataset.aryaPrev !== '') ? el.dataset.aryaPrev : def; el.placeholder = '';
+        });
+      }
+      SETUP_LAST_DRIVER = driver;
+      if (port && !isSupa) port.placeholder = driver === 'pgsql' ? '5432' : (driver === 'sqlsrv' ? '1433' : '3306');
+      [user, pass].forEach(el => { if (el) el.required = !isSqlite && !isSupa; });
+      if (isSupa && pass) pass.required = true;
+      if (dbn) dbn.required = !isSqlite && !isSupa;
     };
 
     function $collectPanel() {
@@ -474,6 +524,19 @@
       const ap = ($setupField('admin_pass') || {}).value || ''; if (ap) payload.admin_pass = ap;
       if (driver === 'sqlite') {
         const sp = $setupVal('sqlite_path'); if (sp) payload.sqlite_path = sp;
+      } else if (driver === 'supabase') {
+        const ref = $setupVal('project_ref'); if (ref) payload.project_ref = ref;
+        payload.pool_mode = $setupVal('pool_mode', 'direct');
+        const rg = $setupVal('region'); if (rg) payload.region = rg;
+        const sslm = $setupVal('sslmode'); if (sslm) payload.sslmode = sslm;
+        const ca = $setupVal('sslrootcert'); if (ca) payload.sslrootcert = ca;
+        const sHost = $setupVal('host'); if (sHost) payload.host = sHost;
+        const sPort = $setupVal('port'); if (sPort) payload.port = Number(sPort);
+        const sDb = $setupVal('dbname'); if (sDb) payload.dbname = sDb;
+        const sUs = $setupVal('dbuser'); if (sUs) payload.dbuser = sUs;
+        payload.dbpass = ($setupField('dbpass') || {}).value || '';
+        if (!ref && !sHost) { $setupErr('برای Supabase حداقل «Project ref» را وارد کنید (یا Host کامل در پیشرفته).'); event.target.closest('form') && null; btn.disabled = false; btn.textContent = 'اتصال و راه‌اندازی'; return; }
+        if (!payload.dbpass) { $setupErr('رمز پایگاه‌داده‌ی Supabase الزامی است.'); btn.disabled = false; btn.textContent = 'اتصال و راه‌اندازی'; return; }
       } else {
         payload.host = $setupVal('host', 'localhost');
         const port = $setupVal('port'); if (port) payload.port = Number(port);

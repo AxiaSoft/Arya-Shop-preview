@@ -107,5 +107,22 @@ $info = $eng->info();
 is_ok(($info['driver'] ?? '') === 'sqlite' && isset($info['server_version']), 'info() payload');
 @unlink($dbFile);
 
+echo "— Supabase (پشتیبان روی PostgreSQL) —\n";
+contains($E::buildDsn('supabase', ['host' => 'db.abc.supabase.co', 'dbname' => 'postgres', 'sslmode' => 'require']), 'sslmode=require', 'supa dsn keeps sslmode');
+contains($E::buildDsn('supabase', ['host' => 'x', 'dbname' => 'postgres', 'sslmode' => 'verify-full', 'sslrootcert' => '/tmp/ca.pem']), 'sslrootcert=/tmp/ca.pem', 'supa dsn sslrootcert');
+$ep = $E::supabaseEndpoints(['project_ref' => 'myref123', 'pool_mode' => 'direct']);
+is_ok($ep['host'] === 'db.myref123.supabase.co' && $ep['port'] === 5432 && $ep['dbuser'] === 'postgres' && $ep['dbname'] === 'postgres', 'supa direct endpoint derivation');
+$ep2 = $E::supabaseEndpoints(['project_ref' => 'myref123', 'pool_mode' => 'pooler', 'region' => 'eu-west-2']);
+is_ok($ep2['host'] === 'aws-0-eu-west-2.pooler.supabase.com' && $ep2['port'] === 6543 && $ep2['dbuser'] === 'postgres.myref123', 'supa pooler endpoint derivation');
+$ep3 = $E::supabaseEndpoints(['host' => 'pg.internal.example.com', 'port' => 5432, 'dbuser' => 'arya', 'dbname' => 'aryadb']);
+is_ok($ep3['host'] === 'pg.internal.example.com' && $ep3['dbuser'] === 'arya' && $ep3['sslmode'] === 'require', 'supa manual host overrides + default ssl');
+$thrown = false; try { $E::supabaseEndpoints(['project_ref' => 'myref123', 'pool_mode' => 'pooler']); } catch (Throwable $e) { $thrown = str_contains($e->getMessage(), 'Region'); }
+is_ok($thrown, 'supa pooler without region -> helpful error');
+is_ok($E::quoteIdent('supabase', 'products') === '"products"', 'supa quotes idents like pg');
+$ddlSupa = implode("\n", $E::createTableSql('supabase', 'products'));
+contains($ddlSupa, 'CREATE TABLE IF NOT EXISTS "products"', 'supa DDL = pg DDL');
+contains($E::upsertSqlFor('supabase', 'products', ['id', 'title']), 'ON CONFLICT ("id") DO UPDATE', 'supa upsert = pg upsert');
+is_ok(in_array('supabase', array_keys($E::SUPPORTED), true) && $E::SUPPORTED['supabase']['needs'][0] === 'pdo_pgsql', 'supabase registered in SUPPORTED');
+
 echo "\nPASS=$PASS FAIL=$FAIL\n";
 exit($FAIL === 0 ? 0 : 1);

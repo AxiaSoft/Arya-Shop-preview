@@ -24,6 +24,22 @@ define('DB_CHARSET', 'utf8mb4');
 // define('DB_PASS', 'YOUR_DB_PASSWORD');
 // define('DB_SCHEMA', 'public');
 
+// ── دیتابیس: Supabase (Postgres ابری — TLS اجباری) ──
+// ساده‌ترین راه: همان ویزارد سایت را با موتور Supabase برانید.
+// برای نصب دستی — مقادیر را از کنسول Supabase بردارید:
+//   Settings → API  (Project ref)  و  Settings → Database (password)
+// Direct : db.<REF>.supabase.co  port 5432  user: postgres
+// Pooler : aws-0-<REGION>.pooler.supabase.com  port 6543  user: postgres.<REF>
+// define('DB_DRIVER', 'supabase');   // دایالکت همان pgsql است؛ TLS خودکار
+// define('DB_HOST', 'db.abcdefghijklmnop.supabase.co');
+// define('DB_PORT', 5432);
+// define('DB_NAME', 'postgres');
+// define('DB_USER', 'postgres');
+// define('DB_PASS', 'YOUR_SUPABASE_DB_PASSWORD');
+// define('DB_SCHEMA', 'public');
+// define('DB_SSLMODE', 'require');            // یا verify-full با sslrootcert
+// define('DB_SSLROOTCERT', '/home/USER/supabase-root-cert.pem'); // اختیاری
+
 // ── دیتابیس: SQLite (بدون سرور؛ مناسب تست/استجینگ) ──
 // define('DB_DRIVER', 'sqlite');
 // define('DB_NAME', '');

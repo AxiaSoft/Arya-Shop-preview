@@ -101,6 +101,8 @@ function dbConfig(): array {
         'charset'     => defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4',
         'sqlite_path' => (defined('DB_SQLITE_PATH') && DB_SQLITE_PATH) ? DB_SQLITE_PATH : (__DIR__ . '/storage/arya_store.sqlite'),
         'schema'      => defined('DB_SCHEMA') ? DB_SCHEMA : null,
+        'sslmode'     => defined('DB_SSLMODE') ? DB_SSLMODE : null,
+        'sslrootcert' => defined('DB_SSLROOTCERT') ? DB_SSLROOTCERT : null,
     ];
 }
 
@@ -350,6 +352,29 @@ if ($action === 'setup') {
     $sqlitePath = trim((string) ($rawBody['sqlite_path'] ?? ''));
     $demoMode = array_key_exists('demo_mode', $rawBody) ? (bool) $rawBody['demo_mode'] : true;
 
+    // ── Supabase: ساخت خودکار میزبان/پورت/کاربر + اجبار TLS ──
+    $sslmode = strtolower(trim((string) ($rawBody['sslmode'] ?? '')));
+    $sslrootcert = trim((string) ($rawBody['sslrootcert'] ?? ''));
+    if ($driver === 'supabase') {
+        $ref = preg_replace('/[^a-z0-9-]/', '', strtolower(trim((string) ($rawBody['project_ref'] ?? ''))));
+        $cfgs = [
+            'project_ref' => $ref,
+            'host'        => $host,
+            'port'        => $port,
+            'dbuser'      => $dbuser,
+            'dbname'      => $dbname,
+            'pool_mode'   => (($rawBody['pool_mode'] ?? 'direct') === 'pooler') ? 'pooler' : 'direct',
+            'region'      => preg_replace('/[^a-z0-9-]/', '', strtolower(trim((string) ($rawBody['region'] ?? '')))),
+            'sslmode'     => $sslmode,
+        ];
+        try { $ep = AryaDbEngine::supabaseEndpoints($cfgs); }
+        catch (Throwable $e) { fail($e->getMessage()); }
+        if ($dbpass === '') fail('رمز پایگاه‌داده‌ی Supabase (Database password) الزامی است.');
+        $host = $ep['host']; $port = $ep['port']; $dbuser = $ep['dbuser']; $dbname = $ep['dbname'];
+        $sslmode = $ep['sslmode'];
+        if (in_array($sslmode, ['disable', 'allow', 'prefer'], true)) fail('اتصال Supabase باید با SSL باشد (sslmode=require یا قوی‌تر).');
+    }
+
     if ($driver === 'sqlite') {
         if ($sqlitePath === '') $sqlitePath = __DIR__ . '/storage/arya_store.sqlite';
         // فقط مسیر داخل پروژه یا temp مجاز است (جلوگیری از نوشتن دلخواه روی سرور)
@@ -362,11 +387,14 @@ if ($action === 'setup') {
         if ($host === '' || $dbname === '' || $dbuser === '') fail('میزبان، نام دیتابیس و نام کاربری الزامی است.');
     }
     if ($driver === 'pgsql' && $schema === '') $schema = 'public';
+    // Supabase: search_path را تنظیم نمی‌کنیم — در حالت Pooler (PgBouncer) فرمان‌های session محدودند؛
+    // جدول‌های بدون‌اسکیمای ما در public پیش‌فرض همان‌جا ساخته می‌شوند.
 
     $cfg = [
         'driver' => $driver, 'host' => $host, 'port' => $port ?: null,
         'dbname' => $dbname, 'dbuser' => $dbuser, 'dbpass' => $dbpass,
         'charset' => 'utf8mb4', 'sqlite_path' => $sqlitePath, 'schema' => $schema ?: null,
+        'sslmode' => $sslmode ?: null, 'sslrootcert' => $sslrootcert ?: null,
     ];
 
     // مرحله ۱: تست اتصال
@@ -409,11 +437,13 @@ if ($action === 'setup') {
         . "if (!defined('ARYA_GUARD')) { http_response_code(403); exit('Forbidden'); }\n"
         . "define('DB_DRIVER', " . $g($driver) . ");\n"
         . "define('DB_HOST', " . $g($host ?: 'localhost') . ");\n"
-        . "define('DB_PORT', " . $g($port ?: ($driver === 'pgsql' ? 5432 : ($driver === 'sqlsrv' ? 1433 : 3306))) . ");\n"
+        . "define('DB_PORT', " . $g($port ?: (($driver === 'pgsql' || $driver === 'supabase') ? 5432 : ($driver === 'sqlsrv' ? 1433 : 3306))) . ");\n"
         . "define('DB_NAME', " . $g($dbname) . ");\n"
         . "define('DB_USER', " . $g($dbuser) . ");\n"
         . "define('DB_PASS', " . $g($dbpass) . ");\n"
         . "define('DB_CHARSET', 'utf8mb4');\n"
+        . ($sslmode ? "define('DB_SSLMODE', " . $g($sslmode) . ");\n" : '')
+        . ($sslrootcert ? "define('DB_SSLROOTCERT', " . $g($sslrootcert) . ");\n" : '')
         . "define('DB_SQLITE_PATH', " . $g($sqlitePath) . ");\n"
         . ($schema ? "define('DB_SCHEMA', " . $g($schema) . ");\n" : '')
         . "define('API_SECRET', " . $g($apiSecret) . ");\n"

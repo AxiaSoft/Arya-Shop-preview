@@ -7,6 +7,7 @@
 ## ویژگی‌ها
 
 - **دیتابیس چندموتوره:** MySQL/MariaDB، PostgreSQL، SQLite و SQL Server — فقط با PDO و افزونه مربوطه؛ ترجمه DDL/UPSERT خودکار (لایه `includes/db_engine.php`).
+- **Supabase (از نسخه ۲):** موتور انتخابی `supabase` در ویزارد — دایالکت همان PostgreSQL است؛ میزبان/پورت/کاربر از Project ref خودکار ساخته می‌شود (Direct `db.<ref>.supabase.co:5432` یا Session Pooler `aws-0-<region>.pooler.supabase.com:6543` با کاربر `postgres.<ref>`) و TLS با `sslmode=require` اجباری است (امکان `verify-full` + `sslrootcert`). نیازی به pdo_pgsql خارج از افزونه‌های معمول نیست؛ نکته: برای مرحله نصب، Direct توصیه می‌شود (روی Transaction Pooler فرمان‌های session محدودند).
 - **پنل هاستینگ:** ویزارد نصب می‌تواند دیتابیس + کاربر را به‌صورت خودکار روی **cPanel/WHM**، **DirectAdmin** یا **Plesk** بسازد (یا دستی پر کنید). حالت «بدون پنل» روی هر سرور PHP کار می‌کند.
 - **احراز هویت واقعی:** bcrypt سمت سرور، ورود کاربر ۲ مرحله‌ای (رمز + OTP)، ورود مدیر ۳ مرحله‌ای (+2FA)، بازیابی رمز با OTP، CSRF، Rate-Limit و هاردنینگ نشست.
 - **بدون سرور هم کار می‌کند:** اگر `config.php` نباشد، فروشگاه با دمای محلی (IndexedDB) و برچسب «آزمایشی» ادامه می‌دهد — مناسب طراحی و دمو.

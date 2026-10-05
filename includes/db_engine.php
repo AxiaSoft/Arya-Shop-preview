@@ -26,25 +26,63 @@ final class AryaDbEngine
         'pgsql' => ['label' => 'PostgreSQL',        'needs' => ['pdo_pgsql'],            'server' => true],
         'sqlite'=> ['label' => 'SQLite (فایل محلی)','needs' => ['pdo_sqlite'],           'server' => false],
         'sqlsrv'=> ['label' => 'SQL Server',        'needs' => ['pdo_sqlsrv'],           'server' => true],
+        'supabase' => ['label' => 'Supabase (Postgres ابری + TLS)', 'needs' => ['pdo_pgsql'], 'server' => false],
     ];
 
     public string $driver;
+    public string $flavor = '';   // 'supabase' وقتی دایالکت pgsql است اما سرویس Supabase هست
     private ?PDO $pdo = null;
     private array $cache = [];
 
     public function __construct(array $cfg)
     {
-        $this->driver  = $cfg['driver'] ?? 'mysql';
-        $this->config  = $cfg;
-        if (!isset(self::SUPPORTED[$this->driver])) {
-            throw new RuntimeException('پشتیبانی از موتور دیتابیس «' . $this->driver . '» تعریف نشده است.');
+        $want        = $cfg['driver'] ?? 'mysql';
+        if (!isset(self::SUPPORTED[$want])) {
+            throw new RuntimeException('پشتیبانی از موتور دیتابیس «' . $want . '» تعریف نشده است.');
         }
-        $need = self::SUPPORTED[$this->driver]['needs'][0];
+        $need = self::SUPPORTED[$want]['needs'][0];
         if ($need && !extension_loaded($need)) {
             throw new RuntimeException(
-                'افزونه‌ی PHP «' . $need . '» برای استفاده از ' . self::SUPPORTED[$this->driver]['label'] . ' نصب/فعال نیست.'
+                'افزونه‌ی PHP «' . $need . '» برای استفاده از ' . self::SUPPORTED[$want]['label'] . ' نصب/فعال نیست.'
             );
         }
+        // Supabase یک Postgres است: دایالکت روی pgsql نرمال‌می‌شود، مزه (flavor) برای DSN/TLS نگه داشته می‌شود.
+        $this->flavor  = ($want === 'supabase') ? 'supabase' : '';
+        $this->driver  = self::dialectOf($want);
+        $this->config  = $cfg;
+        $this->config['driver'] = $this->driver;
+    }
+
+    /** نام موتور را به دایالکت SQL واقعی نگاشت می‌کند (supabase → pgsql) */
+    public static function dialectOf(string $driver): string
+    {
+        return $driver === 'supabase' ? 'pgsql' : $driver;
+    }
+
+    /** پیکربندی اتصال Supabase را می‌سازد (ref → میزبان، pooler، TLS اجباری) */
+    public static function supabaseEndpoints(array $c): array
+    {
+        $ref  = trim((string)($c['project_ref'] ?? ''));
+        $pool = (($c['pool_mode'] ?? 'direct') === 'pooler');
+        $host = trim((string)($c['host'] ?? ''));
+        if ($host === '' && $ref !== '') {
+            if ($pool) {
+                $region = trim((string)($c['region'] ?? ''));
+                if ($region === '') throw new RuntimeException('برای Connection Pooler، Region پروژه (مثل ap-southeast-1) لازم است.');
+                $host = 'aws-0-' . $region . '.pooler.supabase.com';
+            } else {
+                $host = 'db.' . $ref . '.supabase.co';
+            }
+        }
+        if ($host === '') throw new RuntimeException('برای Supabase یا Project ref را بدهید یا Host کامل را.');
+        return [
+            'host'   => $host,
+            'port'   => (int)(($c['port'] ?? 0) ?: ($pool ? 6543 : 5432)),
+            'dbuser' => ($c['dbuser'] ?? '') !== '' ? $c['dbuser']
+                       : ($pool && $ref !== '' ? 'postgres.' . $ref : 'postgres'),
+            'dbname' => ($c['dbname'] ?? '') !== '' ? $c['dbname'] : 'postgres',
+            'sslmode'=> !empty($c['sslmode']) ? $c['sslmode'] : 'require',
+        ];
     }
 
     private array $config;
@@ -57,6 +95,7 @@ final class AryaDbEngine
     // ── DSN و اتصال ──────────────────────────────────────────
     public static function buildDsn(string $driver, array $c, bool $withDb = true): string
     {
+        $driver = self::dialectOf($driver);
         switch ($driver) {
             case 'mysql':
                 $dsn = 'mysql:host=' . ($c['host'] ?? 'localhost');
@@ -66,9 +105,12 @@ final class AryaDbEngine
                 return $dsn;
 
             case 'pgsql':
+                // Supabase/پستگرس امن: sslmode و sslrootcert در DSN قرار می‌گیرند (libpq پارامتر را پاس‌ترو می‌کند)
                 $dsn = 'pgsql:host=' . ($c['host'] ?? 'localhost');
                 $dsn .= ';port=' . ($c['port'] ?? 5432);
                 $dsn .= ';dbname=' . (($withDb && !empty($c['dbname'])) ? $c['dbname'] : 'postgres');
+                if (!empty($c['sslmode']))     $dsn .= ';sslmode=' . preg_replace('/[^a-z-]/', '', (string)$c['sslmode']);
+                if (!empty($c['sslrootcert'])) $dsn .= ';sslrootcert=' . (string)$c['sslrootcert'];
                 return $dsn;
 
             case 'sqlite':
@@ -120,6 +162,7 @@ final class AryaDbEngine
     // ── نقل‌قول شناسه‌ها به سبک هر گویش ─────────────────────
     public static function quoteIdent(string $driver, string $ident): string
     {
+        $driver = self::dialectOf($driver);
         // هوک امنیتی: شناسه‌ها فقط از فهرست‌های داخلی برنامه می‌آیند؛
         // با این حال کاراکترهای مشکوک را حذف می‌کنیم.
         $ident = preg_replace('/[^A-Za-z0-9_]/', '', $ident);
@@ -136,6 +179,8 @@ final class AryaDbEngine
     // ── ساخت دیتابیس در صورت نبود (مراحل نصب) ──────────────
     public static function ensureDatabase(string $driver, PDO $admin, string $dbname): void
     {
+        if ($driver === 'supabase') return; // دیتابیس Supabase مدیریت‌شده است؛ CREATE ندارد
+        $driver = self::dialectOf($driver);
         switch ($driver) {
             case 'mysql':
                 $safe = preg_replace('/[^A-Za-z0-9_]/', '', $dbname);
@@ -292,6 +337,7 @@ final class AryaDbEngine
     /** SQL ساخت یک جدول + ایندکس‌ها برای موتور مشخص */
     public static function createTableSql(string $driver, string $table): array
     {
+        $driver = self::dialectOf($driver);
         $schema = self::schema();
         if (!isset($schema[$table])) throw new RuntimeException("Unknown table: $table");
         $def = $schema[$table];
@@ -428,6 +474,7 @@ final class AryaDbEngine
 
     public static function upsertSqlFor(string $driver, string $table, array $cols): string
     {
+        $driver = self::dialectOf($driver);
         $q   = fn(string $i) => self::quoteIdent($driver, $i);
         $colSql  = implode(',', array_map($q, $cols));
         $pholder = implode(',', array_fill(0, count($cols), '?'));
