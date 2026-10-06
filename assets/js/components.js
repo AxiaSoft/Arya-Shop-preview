@@ -43,6 +43,8 @@ window.ARYA_ICONS = {
   video: '<rect x="2" y="6" width="13" height="12" rx="2.5"/><path d="m22 8.5-7 3.5 7 3.5z"/>',
   edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
   alert: '<path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4"/><path d="M12 17.4v.6"/>',
+  grid: '<rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/>',
+  list: '<path d="M8.5 6.5h12M8.5 12h12M8.5 17.5h12"/><path d="M3.75 6.5h.01M3.75 12h.01M3.75 17.5h.01"/>',
   key: '<path d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-9.03 5.25l-6.3 6.3a1.5 1.5 0 0 1-2.12 0L2.7 18.3a1.5 1.5 0 0 1 0-2.12l6.3-6.3A6 6 0 1 1 21.75 8.25ZM18 9h.01"/>',
 };
 window.aryIcon = function (name, extra) {
@@ -629,7 +631,7 @@ function renderProductCard(product, index = 0) {
             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-6xl lg:text-8xl\\'>📦</div>'; this.parentElement.classList.add('no-image')"
           >
         ` : `
-          <div class="flex items-center justify-center w-full h-full text-white/15">' + (window.ARYA_ICONS ? '<svg class="ary-ic w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">' + ARYA_ICONS.box + '</svg>' : '📦') + '</div>
+          <div class="flex items-center justify-center w-full h-full text-white/15">${window.ARYA_ICONS ? '<svg class="ary-ic w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">' + ARYA_ICONS.box + '</svg>' : '📦'}</div>
         `}
         
         <!-- Badges -->

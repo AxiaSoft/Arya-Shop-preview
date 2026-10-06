@@ -560,6 +560,16 @@ function logout() {
 // CART FUNCTIONS
 // File: assets/js/cart functions.js
 // ═══════════════════════════════════════════════════════════════
+function syncCartState() {
+  // هر تغییر سبد باید از AppState بگذرد تا در localStorage ذخیره شود
+  // (در غیر این صورت با رفرش، آیتم‌های حذف‌شده برمی‌گردند یا افزودنی‌ها می‌پرند)
+  if (window.AppState) {
+    AppState.set({ cart: (state.cart || []).map(it => ({ ...it })) });
+  } else if (typeof render === 'function') {
+    render();
+  }
+}
+
 function addToCart(product) {
   if (!product) return;
   
@@ -587,10 +597,10 @@ function addToCart(product) {
       image: product.image,
       qty: 1
     });
-    toast('به سبد خرید اضافه شد 🛒');
+    toast('به سبد خرید اضافه شد');
   }
-  
-  render();
+
+  syncCartState();
 }
 
 function updateCartQuantity(productId, newQty) {
@@ -608,14 +618,14 @@ function updateCartQuantity(productId, newQty) {
       }
       state.cart[index].qty = newQty;
     }
-    render();
+    syncCartState();
   }
 }
 
 function removeFromCart(productId) {
   state.cart = state.cart.filter(item => item.id !== productId);
   toast('محصول از سبد حذف شد', 'info');
-  render();
+  syncCartState();
 }
 
 function getCartTotal() {

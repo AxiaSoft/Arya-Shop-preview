@@ -1003,3 +1003,7 @@ form select option {
 .ary-hero-dots button{width:.55rem;height:.55rem;border-radius:9999px;background:rgba(255,255,255,.35);border:0;cursor:pointer;transition:all .25s}
 .ary-hero-dots button.on{background:#fff;width:1.4rem}
 .ary-cta-banner{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.5}
+/* اسکرول افقی بدون نوار (بنر شگفت‌انگیزها) */
+.ary-hscroll{scrollbar-width:none;-ms-overflow-style:none}
+.ary-hscroll::-webkit-scrollbar{display:none}
+.ary-hscroll > *{scroll-snap-align:start}

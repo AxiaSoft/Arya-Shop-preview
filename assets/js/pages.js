@@ -80,7 +80,13 @@ function renderHomePage() {
 
   const discountedProducts = (state.products || [])
     .filter(p => p.original_price && p.original_price > p.price)
-    .slice(0, 10);
+    .sort((a, b) => (utils.calculateDiscount(b.original_price, b.price) || 0) - (utils.calculateDiscount(a.original_price, a.price) || 0));
+  // اگر تخفیف‌دارها کمتر از ۱۰ تا بودند، با پرفروش‌ها پر می‌شود — سقف ۱۰ کارت
+  const _notDeals = (state.products || []).filter(p => !discountedProducts.includes(p))
+    .sort((a, b) => estimateSoldPercent(b) - estimateSoldPercent(a));
+  const dealsList = discountedProducts.slice(0, 10)
+    .concat(discountedProducts.length < 10 ? _notDeals.slice(0, 10 - discountedProducts.length) : []);
+  const hasMoreDeals = (state.products || []).length > dealsList.length;
 
   const aboutBlocks = Array.isArray(state.aboutBlocks)
     ? state.aboutBlocks
@@ -219,10 +225,8 @@ function renderHomePage() {
         </div>
       </section>
 
-      <!-- شگفت‌انگیزها — همه‌چیز در یک پنل، گرید واکنش‌گرا با دکمهٔ افزودن سریع -->
-      ${
-        discountedProducts.length > 0
-          ? `
+      <!-- شگفت‌انگیزها — اسلایدر افقی (حداکثر ۱۰ کارت؛ ارتفاع ثابت، بدون کش‌آمدن صفحه) -->
+      ${dealsList.length > 0 ? `
       <section class="py-12 lg:py-16">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
           <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-rose-600 via-pink-600 to-violet-700 p-5 lg:p-8 shadow-2xl shadow-rose-500/15">
@@ -233,43 +237,48 @@ function renderHomePage() {
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center text-white shadow-lg">${aryIcon('bolt','w-6 h-6')}</div>
                 <div>
-                  <h2 class="text-lg lg:text-2xl font-black leading-tight">شگفت‌انگیزهای امروز</h2>
-                  <p class="text-white/75 text-[11px] lg:text-sm">فقط تا پایان امشب — تعداد محدود، از دست نده!</p>
+                  <h2 class="text-lg lg:text-2xl font-black leading-tight">${discountedProducts.length ? 'شگفت‌انگیزهای امروز' : 'پرفروش‌ترین‌های فروشگاه'}</h2>
+                  <p class="text-white/75 text-[11px] lg:text-sm">${discountedProducts.length ? 'فقط تا پایان امشب — تعداد محدود، از دست نده!' : 'محبوب‌ترین انتخاب مشتریان آریا'}</p>
                 </div>
               </div>
-              <div class="flex items-center gap-3">
-                <div class="flex items-center gap-1 text-white text-xs lg:text-base" id="home-deals-countdown">${renderHomeCountdownHTML()}</div>
-                <button onclick="goTo('shop'); setTimeout(()=>utils.scrollTop(),0)" class="text-[11px] lg:text-xs font-black bg-white text-rose-600 hover:bg-rose-50 px-3.5 py-2 rounded-xl transition-colors shadow-lg">همه تخفیف‌ها</button>
+              <div class="flex items-center gap-2 lg:gap-3">
+                ${discountedProducts.length ? `<div class="flex items-center gap-1 text-white text-xs lg:text-base" id="home-deals-countdown">${renderHomeCountdownHTML()}</div>` : ''}
+                <div class="flex items-center gap-1.5">
+                  <button type="button" onclick="aryDealsScroll(-1)" aria-label="قبلی" class="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-colors rotate-180">${aryIcon('arrowleft','w-4 h-4')}</button>
+                  <button type="button" onclick="aryDealsScroll(1)" aria-label="بعدی" class="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-colors">${aryIcon('arrowleft','w-4 h-4')}</button>
+                </div>
+                ${hasMoreDeals ? `<button onclick="goTo('shop'); setTimeout(()=>utils.scrollTop(),0)" class="text-[11px] lg:text-xs font-black bg-white text-rose-600 hover:bg-rose-50 px-3.5 py-2 rounded-xl transition-colors shadow-lg">مشاهده بیشتر</button>` : ''}
               </div>
             </div>
 
-            <div class="relative grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 lg:gap-4">
-              ${discountedProducts
+            <div id="home-deals-slider" class="ary-hscroll flex gap-3 lg:gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-1 px-1">
+              ${dealsList
                 .map((p, i) => {
                   const discount = utils.calculateDiscount(p.original_price, p.price);
                   const soldPct = estimateSoldPercent(p);
                   const img = p.image || p.main_image || (p.images && p.images[0]) || '';
                   return `
-                <div
-                  class="group rounded-2xl bg-white/10 backdrop-blur p-2.5 lg:p-3 transition-all duration-300 hover:bg-white/20 hover:-translate-y-1 cursor-pointer animate-fade"
-                  style="animation-delay:${i * 0.05}s"
-                  onclick="openProductById('${aryEsc(String(p.id))}')"
-                >
-                  <div class="relative aspect-square rounded-xl overflow-hidden bg-slate-950/25 mb-2">
-                    ${img
-                      ? `<img src="${img}" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy">`
-                      : `<div class="w-full h-full flex items-center justify-center text-white/30">${aryIcon('box','w-10 h-10')}</div>`}
-                    ${discount > 0 ? `<span class="absolute top-1.5 right-1.5 bg-white text-rose-600 text-[10px] lg:text-xs font-black px-1.5 py-0.5 rounded-lg shadow">${discount}٪−</span>` : ''}
-                  </div>
-                  <h3 class="text-[11px] lg:text-xs font-bold line-clamp-2 leading-5 min-h-[2.4rem]">${aryEsc(p.title)}</h3>
-                  <div class="mt-1">
-                    ${p.original_price > p.price ? `<div class="text-white/45 text-[10px] line-through">${utils.formatPrice(p.original_price)}</div>` : ''}
-                    <div class="text-emerald-300 font-black text-xs lg:text-sm">${utils.formatPrice(p.price)}<span class="text-[9px] font-normal opacity-75">تومان</span></div>
-                  </div>
-                  <div class="h-1.5 bg-white/15 rounded-full overflow-hidden mt-2"><div class="h-full bg-gradient-to-r from-amber-300 to-rose-400 rounded-full" style="width:${soldPct}%"></div></div>
-                  <div class="flex items-center justify-between gap-1 mt-1.5">
-                    <p class="text-[9px] lg:text-[10px] text-white/55">${soldPct}٪ فروخته شده</p>
-                    <button type="button" class="inline-flex items-center gap-1 text-[10px] font-black bg-white text-rose-600 rounded-lg px-2 py-1.5 hover:bg-rose-50 transition-colors shadow" onclick="event.stopPropagation(); addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-3.5 h-3.5')}افزودن</button>
+                <div class="snap-start shrink-0 w-[68%] sm:w-[46%] md:w-[31.5%] lg:w-[24.5%] xl:w-[19.8%] min-w-0">
+                  <div
+                    class="group rounded-2xl bg-white/10 backdrop-blur p-2.5 lg:p-3 transition-all duration-300 hover:bg-white/20 hover:-translate-y-1 cursor-pointer h-full flex flex-col"
+                    onclick="openProductById('${aryEsc(String(p.id))}')"
+                  >
+                    <div class="relative aspect-square rounded-xl overflow-hidden bg-slate-950/25 mb-2">
+                      ${img
+                        ? `<img src="${img}" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy">`
+                        : `<div class="w-full h-full flex items-center justify-center text-white/30">${aryIcon('box','w-10 h-10')}</div>`}
+                      ${discount > 0 ? `<span class="absolute top-1.5 right-1.5 bg-white text-rose-600 text-[10px] lg:text-xs font-black px-1.5 py-0.5 rounded-lg shadow">${discount}٪−</span>` : ''}
+                    </div>
+                    <h3 class="text-[11px] lg:text-xs font-bold line-clamp-2 leading-5 min-h-[2.4rem]">${aryEsc(p.title)}</h3>
+                    <div class="mt-auto pt-1">
+                      ${p.original_price > p.price ? `<div class="text-white/45 text-[10px] line-through">${utils.formatPrice(p.original_price)}</div>` : ''}
+                      <div class="text-emerald-300 font-black text-xs lg:text-sm">${utils.formatPrice(p.price)}<span class="text-[9px] font-normal opacity-75">تومان</span></div>
+                    </div>
+                    <div class="h-1.5 bg-white/15 rounded-full overflow-hidden mt-2"><div class="h-full bg-gradient-to-r from-amber-300 to-rose-400 rounded-full" style="width:${soldPct}%"></div></div>
+                    <div class="flex items-center justify-between gap-1 mt-1.5">
+                      <p class="text-[9px] lg:text-[10px] text-white/55">${soldPct}٪ فروخته شده</p>
+                      <button type="button" class="inline-flex items-center gap-1 text-[10px] font-black bg-white text-rose-600 rounded-lg px-2 py-1.5 hover:bg-rose-50 transition-colors shadow" onclick="event.stopPropagation(); addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-3.5 h-3.5')}افزودن</button>
+                    </div>
                   </div>
                 </div>`;
                 })
@@ -278,9 +287,7 @@ function renderHomePage() {
           </div>
         </div>
       </section>
-      `
-          : ''
-      }
+      ` : ''}
 
       <!-- About Section -->
       <section class="py-16 lg:py-24">
@@ -375,6 +382,14 @@ function setupHomeHeroSlider() {
   H.timer = setInterval(() => { if (!H.paused && window.aryHeroGo) window.aryHeroGo(H.i + 1); }, 6000);
 }
 window.setupHomeHeroSlider = setupHomeHeroSlider;
+
+// ── اسکرول افقی بنر شگفت‌انگیزها (سازگار با RTL) ──
+window.aryDealsScroll = function (dir) {
+  const el = document.getElementById('home-deals-slider');
+  if (!el) return;
+  const rtl = (getComputedStyle(el).direction || 'ltr') === 'rtl';
+  el.scrollBy({ left: (rtl ? -dir : dir) * el.clientWidth * 0.85, behavior: 'smooth' });
+};
 
 (function () {
   const USERS_KEY = 'arya_users_v1';
@@ -1023,12 +1038,56 @@ function getFilteredProducts() {
   return filteredProducts;
 }
 
+function setProductView(mode) {
+  mode = mode === 'list' ? 'list' : 'grid';
+  if (window.AppState) { AppState.set({ productView: mode }); return; } // notify → render
+  state.productView = mode;
+  if (typeof render === 'function') render();
+}
+window.setProductView = setProductView;
+
+function renderProductRow(p, i) {
+  const img = p.image || p.main_image || (Array.isArray(p.images) && p.images[0]) || '';
+  const discount = utils.calculateDiscount(p.original_price, p.price);
+  const inStock = (p.stock || 0) > 0;
+  const shortDesc = String(p.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  return `
+    <article class="glass rounded-2xl p-3 sm:p-4 flex items-stretch gap-3 sm:gap-5 animate-fade" style="animation-delay:${i * 0.04}s">
+      <div class="w-24 sm:w-32 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-violet-500/10 to-purple-600/10 flex items-center justify-center cursor-pointer relative" onclick="openProductById('${aryEsc(String(p.id))}')">
+        ${img ? `<img src="${img}" alt="" class="w-full h-24 sm:h-32 object-cover" loading="lazy">` : `<div class="flex items-center justify-center w-full h-24 sm:h-32 text-white/25">${aryIcon('box','w-8 h-8')}</div>`}
+        ${discount > 0 ? `<span class="absolute top-1 right-1 badge badge-discount text-[10px] py-0.5">${discount}٪−</span>` : ''}
+      </div>
+      <div class="flex-1 min-w-0 py-0.5 flex flex-col">
+        <h3 class="font-bold text-sm sm:text-base line-clamp-1 cursor-pointer hover:text-violet-300 transition-colors" onclick="openProductById('${aryEsc(String(p.id))}')">${aryEsc(p.title || '')}</h3>
+        ${shortDesc ? `<p class="text-white/50 text-xs mt-1 line-clamp-2 leading-5 hidden sm:block">${aryEsc(shortDesc.slice(0, 180))}</p>` : ''}
+        <div class="flex flex-wrap items-end justify-between gap-2 mt-auto pt-2">
+          <div>
+            ${p.original_price > p.price ? `<div class="text-white/35 text-[11px] line-through">${utils.formatPrice(p.original_price)}</div>` : ''}
+            <div class="text-emerald-400 font-black text-sm sm:text-base">${utils.formatPrice(p.price)}<span class="text-[10px] font-normal text-white/50"> تومان</span></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-[11px] ${inStock ? 'text-emerald-300/80' : 'text-rose-300/80'} inline-flex items-center gap-1">${aryIcon(inStock ? 'check' : 'x','w-3.5 h-3.5')}${inStock ? 'موجود' : 'ناموجود'}</span>
+            <button type="button" class="btn-primary text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-40" ${inStock ? '' : 'disabled'} onclick="addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-4 h-4')}افزودن به سبد</button>
+            <button type="button" class="text-xs px-3 py-2 rounded-xl border border-white/15 text-white/70 hover:bg-white/10 transition-colors" onclick="openProductById('${aryEsc(String(p.id))}')">جزئیات</button>
+          </div>
+        </div>
+      </div>
+    </article>`;
+}
+
 function renderShopProductsOnly() {
   const filteredProducts = getFilteredProducts();
 
   if (filteredProducts.length > 0) {
+    if (state.productView === 'list') {
+      return `
+        <div class="space-y-3 lg:space-y-4">
+          ${filteredProducts.map((p, i) => renderProductRow(p, i)).join('')}
+        </div>
+      `;
+    }
     return `
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 lg:gap-6">
         ${filteredProducts.map((p, i) => renderProductCard(p, i)).join('')}
       </div>
     `;
@@ -1144,6 +1203,7 @@ function updatePriceSlider() {
 
 function renderShopPage() {
   const products = state.products || [];
+  const pv = state.productView === 'list' ? 'list' : 'grid';
 
   const baseList = state.productFilter.category
     ? products.filter(p => p.category === state.productFilter.category)
@@ -1187,7 +1247,13 @@ function renderShopPage() {
             <h1 class="text-2xl lg:text-4xl font-black">
               ${activeCategory ? activeCategory.title : 'همه محصولات'}
             </h1>
-            <p class="text-white/60 mt-2" id="shop-products-count">${filteredProducts.length} محصول</p>
+            <div class="flex items-center gap-3 mt-2 flex-wrap">
+              <p class="text-white/60" id="shop-products-count">${filteredProducts.length} محصول</p>
+              <span class="inline-flex rounded-xl border border-white/10 overflow-hidden" role="group" aria-label="نوع نمایش محصولات">
+                <button type="button" onclick="setProductView('grid')" title="نمایش کاشی‌ای" class="px-2.5 py-1.5 inline-flex items-center gap-1.5 text-xs transition-colors ${pv === 'grid' ? 'bg-violet-500/25 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}">${aryIcon('grid','w-4 h-4')}<span class="hidden sm:inline">کاشی</span></button>
+                <button type="button" onclick="setProductView('list')" title="نمایش لیستی" class="px-2.5 py-1.5 inline-flex items-center gap-1.5 text-xs border-r border-white/10 transition-colors ${pv === 'list' ? 'bg-violet-500/25 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}">${aryIcon('list','w-4 h-4')}<span class="hidden sm:inline">لیستی</span></button>
+              </span>
+            </div>
           </div>
           <button
             onclick="toggleFilterSidebar()"
@@ -3263,73 +3329,6 @@ function renderProductPage() {
     render();
   }
 
-  // ───────── حذف دائمی حساب کاربری (item 4) ─────────
-  function openDeleteAccountConfirm() {
-    state.confirmModal = {
-      type: 'deleteAccount',
-      title: 'حذف دائمی حساب کاربری',
-      icon: aryIcon('trash', 'w-14 h-14 text-rose-300'),
-      message: `
-        <div class="text-right space-y-3">
-          <p class="text-white/70 text-sm leading-relaxed">
-            این عملیات <b class="text-rose-300">غیرقابل بازگشت</b> است. برای تایید، عبارت «<b dir="ltr">حذف</b>» را در کادر زیر تایپ کنید.
-          </p>
-          <input id="delete-account-confirm-input" class="input-style w-full text-center" placeholder="حذف">
-        </div>
-      `,
-      confirmText: 'حذف دائمی حساب',
-      confirmClass: 'btn-danger',
-      onConfirm: () => {
-        const val = (document.getElementById('delete-account-confirm-input')?.value || '').trim();
-        if (val !== 'حذف') {
-          toast('عبارت تایید را دقیقاً وارد کنید', 'warning');
-          return;
-        }
-        performAccountDeletion();
-      }
-    };
-    render();
-  }
-
-  async function performAccountDeletion() {
-    const user = state.user;
-    if (!user) return;
-
-    state.confirmModal = null;
-    render();
-
-    if (serverAuth()) {
-      try {
-        const r = await AryaServer.removeAccount();
-        if (!r.ok) { toast(r.msg || 'حذف حساب روی سرور ناموفق بود', 'warning'); render(); return; }
-      } catch (e) { toast('حذف حساب روی سرور ناموفق بود', 'warning'); render(); return; }
-    } else try {
-      await fetch('Db.php?action=user_delete', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'same-origin',
-        body: JSON.stringify({ id: user.id, identifier: user.email || user.phone })
-      }).catch(() => {}); // best-effort؛ نبود بک‌اند PHP نباید مانع پاک‌سازی محلی شود
-    } catch (e) {}
-
-    try {
-      const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
-      const filtered = users.filter(u => u.id !== user.id);
-      localStorage.setItem('arya_users_v1', JSON.stringify(filtered));
-    } catch (e) {}
-
-    if (window.AryaDB) { try { AryaDB.remove('users', user.id); } catch(e) {} }
-
-    state.user = null;
-    state.currentUser = null;
-    state.isAdmin = false;
-    if (window.AppState) AppState.set({ user: null, currentUser: null, isAdmin: false, loggedIn: false });
-
-    toast('حساب کاربری شما برای همیشه حذف شد', 'info');
-    goTo('home');
-    render();
-  }
-
   // ───────── Addresses ─────────
   let _addrSyncT = null;
   function syncAddressesSoon() {
@@ -4170,18 +4169,6 @@ function renderProductPage() {
             </form>
           </div>
 
-          <!-- منطقه خطر -->
-          <div class="rounded-2xl p-4 sm:p-6 border border-rose-500/20 bg-rose-500/5">
-            <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-rose-300"><span class="inline-flex">${aryIcon('alert', 'w-5 h-5')}</span><span>منطقه خطر</span></h2>
-            <p class="text-white/50 text-sm mb-4 leading-relaxed">
-              حذف حساب کاربری، تمام اطلاعات پروفایل، آدرس‌ها و علاقه‌مندی‌های شما را برای همیشه پاک می‌کند.
-              این عملیات غیرقابل بازگشت است. سوابق سفارش‌ها و تیکت‌های پشتیبانی شما (بدون اطلاعات هویتی) برای الزامات مالی نگه‌داری می‌شود.
-            </p>
-            <button type="button" onclick="openDeleteAccountConfirm()" class="btn-ghost text-rose-400 border border-rose-500/30 px-5 py-2.5 rounded-xl text-sm font-medium">
-              حذف دائمی حساب کاربری
-            </button>
-          </div>
-
         </div>
         ` : ''}
 
@@ -4197,8 +4184,6 @@ function renderProductPage() {
   window.numericMask          = numericMask;
   window.updateUserProfile    = updateUserProfile;
   window.updateUserNationalId = updateUserNationalId;
-  window.openDeleteAccountConfirm = openDeleteAccountConfirm;
-  window.performAccountDeletion   = performAccountDeletion;
   window.addAddressFromForm   = addAddressFromForm;
   window.openEditAddressModal = openEditAddressModal;
   window.saveEditedAddress    = saveEditedAddress;
@@ -4429,6 +4414,7 @@ function renderProductPage() {
             created_at: new Date().toISOString()
           });
           state.cart = [];
+          if (window.AppState) AppState.set({ cart: [] });
           toast('سفارش شما با موفقیت ثبت شد');
           goTo('orders');
           setTimeout(() => utils.scrollTop(), 0);
