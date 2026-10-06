@@ -234,6 +234,7 @@ final class AryaDbEngine
                     ['total','num18'], ['status','str',50], ['created_at','ts'],
                     ['cancel_reason','str',500], ['return_status','str',20],
                     ['return_reason','text'], ['return_at','str',32],
+                    ['tracking_code','str',120], ['admin_note','text'],
                 ],
                 'indexes' => ['idx_orders_user_phone' => ['user_phone'], 'idx_orders_status' => ['status']],
             ],

@@ -6,9 +6,9 @@ const defaultConfig = {
   store_name: 'فروشگاه آکسیاسافت',
   hero_title: 'سایت فروشگاهی آریا آماده خدمت رسانی!',
   hero_subtitle: 'مدرن ، زیبا ، راحت در سایت فروشگاهی آریا راحت بخر و راحت بفروش!',
-  primary_color: '#6366f1',
-  secondary_color: '#8b5cf6',
-  accent_color: '#a855f7',
+  primary_color: '#2563eb',
+  secondary_color: '#3b82f6',
+  accent_color: '#0ea5e9',
   bg_color: '#0f172a',
   text_color: '#ffffff'
 };

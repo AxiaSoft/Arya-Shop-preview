@@ -328,7 +328,7 @@ function updateOtpTimerDisplay() {
     if (state.otpTimer > 0) {
       timerEl.innerHTML = `<span class="text-white/40">${Math.floor(state.otpTimer / 60)}:${String(state.otpTimer % 60).padStart(2, '0')}</span>`;
     } else {
-      timerEl.innerHTML = `<button type="button" onclick="resendOtp()" class="text-violet-400 hover:text-violet-300 transition-colors">ارسال مجدد کد</button>`;
+      timerEl.innerHTML = `<button type="button" onclick="resendOtp()" class="text-blue-400 hover:text-blue-300 transition-colors">ارسال مجدد کد</button>`;
     }
   }
 }
@@ -501,6 +501,67 @@ function logout() {
     }
   }
 
+  // ---------- حفظ اسکرول افقی بندهای کشیدنی + فوکوس فیلد (با هر رندر برنگردد) ----------
+  const KEEP_SCROLL_SEL = '.ary-hscroll, [data-keep-scroll], .overflow-x-auto';
+  function captureKeepState(root) {
+    const snaps = [];
+    try {
+      const els = root.querySelectorAll(KEEP_SCROLL_SEL);
+      for (let i = 0; i < els.length; i++) {
+        const el = els[i];
+        if (!el.scrollLeft && el.scrollTop !== undefined && !el.scrollTop) continue;
+        const key = el.id || el.getAttribute('data-keep-scroll') || (el.className && String(el.className).slice(0, 80)) || '';
+        snaps.push({ key: key, i: i, left: el.scrollLeft, top: el.scrollTop });
+      }
+    } catch (e) {}
+    let focus = null;
+    try {
+      const ae = document.activeElement;
+      if (ae && ae.id && root.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) {
+        focus = {
+          id: ae.id,
+          start: (() => { try { return ae.selectionStart; } catch (e) { return null; } })(),
+          end: (() => { try { return ae.selectionEnd; } catch (e) { return null; } })()
+        };
+      }
+    } catch (e) {}
+    const winY = window.scrollY || 0;
+    return { snaps: snaps, focus: focus, winY: winY };
+  }
+  function restoreKeepState(root, keep) {
+    if (!keep) return;
+    const candScrollableY = el => el.scrollHeight - el.clientHeight >= 8;
+    const apply = () => {
+      try {
+        const els = root.querySelectorAll(KEEP_SCROLL_SEL);
+        keep.snaps.forEach(sn => {
+          let el = null;
+          const simpleKey = sn.key && sn.key.indexOf(' ') === -1 && sn.key.indexOf('.') === -1 && sn.key.length < 60;
+          if (simpleKey) el = document.getElementById(sn.key) || root.querySelector('[data-keep-scroll="' + sn.key + '"]');
+          if (!el) {
+            const cand = els[sn.i];
+            if (cand && sn.left > 0 && cand.scrollWidth - cand.clientWidth >= 12) el = cand; // فقط همان‌جا که واقعاً افقی اسکرول‌شدنی است
+          }
+          if (el) {
+            if (sn.left) el.scrollLeft = sn.left;
+            if (sn.top && candScrollableY(el)) el.scrollTop = sn.top;
+          }
+        });
+      } catch (e) {}
+      if (keep.focus && keep.focus.id) {
+        const nf = document.getElementById(keep.focus.id);
+        if (nf && root.contains(nf)) {
+          nf.focus({ preventScroll: true });
+          try { if (keep.focus.start != null) nf.setSelectionRange(keep.focus.start, keep.focus.end); } catch (e) {}
+        }
+      }
+      if (window.scrollY !== keep.winY) {
+        try { window.scrollTo({ top: keep.winY, behavior: 'auto' }); } catch (e) {}
+      }
+    };
+    requestAnimationFrame(apply);
+  }
+
   // ---------- Core render (batched with rAF) ----------
   function doRender() {
     isScheduled = false;
@@ -515,7 +576,11 @@ function logout() {
 
     if (html === lastHTML) return;
 
+    const samePage = lastPage === state.page;
+    const keep = samePage ? captureKeepState(appEl) : null;
+
     writeHTML(appEl, html);
+    if (keep) restoreKeepState(appEl, keep);
     lastHTML = html;
     lastPage = state.page;
 

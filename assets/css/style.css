@@ -38,7 +38,7 @@ body {
     
     /* Gradient Backgrounds */
     .bg-main {
-      background: linear-gradient(135deg, #142346 0%, #1e1b4b 30%, #142346 60%, #1e1b4b 100%);
+      background: linear-gradient(135deg, #142346 0%, #1b2f55 30%, #142346 60%, #1b2f55 100%);
       background-attachment: fixed;
     }
     .bg-hero-gradient {
@@ -50,12 +50,12 @@ body {
     /* Buttons */
     .btn-primary {
       background: linear-gradient(135deg, #2a8dff  0%, #005aff 100%);
-      box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+      box-shadow: 0 4px 20px rgba(37, 99, 235, 0.4);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .btn-primary:hover {
       transform: translateY(-3px);
-      box-shadow: 0 8px 30px rgba(99, 102, 241, 0.5);
+      box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5);
     }
     .btn-primary:active { transform: translateY(-1px); }
     .btn-primary:disabled {
@@ -108,7 +108,7 @@ body {
     .input-style:focus {
       outline: none;
       border-color: #5cd2f6;
-      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
       background: rgba(255, 255, 255, 0.08);
     }
     
@@ -122,7 +122,7 @@ body {
     }
     
     .product-image {
-      background: linear-gradient(145deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+      background: linear-gradient(145deg, rgba(37, 99, 235, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
       position: relative;
       overflow: hidden;
     }
@@ -149,7 +149,7 @@ body {
       color: #1f2937;
     }
     .badge-processing {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      background: linear-gradient(135deg, #2563eb, #3b82f6);
       color: white;
     }
     .badge-shipped {
@@ -165,7 +165,7 @@ body {
       color: white;
     }
     .badge-new {
-      background: linear-gradient(135deg, #8b5cf6, #a855f7);
+      background: linear-gradient(135deg, #3b82f6, #0ea5e9);
       color: white;
     }
     
@@ -276,14 +276,14 @@ body {
       transform: translateY(-50%);
       height: 0;
       width: 4px;
-      background: linear-gradient(180deg, #6366f1, #8b5cf6);
+      background: linear-gradient(180deg, #2563eb, #3b82f6);
       border-radius: 0 4px 4px 0;
       transition: height 0.3s ease;
     }
-    .sidebar-item:hover { background: rgba(99, 102, 241, 0.1); }
+    .sidebar-item:hover { background: rgba(37, 99, 235, 0.1); }
     .sidebar-item:hover::before { height: 60%; }
     .sidebar-item.active {
-      background: rgba(99, 102, 241, 0.15);
+      background: rgba(37, 99, 235, 0.15);
     }
     .sidebar-item.active::before { height: 70%; }
     
@@ -327,13 +327,13 @@ body {
     
     /* Selection */
     ::selection {
-      background: rgba(139, 92, 246, 0.4);
+      background: rgba(59, 130, 246, 0.4);
       color: white;
     }
     
     /* Focus Visible */
     :focus-visible {
-      outline: 2px solid #8b5cf6;
+      outline: 2px solid #3b82f6;
       outline-offset: 2px;
     }
     
@@ -392,10 +392,10 @@ SHOP FILTER SIDEBAR (INDEPENDENT FROM HAMBURGER MENU)
     opacity 0.6s;
 }
 
-/* Purple square */
-.square-purple {
-  background: rgba(139, 92, 246, 0.35);
-  animation: floatPurple 5s ease-in-out infinite;
+/* Sky square */
+.square-sky {
+  background: rgba(59, 130, 246, 0.35);
+  animation: floatSky 5s ease-in-out infinite;
 }
 
 /* Red square */
@@ -418,7 +418,7 @@ SHOP FILTER SIDEBAR (INDEPENDENT FROM HAMBURGER MENU)
   100% { transform: translateY(0) rotate(0deg); }
 }
 
-@keyframes floatPurple {
+@keyframes floatSky {
   0% { transform: translateY(0) rotate(0deg); }
   50% { transform: translateY(12px) rotate(-4deg); }
   100% { transform: translateY(0) rotate(0deg); }
@@ -601,8 +601,8 @@ SHOP FILTER SIDEBAR (INDEPENDENT FROM HAMBURGER MENU)
 }
 
 .admin-sheet-tab-btn.active {
-  background: rgba(129, 140, 248, 0.18);
-  border-color: rgba(129, 140, 248, 0.7);
+  background: rgba(96, 165, 250, 0.18);
+  border-color: rgba(96, 165, 250, 0.7);
   transform: translateY(-1px);
 }
 
@@ -667,7 +667,7 @@ select option:hover,
 select option:focus,
 select option:active,
 select option:checked {
-  background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+  background: linear-gradient(135deg, #1e40af, #2563eb) !important;
   color: white !important;
 }
 
@@ -679,7 +679,7 @@ select option:checked {
   }
   
   select option:checked {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    background: linear-gradient(135deg, #1e40af, #2563eb) !important;
     color: white !important;
   }
 }
@@ -702,8 +702,8 @@ select option:checked {
 /* استایل برای وقتی سلکت فوکوس داره */
 select:focus {
   outline: none !important;
-  border-color: #8b5cf6 !important;
-  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.3) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
 }
 
 /* استایل برای وقتی سلکت غیرفعاله */
@@ -758,7 +758,7 @@ form select option {
   }
   
   select option:checked {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+    background: linear-gradient(135deg, #1e40af, #2563eb) !important;
     color: white !important;
   }
 }
@@ -813,22 +813,22 @@ form select option {
 
 .gallery-thumb:hover {
   transform: scale(1.1);
-  border-color: #8b5cf6;
+  border-color: #3b82f6;
   z-index: 10;
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
 }
 
 .gallery-thumb.active {
-  border-color: #8b5cf6;
+  border-color: #3b82f6;
   transform: scale(1.05);
-  box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
   animation: thumbPulse 2s infinite;
 }
 
 @keyframes thumbPulse {
-  0% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); }
-  50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.8); }
-  100% { box-shadow: 0 0 15px rgba(139, 92, 246, 0.5); }
+  0% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.8); }
+  100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
 }
 
 /* thumbnail image */
@@ -1008,17 +1008,33 @@ form select option {
 .ary-hscroll::-webkit-scrollbar{display:none}
 .ary-hscroll > *{scroll-snap-align:start}
 
-/* ── دایرهٔ شناور پشتیبانی ── */
-#arya-support-fab{position:fixed;left:1.25rem;bottom:1.25rem;z-index:80;display:flex;align-items:center;gap:.6rem;cursor:pointer;outline:none}
-#arya-support-fab .ary-fab-btn{width:3.4rem;height:3.4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#7c3aed,#a855f7 55%,#6366f1);box-shadow:0 10px 32px rgba(124,58,237,.45);transition:transform .2s ease,box-shadow .2s ease;position:relative}
-#arya-support-fab:hover .ary-fab-btn,#arya-support-fab:focus-visible .ary-fab-btn{transform:translateY(-2px) scale(1.06);box-shadow:0 14px 38px rgba(124,58,237,.6)}
+/* ── دایرهٔ شناور پشتیبانی (راستِ صفحه، با انیمیشن) ── */
+#arya-support-fab{position:fixed;right:1.25rem;bottom:1.25rem;left:auto;z-index:80;display:flex;align-items:center;gap:.6rem;cursor:pointer;outline:none;animation:aryFabIn .75s cubic-bezier(.22,1.45,.36,1) .25s both}
+#arya-support-fab .ary-fab-btn{width:3.4rem;height:3.4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#1d4ed8 0%,#2563eb 45%,#0ea5e9 100%);background-size:160% 160%;box-shadow:0 10px 32px rgba(29,78,216,.45);transition:transform .25s cubic-bezier(.22,1.4,.36,1),box-shadow .25s ease,background-position .5s ease;position:relative;animation:aryFabBob 3.6s ease-in-out 1.4s infinite}
+#arya-support-fab .ary-fab-btn::before{content:"";position:absolute;inset:-7px;border-radius:9999px;border:1.5px dashed rgba(59,130,246,.55);animation:aryFabSpin 16s linear infinite;pointer-events:none}
+#arya-support-fab:hover .ary-fab-btn,#arya-support-fab:focus-visible .ary-fab-btn{transform:translateY(-4px) scale(1.1) rotate(-4deg);box-shadow:0 16px 42px rgba(29,78,216,.65);background-position:100% 50%}
+#arya-support-fab:active .ary-fab-btn{transform:scale(.92)}
 #arya-support-fab .ary-fab-btn::after{content:"";position:absolute;inset:0;border-radius:9999px;animation:aryFabPing 2.6s cubic-bezier(0,0,.2,1) infinite;pointer-events:none}
+#arya-support-fab .ary-fab-btn svg{transition:transform .3s cubic-bezier(.22,1.4,.36,1)}
+#arya-support-fab:hover .ary-fab-btn svg{transform:scale(1.08)}
+@keyframes aryFabIn{0%{opacity:0;transform:translateY(26px) scale(.3)}60%{opacity:1;transform:translateY(-6px) scale(1.06)}100%{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes aryFabBob{0%,100%{margin-bottom:0}50%{margin-bottom:7px}}
+@keyframes aryFabSpin{to{transform:rotate(360deg)}}
 @keyframes aryFabPing{70%,100%{transform:scale(1.45);opacity:0}}
-@media (prefers-reduced-motion:reduce){#arya-support-fab .ary-fab-btn::after{animation:none}}
-.ary-fab-badge{position:absolute;top:-3px;right:-3px;min-width:1.2rem;height:1.2rem;border-radius:9999px;background:#f43f5e;color:#fff;font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 .32rem;border:2px solid #14092e}
-#arya-support-fab .ary-fab-tip{background:rgba(20,9,46,.92);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:.75rem;font-weight:700;padding:.45rem .8rem;border-radius:.8rem;opacity:0;transform:translateX(-6px);transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
-#arya-support-fab:hover .ary-fab-tip,#arya-support-fab:focus-visible .ary-fab-tip{opacity:1;transform:translateX(0)}
-.ary-chat-bubble-user{background:linear-gradient(135deg,rgba(124,58,237,.85),rgba(99,102,241,.85));border-radius:1rem 1rem .3rem 1rem}
+#arya-support-fab .ary-fab-badge{animation:aryBadgePop .45s cubic-bezier(.22,1.5,.36,1) both}
+@keyframes aryBadgePop{0%{transform:scale(0)}70%{transform:scale(1.25)}100%{transform:scale(1)}}
+/* پنل چت — باز شدن با پاپ */
+@keyframes aryChatPop{0%{opacity:0;transform:translateY(24px) scale(.94)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.ary-chat-open{animation:aryChatPop .4s cubic-bezier(.22,1.25,.36,1) both}
+@keyframes aryMsgIn{0%{opacity:0;transform:translateY(10px) scale(.97)}100%{opacity:1;transform:translateY(0) scale(1)}}
+.ary-msg-in{animation:aryMsgIn .3s ease both}
+#ary-chat-panel #ary-chat-body::-webkit-scrollbar{width:6px}
+#ary-chat-panel #ary-chat-body::-webkit-scrollbar-thumb{background:rgba(59,130,246,.4);border-radius:9999px}
+@media (prefers-reduced-motion:reduce){#arya-support-fab,#arya-support-fab .ary-fab-btn,#arya-support-fab .ary-fab-btn::before,#arya-support-fab .ary-fab-btn::after,#arya-support-fab .ary-fab-badge{animation:none}.ary-chat-open,.ary-msg-in{animation:none}}
+.ary-fab-badge{position:absolute;top:-3px;right:-3px;min-width:1.2rem;height:1.2rem;border-radius:9999px;background:#f43f5e;color:#fff;font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 .32rem;border:2px solid #0c1a33}
+#arya-support-fab .ary-fab-tip{background:rgba(12,26,58,.94);border:1px solid rgba(59,130,246,.35);color:#fff;font-size:.75rem;font-weight:700;padding:.45rem .8rem;border-radius:.8rem;opacity:0;transform:translateX(6px);transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+#arya-support-fab:hover .ary-fab-tip,#arya-support-fab:focus-visible .ary-fab-tip{opacity:1;transform:translateX(0) translateY(-1px)}
+.ary-chat-bubble-user{background:linear-gradient(135deg,rgba(29, 78, 216, .85),rgba(37, 99, 235, .85));border-radius:1rem 1rem .3rem 1rem}
 .ary-chat-bubble-sup{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09);border-radius:1rem 1rem 1rem .3rem}
 
 /* ── اسکرول افقی با درگ ── */

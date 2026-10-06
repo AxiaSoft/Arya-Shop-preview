@@ -132,7 +132,7 @@ function renderHomePage() {
 
           <!-- عناصر تزئینی شناور -->
           <div class="absolute -top-10 right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl animate-float" style="animation-duration:6s"></div>
-          <div class="absolute bottom-0 left-10 w-56 h-56 rounded-full bg-violet-400/10 blur-3xl animate-float" style="animation-duration:8s;animation-delay:1s"></div>
+          <div class="absolute bottom-0 left-10 w-56 h-56 rounded-full bg-blue-400/10 blur-3xl animate-float" style="animation-duration:8s;animation-delay:1s"></div>
           <div class="absolute top-1/3 left-1/4 w-24 h-24 rounded-full bg-cyan-300/10 blur-2xl animate-pulse-slow"></div>
 
           <div class="max-w-7xl mx-auto px-4 lg:px-8 text-center relative z-10">
@@ -182,7 +182,7 @@ function renderHomePage() {
             ${[
               { icon: 'truck',     tint: 'text-sky-300',   title: 'ارسال رایگان', desc: 'سفارش بالای ۵۰۰ هزار' },
               { icon: 'shield',    tint: 'text-emerald-300', title: 'ضمانت اصالت', desc: 'تضمین کیفیت کالا' },
-              { icon: 'card',      tint: 'text-violet-300', title: 'پرداخت امن', desc: 'درگاه معتبر بانکی' },
+              { icon: 'card',      tint: 'text-blue-300', title: 'پرداخت امن', desc: 'درگاه معتبر بانکی' },
               { icon: 'chat',      tint: 'text-amber-300',  title: 'پشتیبانی ۲۴/۷', desc: 'همیشه در کنار شما' },
             ].map((f, i) => `
               <div class="glass rounded-2xl p-5 lg:p-7 text-center card group animate-fade" style="animation-delay:${i * 0.1}s">
@@ -211,10 +211,10 @@ function renderHomePage() {
                 (cat, i) => `
               <button 
                 onclick="state.productFilter.category='${aryEsc(String(cat.id))}'; goTo('shop')"
-                class="glass rounded-2xl p-5 lg:p-6 text-center card animate-fade hover:shadow-lg hover:shadow-violet-500/10 transition-shadow group"
+                class="glass rounded-2xl p-5 lg:p-6 text-center card animate-fade hover:shadow-lg hover:shadow-blue-500/10 transition-shadow group"
                 style="animation-delay:${i * 0.06}s"
               >
-                <div class="mb-2 inline-flex text-violet-300 transition-transform group-hover:scale-110">${aryCatIcon(cat, 'w-6 h-6 lg:w-8 lg:h-8')}</div>
+                <div class="mb-2 inline-flex text-blue-300 transition-transform group-hover:scale-110">${aryCatIcon(cat, 'w-6 h-6 lg:w-8 lg:h-8')}</div>
                 <h3 class="font-semibold text-xs lg:text-sm">${aryEsc(cat.title)}</h3>
               </button>
             `
@@ -229,7 +229,7 @@ function renderHomePage() {
       ${dealsList.length > 0 ? `
       <section class="py-12 lg:py-16">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
-          <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-rose-600 via-pink-600 to-violet-700 p-5 lg:p-8 shadow-2xl shadow-rose-500/15">
+          <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-rose-600 via-pink-600 to-blue-700 p-5 lg:p-8 shadow-2xl shadow-rose-500/15">
             <div class="absolute -top-12 -left-12 w-44 h-44 rounded-full bg-white/10 blur-2xl animate-pulse-slow"></div>
             <div class="absolute -bottom-16 -right-10 w-52 h-52 rounded-full bg-amber-300/10 blur-3xl"></div>
 
@@ -302,7 +302,7 @@ function renderHomePage() {
               <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fade" style="animation-delay:${i * 0.1}s">
 
                 <div class="relative about-image-wrapper flex justify-center ${i % 2 === 1 ? 'md:order-2' : ''}">
-                  <div class="about-3d-square square-purple w-24 h-24 -top-6 -left-6"></div>
+                  <div class="about-3d-square square-sky w-24 h-24 -top-6 -left-6"></div>
                   <div class="about-3d-square square-red w-28 h-28 -bottom-6 -right-6"></div>
 
                   <div class="w-56 h-56 lg:w-72 lg:h-72 rounded-3xl overflow-hidden shadow-2xl relative z-10 transition-transform duration-500 hover:scale-[1.03]">
@@ -482,7 +482,7 @@ window.AryaSupportChat = (function () {
     const { tickets, msgs } = thread();
     body.innerHTML = msgs.length ? msgs.map(m => m.sys
       ? `<div class="text-center text-[10px] text-white/35 py-1">${esc(m.text)}</div>`
-      : `<div class="flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}">
+      : `<div class="flex ary-msg-in ${m.from === 'user' ? 'justify-end' : 'justify-start'}">
            <div class="${m.from === 'user' ? 'ary-chat-bubble-user text-white' : 'ary-chat-bubble-sup text-white/85'} max-w-[85%] px-3 py-2 text-[12px] leading-6">
              <p class="whitespace-pre-line break-words">${esc(m.text)}</p>
              <span class="block text-[9px] opacity-55 mt-0.5">${m.at ? new Date(m.at).toLocaleString('fa-IR', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : ''}</span>
@@ -513,14 +513,14 @@ window.AryaSupportChat = (function () {
     if (!root) {
       root = document.createElement('div');
       root.id = 'ary-chat-panel';
-      root.className = 'fixed z-[81] inset-x-3 bottom-3 sm:inset-x-auto sm:left-5 sm:bottom-24 w-auto sm:w-96';
+      root.className = 'fixed z-[81] inset-x-3 bottom-3 sm:inset-x-auto sm:right-5 sm:bottom-24 w-auto sm:w-96';
       root.innerHTML = `
         <div class="glass-strong rounded-3xl overflow-hidden border border-white/12 shadow-2xl" style="max-height:min(72vh,34rem)">
-          <div class="flex items-center justify-between gap-2 px-4 py-3 bg-gradient-to-l from-violet-600/80 to-indigo-600/70">
+          <div class="flex items-center justify-between gap-2 px-4 py-3 bg-gradient-to-l from-blue-700 via-blue-600 to-sky-600">
             <div class="flex items-center gap-2.5 min-w-0">
               <span class="relative w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
                 <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-                <span class="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#1a0f33]"></span>
+                <span class="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#0f1d3a]"></span>
               </span>
               <div class="min-w-0">
                 <p class="text-sm font-bold text-white truncate">چت پشتیبانی آریا</p>
@@ -553,6 +553,7 @@ window.AryaSupportChat = (function () {
       root.querySelector('#ary-chat-new').onclick = () => { if (typeof window.openUserTicketModal === 'function') { close(); window.openUserTicketModal(); } };
     }
     root.style.display = '';
+    root.classList.remove('ary-chat-open'); void root.offsetWidth; root.classList.add('ary-chat-open');
     isOpen = true;
     paint(); pull();
     if (pollTimer) clearInterval(pollTimer);
@@ -585,10 +586,10 @@ window.AryaSupportChat = (function () {
     b.type = 'button';
     b.id = 'arya-support-fab';
     b.setAttribute('aria-label', 'چت پشتیبانی');
-    b.innerHTML = `<span class="ary-fab-tip">چت با پشتیبانی</span>
-      <span class="ary-fab-btn">
+    b.innerHTML = `<span class="ary-fab-btn">
         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
-      </span>`;
+      </span>
+      <span class="ary-fab-tip">چت با پشتیبانی</span>`;
     b.onclick = () => window.AryaSupportChat.toggle();
     document.body.appendChild(b);
     window.AryaSupportChat.updateBadge();
@@ -651,7 +652,7 @@ window.AryaVideoPlayer = (function () {
         ${list.map((v, i) => {
           const it = info(v);
           return `
-          <button type="button" data-i="${i}" class="avp-thumb shrink-0 w-28 sm:w-32 rounded-xl overflow-hidden border-2 transition-all ${i === idx ? 'border-violet-400 ring-2 ring-violet-400/30' : 'border-white/10 hover:border-white/40'}">
+          <button type="button" data-i="${i}" class="avp-thumb shrink-0 w-28 sm:w-32 rounded-xl overflow-hidden border-2 transition-all ${i === idx ? 'border-blue-400 ring-2 ring-blue-400/30' : 'border-white/10 hover:border-white/40'}">
             <span class="relative block aspect-video bg-white/5">
               <video muted playsinline preload="metadata" src="${esc(it.url)}#t=0.9" tabindex="-1" class="absolute inset-0 w-full h-full object-cover pointer-events-none"></video>
               <span class="absolute inset-0 flex items-center justify-center text-white/40 pointer-events-none">
@@ -872,7 +873,7 @@ window.aryDealsScroll = function (dir) {
     if (state.authOtpTimer > 0) {
       el.innerHTML = `<span class="text-white/40">${Math.floor(state.authOtpTimer / 60)}:${String(state.authOtpTimer % 60).padStart(2, '0')}</span>`;
     } else {
-      el.innerHTML = `<button type="button" onclick="resendLoginOtp()" class="text-violet-400 hover:text-violet-300 transition-colors">ارسال مجدد کد</button>`;
+      el.innerHTML = `<button type="button" onclick="resendLoginOtp()" class="text-blue-400 hover:text-blue-300 transition-colors">ارسال مجدد کد</button>`;
     }
   }
 
@@ -1118,12 +1119,12 @@ window.aryDealsScroll = function (dir) {
       const target = state.pendingLoginUser?.phone || state.pendingLoginUser?.email || '';
       const timerHtml = state.authOtpTimer > 0
         ? `<span class="text-white/40">${Math.floor(state.authOtpTimer / 60)}:${String(state.authOtpTimer % 60).padStart(2, '0')}</span>`
-        : `<button type="button" onclick="resendLoginOtp()" class="text-violet-400 hover:text-violet-300 transition-colors">ارسال مجدد کد</button>`;
+        : `<button type="button" onclick="resendLoginOtp()" class="text-blue-400 hover:text-blue-300 transition-colors">ارسال مجدد کد</button>`;
       return `
         ${typeof renderHeader === 'function' ? renderHeader() : ''}
         <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
           <div class="text-center mb-8">
-            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">${aryIcon('lock', 'w-10 h-10 text-violet-100')}</div>
+            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-sky-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-blue-500/30 animate-float">${aryIcon('lock', 'w-10 h-10 text-blue-100')}</div>
             <h1 class="text-2xl font-black mb-1">${state.authOtpMode === 'forgot' ? 'بازیابی رمز عبور' : 'تایید هویت'}</h1>
             <p class="text-white/50 text-sm">کد ۶ رقمی ارسال‌شده به ${target} را وارد کنید</p>
           </div>
@@ -1136,9 +1137,9 @@ window.aryDealsScroll = function (dir) {
                   placeholder="------" autocomplete="one-time-code" required autofocus>
               </div>
               ${state.authOtp ? `
-              <div class="glass rounded-xl px-4 py-3 border border-violet-500/30 bg-violet-500/10 flex items-center justify-between gap-3">
-                <p class="text-xs text-white/70">حالت نمایشی — کد شما: <b dir="ltr" class="tracking-[0.3em] text-violet-200">${aryEsc(String(state.authOtp))}</b></p>
-                <button type="button" class="text-xs font-bold text-violet-300 hover:text-white transition-colors" onclick="document.querySelector('input[name=otp]').value='${aryEsc(String(state.authOtp))}'">استفاده از کد</button>
+              <div class="glass rounded-xl px-4 py-3 border border-blue-500/30 bg-blue-500/10 flex items-center justify-between gap-3">
+                <p class="text-xs text-white/70">حالت نمایشی — کد شما: <b dir="ltr" class="tracking-[0.3em] text-blue-200">${aryEsc(String(state.authOtp))}</b></p>
+                <button type="button" class="text-xs font-bold text-blue-300 hover:text-white transition-colors" onclick="document.querySelector('input[name=otp]').value='${aryEsc(String(state.authOtp))}'">استفاده از کد</button>
               </div>` : ''}
               <div class="text-center text-sm">
                 <span id="login-otp-timer">${timerHtml}</span>
@@ -1155,11 +1156,11 @@ window.aryDealsScroll = function (dir) {
     const tabBar = `
       <div class="flex gap-2 mb-6">
         <button type="button" onclick="state.authTab='login'; state.authError=''; render()"
-          class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab==='login' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30' : 'glass text-white/60 hover:bg-white/10'}">
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab==='login' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'glass text-white/60 hover:bg-white/10'}">
           ورود
         </button>
         <button type="button" onclick="state.authTab='register'; state.authError=''; render()"
-          class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab==='register' ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30' : 'glass text-white/60 hover:bg-white/10'}">
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab==='register' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'glass text-white/60 hover:bg-white/10'}">
           ثبت‌نام
         </button>
       </div>
@@ -1178,7 +1179,7 @@ window.aryDealsScroll = function (dir) {
           <div>
             <div class="flex items-center justify-between mb-2">
               <label class="text-sm text-white/70">رمز عبور</label>
-              <button type="button" onclick="state.authTab='forgot'; state.authError=''; render()" class="text-xs text-violet-400 hover:text-violet-300">فراموشی رمز؟</button>
+              <button type="button" onclick="state.authTab='forgot'; state.authError=''; render()" class="text-xs text-blue-400 hover:text-blue-300">فراموشی رمز؟</button>
             </div>
             <div class="relative">
               <input name="password" id="login-pass" type="password" class="input-style w-full pl-12" placeholder="رمز عبور" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required>
@@ -1239,7 +1240,7 @@ window.aryDealsScroll = function (dir) {
     } else if (tab === 'forgot') {
       formContent = `
         <div class="text-center mb-6">
-          <div class="text-violet-300 flex justify-center mb-3">${aryIcon('key','w-11 h-11')}</div>
+          <div class="text-blue-300 flex justify-center mb-3">${aryIcon('key','w-11 h-11')}</div>
           <h2 class="text-xl font-black mb-1">بازیابی رمز</h2>
           <p class="text-white/50 text-sm">ایمیل یا شماره ثبت‌شده را وارد کنید</p>
         </div>
@@ -1271,7 +1272,7 @@ window.aryDealsScroll = function (dir) {
       ${typeof renderHeader === 'function' ? renderHeader() : ''}
       <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
         <div class="text-center mb-8">
-          <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">${aryIcon('key', 'w-9 h-9 text-violet-100')}</div>
+          <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-sky-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-blue-500/30 animate-float">${aryIcon('key', 'w-9 h-9 text-blue-100')}</div>
           <h1 class="text-2xl font-black mb-1">${tab === 'login' ? 'ورود به حساب' : tab === 'register' ? 'ایجاد حساب' : 'بازیابی رمز'}</h1>
           <p class="text-white/50 text-sm">فروشگاه آریا</p>
         </div>
@@ -1368,12 +1369,12 @@ function renderProductRow(p, i) {
   const shortDesc = String(p.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
   return `
     <article class="glass rounded-2xl p-3 sm:p-4 flex items-stretch gap-3 sm:gap-5 animate-fade" style="animation-delay:${i * 0.04}s">
-      <div class="w-24 sm:w-32 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-violet-500/10 to-purple-600/10 flex items-center justify-center cursor-pointer relative" onclick="openProductById('${aryEsc(String(p.id))}')">
+      <div class="w-24 sm:w-32 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-blue-500/10 to-sky-600/10 flex items-center justify-center cursor-pointer relative" onclick="openProductById('${aryEsc(String(p.id))}')">
         ${img ? `<img src="${img}" alt="" class="w-full h-24 sm:h-32 object-cover" loading="lazy">` : `<div class="flex items-center justify-center w-full h-24 sm:h-32 text-white/25">${aryIcon('box','w-8 h-8')}</div>`}
         ${discount > 0 ? `<span class="absolute top-1 right-1 badge badge-discount text-[10px] py-0.5">${discount}٪−</span>` : ''}
       </div>
       <div class="flex-1 min-w-0 py-0.5 flex flex-col">
-        <h3 class="font-bold text-sm sm:text-base line-clamp-1 cursor-pointer hover:text-violet-300 transition-colors" onclick="openProductById('${aryEsc(String(p.id))}')">${aryEsc(p.title || '')}</h3>
+        <h3 class="font-bold text-sm sm:text-base line-clamp-1 cursor-pointer hover:text-blue-300 transition-colors" onclick="openProductById('${aryEsc(String(p.id))}')">${aryEsc(p.title || '')}</h3>
         ${shortDesc ? `<p class="text-white/50 text-xs mt-1 line-clamp-2 leading-5 hidden sm:block">${aryEsc(shortDesc.slice(0, 180))}</p>` : ''}
         <div class="flex flex-wrap items-end justify-between gap-2 mt-auto pt-2">
           <div>
@@ -1493,10 +1494,10 @@ function updateCategoryButtonsUI() {
       (!val && !state.productFilter.category);
 
     if (isActive) {
-      btn.classList.add("bg-violet-500", "text-white", "shadow-lg");
+      btn.classList.add("bg-blue-500", "text-white", "shadow-lg");
       btn.classList.remove("glass", "hover:bg-white/10", "text-white/60");
     } else {
-      btn.classList.remove("bg-violet-500", "text-white", "shadow-lg");
+      btn.classList.remove("bg-blue-500", "text-white", "shadow-lg");
       btn.classList.add("glass", "hover:bg-white/10");
     }
   });
@@ -1565,8 +1566,8 @@ function renderShopPage() {
             <div class="flex items-center gap-3 mt-2 flex-wrap">
               <p class="text-white/60" id="shop-products-count">${filteredProducts.length} محصول</p>
               <span class="inline-flex rounded-xl border border-white/10 overflow-hidden" role="group" aria-label="نوع نمایش محصولات">
-                <button type="button" onclick="setProductView('grid')" title="نمایش کاشی‌ای" class="px-2.5 py-1.5 inline-flex items-center gap-1.5 text-xs transition-colors ${pv === 'grid' ? 'bg-violet-500/25 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}">${aryIcon('grid','w-4 h-4')}<span class="hidden sm:inline">کاشی</span></button>
-                <button type="button" onclick="setProductView('list')" title="نمایش لیستی" class="px-2.5 py-1.5 inline-flex items-center gap-1.5 text-xs border-r border-white/10 transition-colors ${pv === 'list' ? 'bg-violet-500/25 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}">${aryIcon('list','w-4 h-4')}<span class="hidden sm:inline">لیستی</span></button>
+                <button type="button" onclick="setProductView('grid')" title="نمایش کاشی‌ای" class="px-2.5 py-1.5 inline-flex items-center gap-1.5 text-xs transition-colors ${pv === 'grid' ? 'bg-blue-500/25 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}">${aryIcon('grid','w-4 h-4')}<span class="hidden sm:inline">کاشی</span></button>
+                <button type="button" onclick="setProductView('list')" title="نمایش لیستی" class="px-2.5 py-1.5 inline-flex items-center gap-1.5 text-xs border-r border-white/10 transition-colors ${pv === 'list' ? 'bg-blue-500/25 text-white' : 'text-white/50 hover:text-white hover:bg-white/5'}">${aryIcon('list','w-4 h-4')}<span class="hidden sm:inline">لیستی</span></button>
               </span>
             </div>
           </div>
@@ -1609,7 +1610,7 @@ function renderShopPage() {
                 onclick="state.productFilter.category=''; updateShopProductsOnly(true); updateCategoryButtonsUI()"
                 class="cat-btn px-4 py-2.5 rounded-xl text-sm font-medium ${
                   !state.productFilter.category
-                    ? 'bg-violet-500 text-white shadow-lg'
+                    ? 'bg-blue-500 text-white shadow-lg'
                     : 'glass hover:bg-white/10'
                 }"
                 type="button"
@@ -1623,7 +1624,7 @@ function renderShopPage() {
                   onclick="state.productFilter.category='${cat.id}'; updateShopProductsOnly(true); updateCategoryButtonsUI()"
                   class="cat-btn px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 ${
                     state.productFilter.category === cat.id
-                      ? 'bg-violet-500 text-white shadow-lg'
+                      ? 'bg-blue-500 text-white shadow-lg'
                       : 'glass hover:bg-white/10'
                   }"
                   type="button"
@@ -2187,10 +2188,10 @@ function renderReviewRepliesModal(productId) {
                     c => `
               <div class="flex justify-end">
                 <div class="max-w-[85%] flex gap-2 items-start flex-row-reverse">
-                  <div class="w-8 h-8 rounded-full bg-violet-500/40 flex items-center justify-center text-xs sm:text-sm" aria-hidden="true">
+                  <div class="w-8 h-8 rounded-full bg-blue-500/40 flex items-center justify-center text-xs sm:text-sm" aria-hidden="true">
                     ${(c.user_name || 'ک')[0]}
                   </div>
-                  <div class="bg-violet-500/20 border border-violet-400/40 rounded-2xl rounded-br-sm px-3 py-2 text-xs sm:text-sm text-white shadow-sm">
+                  <div class="bg-blue-500/20 border border-blue-400/40 rounded-2xl rounded-br-sm px-3 py-2 text-xs sm:text-sm text-white shadow-sm">
                     <div class="flex items-center justify-between gap-2 mb-1">
                       <span class="font-semibold text-[11px] sm:text-xs">${aryEsc(c.user_name)}</span>
                       <span class="text-[10px] text-white/50">${utils.formatDateTime(c.created_at)}</span>
@@ -2248,7 +2249,7 @@ function renderReviewRepliesModal(productId) {
             : `
           <div class="mt-3 text-xs text-white/50">
             برای پاسخ دادن ابتدا 
-            <button onclick="goTo('login')" class="text-violet-400 underline" type="button">وارد شوید</button>
+            <button onclick="goTo('login')" class="text-blue-400 underline" type="button">وارد شوید</button>
           </div>
         `
         }
@@ -2265,11 +2266,11 @@ function renderReviewItem(review, depth, productId, options) {
     review.children && Array.isArray(review.children) && review.children.length > 0;
 
   return `
-    <div class="glass rounded-2xl p-4 mb-3 mr-${indent * 4} transition-all hover:shadow-xl hover:shadow-violet-500/10" data-review-id="${review.id}">
+    <div class="glass rounded-2xl p-4 mb-3 mr-${indent * 4} transition-all hover:shadow-xl hover:shadow-blue-500/10" data-review-id="${review.id}">
       
       <div class="flex items-center justify-between mb-2">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-sm font-bold text-white" aria-hidden="true">
+          <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-sky-600 flex items-center justify-center text-sm font-bold text-white" aria-hidden="true">
             ${(review.user_name || 'ک')[0]}
           </div>
           <div>
@@ -2337,7 +2338,7 @@ function renderReviewItem(review, depth, productId, options) {
           <button 
             type="button"
             onclick="this.closest('.glass').querySelector('.reply-form').classList.toggle('hidden'); event.preventDefault();" 
-            class="text-violet-400 hover:text-violet-300 transition-all"
+            class="text-blue-400 hover:text-blue-300 transition-all"
           >
             پاسخ دادن
           </button>
@@ -2357,7 +2358,7 @@ function renderReviewItem(review, depth, productId, options) {
           : `
         <div class="hidden mt-3 text-xs text-white/50 reply-form">
           برای پاسخ دادن ابتدا 
-          <button onclick="goTo('login')" class="text-violet-400 underline" type="button">وارد شوید</button>
+          <button onclick="goTo('login')" class="text-blue-400 underline" type="button">وارد شوید</button>
         </div>
         `
       }
@@ -2445,10 +2446,10 @@ function changeGalleryIndex(delta, galleryLength) {
     thumbs.forEach(btn => {
       const idx = Number(btn.getAttribute('data-index') || '0');
       if (idx === next) {
-        btn.classList.add('border-violet-400');
+        btn.classList.add('border-blue-400');
         btn.classList.remove('border-white/30');
       } else {
-        btn.classList.remove('border-violet-400');
+        btn.classList.remove('border-blue-400');
         btn.classList.add('border-white/30');
       }
     });
@@ -2471,7 +2472,7 @@ function setGalleryIndexDirect(index, galleryLength) {
 function renderThumbnail(img, i, idx, product, galleryLength) {
   const isActive = i === idx;
   const thumbnailClass = `flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
-    isActive ? 'border-violet-400' : 'border-white/30 hover:border-violet-300'
+    isActive ? 'border-blue-400' : 'border-white/30 hover:border-blue-300'
   } bg-black/40`;
 
   return `
@@ -2563,7 +2564,7 @@ function renderProductGalleryLightbox(product, gallery) {
         </div>
 
         ${gallery.length > 1 ? `
-          <div class="flex gap-2 overflow-x-auto mt-4 px-2 py-2 justify-center">
+          <div data-keep-scroll="catchips" class="flex gap-2 overflow-x-auto mt-4 px-2 py-2 justify-center">
             ${gallery.map((img, i) => renderThumbnail(img, i, idx, product, gallery.length)).join('')}
           </div>
         ` : ''}
@@ -2654,7 +2655,7 @@ function renderProductVideos(product) {
       <!-- هدر ویدیوها -->
       <div class="flex items-center gap-3 mb-6">
         <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl">
-          ${aryIcon('video', 'w-6 h-6 text-violet-300')}
+          ${aryIcon('video', 'w-6 h-6 text-blue-300')}
         </div>
         <div>
           <h2 class="text-2xl font-black">ویدیوهای محصول</h2>
@@ -2726,11 +2727,11 @@ function renderProductArticle(article) {
   return `
     <section class="mb-16 article-section">
       <div class="relative mb-8">
-        <div class="absolute -top-6 right-0 w-32 h-32 bg-gradient-to-br from-violet-600/20 to-purple-600/20 rounded-full blur-3xl"></div>
+        <div class="absolute -top-6 right-0 w-32 h-32 bg-gradient-to-br from-blue-600/20 to-sky-600/20 rounded-full blur-3xl"></div>
         <div class="absolute -bottom-6 left-0 w-40 h-40 bg-gradient-to-br from-blue-600/20 to-cyan-600/20 rounded-full blur-3xl"></div>
         
         <div class="relative flex items-center gap-4">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/30">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-sky-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
             <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 12h8v8h-8v-8z" />
             </svg>
@@ -2743,10 +2744,10 @@ function renderProductArticle(article) {
       </div>
 
       <div class="article-container relative">
-        <div class="absolute inset-0 bg-gradient-to-br from-violet-500/5 via-transparent to-purple-500/5 rounded-3xl"></div>
+        <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-sky-500/5 rounded-3xl"></div>
         
         <div class="relative glass rounded-3xl overflow-hidden border border-white/10">
-          <div class="h-2 bg-gradient-to-l from-violet-500 via-purple-500 to-pink-500"></div>
+          <div class="h-2 bg-gradient-to-l from-blue-500 via-sky-500 to-pink-500"></div>
           
           <div class="p-6 lg:p-10">
             <div class="flex items-center gap-3 mb-6 text-sm text-white/40 border-b border-white/10 pb-4">
@@ -2765,14 +2766,14 @@ function renderProductArticle(article) {
               </span>
             </div>
             
-            <div class="article-content prose prose-invert prose-violet max-w-none
+            <div class="article-content prose prose-invert prose-blue max-w-none
                         prose-headings:text-white prose-headings:font-bold
                         prose-p:text-white/80 prose-p:leading-relaxed
-                        prose-strong:text-violet-300
-                        prose-a:text-violet-400 prose-a:no-underline hover:prose-a:text-violet-300
+                        prose-strong:text-blue-300
+                        prose-a:text-blue-400 prose-a:no-underline hover:prose-a:text-blue-300
                         prose-ul:text-white/80 prose-ol:text-white/80
-                        prose-li:marker:text-violet-400
-                        prose-blockquote:border-r-violet-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-lg
+                        prose-li:marker:text-blue-400
+                        prose-blockquote:border-r-blue-500 prose-blockquote:bg-white/5 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-lg
                         prose-hr:border-white/10
                         prose-img:rounded-xl prose-img:shadow-lg">
               ${article}
@@ -2918,13 +2919,13 @@ function renderProductPage() {
           ${
             gallery.length > 0
               ? `
-            <div class="flex items-center gap-3 overflow-x-auto w-full">
+            <div data-keep-scroll="toolbar" class="flex items-center gap-3 overflow-x-auto w-full">
               ${visibleThumbs
                 .map(
                   (img, idx) => `
                 <button
                   type="button"
-                  class="flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border border-white/10 hover:border-violet-400 transition-colors bg-black/30"
+                  class="flex-shrink-0 w-20 h-20 md:w-24 md:h-24 rounded-2xl overflow-hidden border border-white/10 hover:border-blue-400 transition-colors bg-black/30"
                   onclick="state.productGalleryIndex=${idx}; openProductGalleryLightbox('${product.id}')"
                   aria-label="تصویر ${idx + 1} محصول"
                 >
@@ -2960,7 +2961,7 @@ function renderProductPage() {
         <!-- Info -->
         <div class="space-y-6">
           ${category ? `
-            <span class="inline-block bg-violet-500/20 text-violet-400 px-4 py-1.5 rounded-full text-sm font-medium">
+            <span class="inline-block bg-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-sm font-medium">
               ${category.title}
             </span>
           ` : ''}
@@ -3109,7 +3110,7 @@ function renderProductPage() {
               onclick="setReviewFilter('all', event)"
               class="px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
                 state.reviewFilter === 'all' 
-                  ? 'bg-violet-500 text-white' 
+                  ? 'bg-blue-500 text-white' 
                   : 'glass hover:bg-white/10'
               }"
             >
@@ -3447,32 +3448,71 @@ function renderProductPage() {
   function updateUserProfile() {
     const name = String(document.getElementById('profile-name')?.value || '').trim();
     const phone = String(document.getElementById('profile-phone')?.value || '').trim();
+    const emailEl = document.getElementById('profile-email');
+    const email = String((emailEl && emailEl.value) || '').trim().toLowerCase();
 
     if (name.length < 3) return toast('نام و نام خانوادگی باید حداقل ۳ کاراکتر باشد', 'warning');
     if (phone && !/^09[0-9]{9}$/.test(phone)) return toast('شماره موبایل نامعتبر است', 'warning');
+    if (emailEl && email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return toast('قالب ایمیل نامعتبر است', 'warning');
 
     if (serverAuth()) {
-      AryaServer.update({ name, ...(phone ? { phone } : {}) }).then(r => {
+      AryaServer.update({ name, ...(phone ? { phone } : {}), ...(emailEl && email ? { email } : {}) }).then(r => {
         if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
       });
     }
     state.user.name = name;
     if (phone) state.user.phone = phone;
+    if (emailEl && email) state.user.email = email;
 
-    state.currentUser = { ...(state.currentUser || {}), name, phone };
+    state.currentUser = { ...(state.currentUser || {}), name, phone, ...(emailEl && email ? { email } : {}) };
 
     try {
       const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
       const uidx = users.findIndex(u => u.id === state.user.id || u.email === state.user.email);
-      if (uidx >= 0) { users[uidx] = { ...users[uidx], name, ...(phone ? {phone} : {}) }; }
+      if (uidx >= 0) { users[uidx] = { ...users[uidx], name, ...(phone ? {phone} : {}), ...(email ? {email} : {}) }; }
       localStorage.setItem('arya_users_v1', JSON.stringify(users));
     } catch(e) {}
 
     if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
-    if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name, phone });
-    if (window.persistUserToServer) persistUserToServer({ id: state.user.id, name, phone });
+    if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name, phone, ...(email ? { email } : {}) });
+    if (window.persistUserToServer) persistUserToServer({ id: state.user.id, name, phone, ...(email ? { email } : {}) });
 
     toast('پروفایل بروزرسانی شد');
+    render();
+  }
+
+  // ───────── ذخیرهٔ مشخصات حساب (به‌جز کد ملی) از تب تنظیمات ─────────
+  function updateUserAccount() {
+    const name = String(document.getElementById('settings-name')?.value || '').trim();
+    const email = String(document.getElementById('settings-email')?.value || '').trim().toLowerCase();
+    const phone = String(document.getElementById('settings-phone')?.value || '').trim();
+
+    if (name.length < 3) return toast('نام و نام خانوادگی باید حداقل ۳ کاراکتر باشد', 'warning');
+    if (!/^09[0-9]{9}$/.test(phone)) return toast('شماره موبایل معتبر لازم است (۰۹xxxxxxxxx)', 'warning');
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return toast('قالب ایمیل نامعتبر است', 'warning');
+
+    const payload = { name, phone, ...(email ? { email } : {}) };
+    if (serverAuth()) {
+      AryaServer.update(payload).then(r => {
+        if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
+      });
+    }
+    state.user.name = name; state.user.phone = phone;
+    if (email) state.user.email = email;
+    state.currentUser = { ...(state.currentUser || {}), name, phone, ...(email ? { email } : {}) };
+
+    try {
+      const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
+      const uidx = users.findIndex(u => u.id === state.user.id || u.email === state.user.email);
+      if (uidx >= 0) users[uidx] = { ...users[uidx], name, phone, ...(email ? { email } : {}) };
+      localStorage.setItem('arya_users_v1', JSON.stringify(users));
+    } catch (e) {}
+
+    if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
+    if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name, phone, ...(email ? { email } : {}) });
+    if (window.persistUserToServer) persistUserToServer({ id: state.user.id, ...payload });
+
+    toast('مشخصات حساب ذخیره شد');
     render();
   }
 
@@ -3706,7 +3746,7 @@ function renderProductPage() {
     state.tickets.unshift(ticket);
 
     if (serverAuth()) {
-      AryaServer.createTicket({ user_phone: ticket.user_phone, user_name: ticket.user_name, subject, message })
+      AryaServer.createTicket({ user_phone: ticket.user_phone, user_name: ticket.user_name, subject, message, priority })
         .then(r => {
           if (r.ok) { ticket.id = r.data.id; persistTickets(); }
           else toast(r.msg || 'ثبت تیکت روی سرور ناموفق بود', 'warning');
@@ -3737,6 +3777,7 @@ function renderProductPage() {
     t.messages = msgs;
 
     if (serverAuth()) {
+      t.status = 'open'; // منتظر پاسخ کارشناس
       AryaServer.replyTicket({ id: String(ticketId), reply: msg, user_phone: (state.user && state.user.phone) || '' })
         .then(r => { if (!r.ok) toast(r.msg || 'پاسخ روی سرور ثبت نشد', 'warning'); })
         .catch(() => toast('پاسخ روی سرور ثبت نشد', 'warning'));
@@ -3746,6 +3787,21 @@ function renderProductPage() {
 
     toast('پاسخ شما ارسال شد');
     render();
+  }
+
+  function toggleUserTicketThread(id) {
+    state._openTicketThreads = state._openTicketThreads || {};
+    state._openTicketThreads[String(id)] = !state._openTicketThreads[String(id)];
+    render();
+  }
+
+  function aryUserCopyTracking(orderId) {
+    const o = (state.orders || []).find(x => String(x.id) === String(orderId));
+    const code = o && String(o.tracking_code || '').trim();
+    if (!code) { if (window.toast) toast('کد رهگیری هنوز ثبت نشده است', 'warning'); return; }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(code).then(() => toast('کد رهگیری کپی شد', 'success')).catch(() => toast('کپی ممکن نبود', 'error'));
+    } else { toast('کد رهگیری: ' + code, 'info'); }
   }
 
   // ───────── Orders status helper ─────────
@@ -3938,17 +3994,17 @@ function renderProductPage() {
 
         <!-- Hero Profile Card -->
         <div class="glass rounded-3xl p-5 sm:p-6 mb-6 relative overflow-hidden">
-          <div class="absolute inset-0 bg-gradient-to-br from-violet-500/8 to-purple-500/4 pointer-events-none"></div>
+          <div class="absolute inset-0 bg-gradient-to-br from-blue-500/8 to-sky-500/4 pointer-events-none"></div>
           <div class="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
-            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-4xl shadow-lg shadow-violet-500/25 flex-shrink-0">
-              ${aryIcon('user', 'w-10 h-10 text-violet-200')}
+            <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-blue-500 to-sky-600 flex items-center justify-center text-4xl shadow-lg shadow-blue-500/25 flex-shrink-0">
+              ${aryIcon('user', 'w-10 h-10 text-blue-200')}
             </div>
             <div class="flex-1 min-w-0 text-center sm:text-right w-full">
               <h1 class="text-xl sm:text-2xl font-black mb-1 truncate">${user.name || 'کاربر'}</h1>
               <p class="text-white/50 text-sm font-mono mb-1 break-all">${user.email || ''}</p>
               <p class="text-white/40 text-sm font-mono mb-3">${user.phone || ''}</p>
               <div class="flex flex-wrap gap-2 justify-center sm:justify-start">
-                <span class="glass px-3 py-1 rounded-full text-xs"><span class="text-violet-400 font-bold">${userOrders.length}</span> سفارش</span>
+                <span class="glass px-3 py-1 rounded-full text-xs"><span class="text-blue-400 font-bold">${userOrders.length}</span> سفارش</span>
                 <span class="glass px-3 py-1 rounded-full text-xs"><span class="text-rose-400 font-bold">${wishlist.length}</span> علاقه‌مندی</span>
                 <span class="glass px-3 py-1 rounded-full text-xs"><span class="text-amber-400 font-bold">${userTickets.length}</span> تیکت</span>
                 <span class="glass px-3 py-1 rounded-full text-xs"><span class="text-emerald-400 font-bold">${user.addresses.length}</span> آدرس</span>
@@ -3961,7 +4017,7 @@ function renderProductPage() {
         </div>
 
         <!-- Tab Navigation -->
-        <div class="flex gap-2 overflow-x-auto pb-2 mb-6" style="-ms-overflow-style:none;scrollbar-width:none;">
+        <div data-keep-scroll="profile-tabs" class="flex gap-2 overflow-x-auto pb-2 mb-6" style="-ms-overflow-style:none;scrollbar-width:none;">
           ${[
             {id:'profile', label:'پروفایل', icon:'user'},
             {id:'orders', label:'سفارشات', icon:'box'},
@@ -3973,7 +4029,7 @@ function renderProductPage() {
             <button type="button"
               onclick="switchProfileTab('${tab.id}')""
               class="flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap
-                ${state.profileTab===tab.id ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30' : 'glass text-white/60 hover:bg-white/10'}">
+                ${state.profileTab===tab.id ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'glass text-white/60 hover:bg-white/10'}">
               <span class="inline-flex ${state.profileTab === tab.id ? '' : 'opacity-70'}">${aryCatIcon({ icon: tab.icon }, 'w-4 h-4')}</span><span>${tab.label}</span>
             </button>
           `).join('')}
@@ -3984,7 +4040,7 @@ function renderProductPage() {
 
         <!-- Profile editor -->
         <div class="glass rounded-2xl p-4 sm:p-6 mb-8">
-          <h2 class="text-lg sm:text-xl font-bold mb-6 flex items-center gap-2"><span class="inline-flex text-violet-300">${aryIcon('user', 'w-5 h-5')}</span><span>ویرایش پروفایل کاربری</span></h2>
+          <h2 class="text-lg sm:text-xl font-bold mb-6 flex items-center gap-2"><span class="inline-flex text-blue-300">${aryIcon('user', 'w-5 h-5')}</span><span>ویرایش پروفایل کاربری</span></h2>
           <form onsubmit="event.preventDefault(); updateUserProfile();" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label class="block text-sm text-white/70 mb-1">نام و نام خانوادگی *</label>
@@ -3994,6 +4050,12 @@ function renderProductPage() {
               <label class="block text-sm text-white/70 mb-1">شماره موبایل *</label>
               <input id="profile-phone" class="input-style w-full text-left" dir="ltr" inputmode="tel"
                 value="${user.phone || ''}" placeholder="09123456789">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm text-white/70 mb-1">ایمیل</label>
+              <input id="profile-email" type="email" class="input-style w-full text-left" dir="ltr"
+                value="${user.email || ''}" placeholder="example@mail.com" autocomplete="email">
+              <p class="text-[11px] text-white/40 mt-1.5">با تغییر ایمیل، ورود با ایمیل جدید انجام می‌شود. بازیابی رمز عبور هم به همین آدرس ارسال می‌گردد.</p>
             </div>
             <div class="md:col-span-2">
               <button type="submit" class="btn-primary w-full py-3 rounded-xl font-bold">ذخیره تغییرات</button>
@@ -4122,8 +4184,25 @@ function renderProductPage() {
                           <span class="text-white/60">${window.utils && utils.formatDate ? utils.formatDate(order.created_at) : (order.created_at || '')}</span>
                           <span class="text-emerald-400 font-bold">${window.utils && utils.formatPrice ? utils.formatPrice(order.total) : (order.total || '')}</span>
                         </div>
-                        ${addrTxt ? `<p class="text-[11px] text-white/40 leading-5 flex items-start gap-1.5"><span class="mt-0.5 inline-flex text-violet-300/70">${aryIcon('pin', 'w-3.5 h-3.5')}</span><span class="min-w-0 break-words">${aryEsc(addrTxt)}</span></p>` : ''}
+                        ${addrTxt ? `<p class="text-[11px] text-white/40 leading-5 flex items-start gap-1.5"><span class="mt-0.5 inline-flex text-blue-300/70">${aryIcon('pin', 'w-3.5 h-3.5')}</span><span class="min-w-0 break-words">${aryEsc(addrTxt)}</span></p>` : ''}
                         ${st === 'canceled' && order.cancel_reason ? `<p class="text-[11px] text-rose-300/80">دلیل لغو: ${aryEsc(String(order.cancel_reason))}</p>` : ''}
+                        ${(function () {
+                          if (st === 'canceled') return '';
+                          const steps = [['pending','ثبت'],['processing','پردازش'],['shipped','ارسال'],['delivered','تحویل']];
+                          const oi = steps.findIndex(x => x[0] === st);
+                          const trk = String(order.tracking_code || '').trim();
+                          return `
+                        <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                          ${steps.map((sp, si) => `
+                            <div class="flex items-center gap-1.5">
+                              <span class="w-2 h-2 rounded-full shrink-0 ${si <= oi ? 'bg-blue-400' : 'bg-white/15'} ${si === oi ? 'ring-2 ring-blue-400/40' : ''}"></span>
+                              <span class="text-[10px] ${si === oi ? 'text-blue-300 font-bold' : si < oi ? 'text-white/60' : 'text-white/30'}">${sp[1]}</span>
+                              ${si < 3 ? `<span class="w-3 h-px ${si < oi ? 'bg-blue-400/60' : 'bg-white/10'}"></span>` : ''}
+                            </div>`).join('')}
+                          ${trk ? `<button type="button" onclick="aryUserCopyTracking('${aryEsc(String(order.id))}')" title="کپی کد رهگیری" dir="ltr" class="ms-auto inline-flex items-center gap-1 text-[10px] font-mono text-blue-200/90 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg px-2 py-1 border border-blue-500/25 transition-all">${aryIcon('truck', 'w-3 h-3')}${aryEsc(trk)} ⧉</button>` : (st === 'shipped' || st === 'delivered' ? `<span class="ms-auto text-[10px] text-white/35">کد رهگیری به‌زودی ثبت می‌شود</span>` : '')}
+                        </div>`;
+                        })()}
+                        ${order.admin_note ? `<p class="text-[11px] text-amber-200/85 bg-amber-500/5 border border-amber-500/15 rounded-xl px-3 py-2 flex items-start gap-1.5"><span class="mt-0.5 inline-flex shrink-0">${aryIcon('info','w-3.5 h-3.5')}</span><span>یادداشت پشتیبانی: ${aryEsc(String(order.admin_note))}</span></p>` : ''}
                         ${rs && order.return_reason ? `<p class="text-[11px] text-white/50">دلیل مرجوعی: ${aryEsc(String(order.return_reason))}</p>` : ''}
                         ${(canCancel || canReturn || windowExpired) ? `
                         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
@@ -4176,7 +4255,7 @@ function renderProductPage() {
                     </button>
                     <div class="flex-1 min-w-0">
                       <button type="button" onclick="state.selectedProduct=state.products.find(p=>p.id==='${productId}'); if(state.selectedProduct)goTo('product')" 
-                        class="font-bold line-clamp-1 text-right hover:text-violet-300 transition-colors block w-full">${wTitle}</button>
+                        class="font-bold line-clamp-1 text-right hover:text-blue-300 transition-colors block w-full">${wTitle}</button>
                       <div class="text-sm text-emerald-400 mt-1">
                         ${window.utils && utils.formatPrice ? utils.formatPrice(wPrice) : wPrice}
                       </div>
@@ -4192,117 +4271,104 @@ function renderProductPage() {
 
         <!-- TAB: Tickets -->
         ${state.profileTab === 'tickets' ? `
-        <!-- Tickets -->
-        <div class="glass rounded-2xl p-6">
-          <div class="flex items-center justify-between mb-4">
-            <h2 class="font-bold text-lg flex items-center gap-2">
-              <span class="text-violet-300 inline-flex">${aryIcon('ticket','w-5 h-5')}</span><span>تیکت‌های پشتیبانی</span>
-            </h2>
-            <button 
-              class="btn-primary px-4 py-2 rounded-xl text-sm"
-              type="button"
-              onclick="openUserTicketModal()"
-            >
-              ارسال تیکت جدید
+        <div class="space-y-5">
+          <div class="glass rounded-3xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-11 h-11 rounded-2xl bg-blue-500/15 text-blue-300 flex items-center justify-center shrink-0">${aryIcon('ticket','w-5 h-5')}</span>
+              <div class="min-w-0">
+                <h2 class="font-black text-xl leading-7">تیکت‌های پشتیبانی</h2>
+                <p class="text-xs text-white/50 mt-1">${userTickets.length} گفتگو ثبت شده • پشتیبانی تا ۴۸ ساعت کاری پاسخ می‌دهد</p>
+              </div>
+            </div>
+            <button class="btn-primary px-5 py-3 rounded-2xl text-sm font-bold flex items-center gap-2" type="button" onclick="openUserTicketModal()">
+              <span class="inline-flex text-white">${aryIcon('plus','w-4 h-4')}</span> ارسال تیکت جدید
             </button>
           </div>
 
-          <div class="mt-2 space-y-3">
-            ${
-              userTickets.length === 0
-                ? `<div class="text-sm text-white/60">تیکتی ثبت نشده است.</div>`
-                : userTickets
-                    .map(t => {
-                      const msgs = normalizeTicketMessages(t);
-                      const lastMsg = msgs[msgs.length - 1];
-                      const priorityLabel = t.priority === 'urgent' ? 'فوری' : 'عادی';
-                      const priorityBadge =
-                        t.priority === 'urgent'
-                          ? 'badge-danger'
-                          : 'badge-new';
+          ${userTickets.length === 0 ? `
+            <div class="glass rounded-3xl p-12 text-center">
+              <div class="mx-auto w-20 h-20 rounded-3xl bg-blue-500/10 text-blue-300/70 flex items-center justify-center mb-5">${aryIcon('ticket','w-10 h-10')}</div>
+              <h3 class="font-bold text-lg mb-2">هنوز تیکتی ثبت نکرده‌اید</h3>
+              <p class="text-sm text-white/50 leading-7 max-w-md mx-auto mb-6">هر سؤالی درباره سفارش، ارسال، مرجوعی یا کیفیت کالا دارید، همین‌جا بپرسید. گفتگوها در چت شناور پایین صفحه هم قابل پیگیری است.</p>
+              <button class="btn-primary px-6 py-3 rounded-2xl font-bold text-sm" type="button" onclick="openUserTicketModal()">ثبت اولین تیکت</button>
+            </div>
+          ` : `
+            <div class="space-y-4">
+              ${userTickets
+                .slice()
+                .sort((x, y) => String(y.created_at || '').localeCompare(String(x.created_at || '')))
+                .map(t => {
+                  const msgs = normalizeTicketMessages(t);
+                  const lastMsg = msgs[msgs.length - 1];
+                  const isOpenT = t.status === 'open';
+                  const isAns = t.status === 'answered';
+                  const expanded = !!(state._openTicketThreads && state._openTicketThreads[t.id]);
+                  const stBadge = isOpenT ? 'badge-processing' : (isAns ? 'badge-new' : 'badge-delivered');
+                  const stLabel = isOpenT ? 'باز — در انتظار پاسخ' : (isAns ? 'پاسخ داده شده' : 'بسته‌شده');
+                  const prLabel = t.priority === 'urgent' ? 'فوری' : 'عادی';
+                  const prBadge = t.priority === 'urgent' ? 'badge-danger' : '';
+                  const lastAt = lastMsg && lastMsg.at ? (window.utils && utils.formatDateTime ? utils.formatDateTime(lastMsg.at) : lastMsg.at) : '';
 
-                      return `
-                  <div class="glass rounded-xl p-4">
-                    <div class="flex items-center justify-between mb-2">
-                      <div class="font-mono text-xs">#${String(t.id || '').slice(-6)}</div>
-                      <div class="flex items-center gap-2">
-                        <span class="badge ${
-                          t.status === 'open' ? 'badge-processing' : 'badge-delivered'
-                        }">
-                          ${t.status === 'open' ? 'باز' : 'بسته'}
-                        </span>
-                        <span class="badge ${priorityBadge}">
-                          ${priorityLabel}
-                        </span>
+                  return `
+                <div class="glass rounded-3xl p-5 sm:p-6 animate-fade">
+                  <div class="flex flex-wrap items-start justify-between gap-3">
+                    <div class="min-w-0 flex-1">
+                      <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="badge ${stBadge}">${stLabel}</span>
+                        ${t.priority === 'urgent' ? `<span class="badge ${prBadge}">${prLabel}</span>` : ''}
+                        <span class="text-[11px] text-white/35 font-mono" dir="ltr">#${String(t.id || '').slice(-6)}</span>
                       </div>
+                      <h3 class="font-bold text-base sm:text-lg leading-8 break-words">${aryEsc(t.subject || 'بدون موضوع')}</h3>
+                      <p class="text-xs text-white/45 mt-1">
+                        ثبت: ${window.utils && utils.formatDateTime ? utils.formatDateTime(t.created_at) : (t.created_at || '—')}
+                        ${lastAt ? ` • آخرین پیام: ${lastAt}` : ''}
+                      </p>
                     </div>
-                    <div class="text-sm font-semibold mb-1">${aryEsc(t.subject || '')}</div>
-                    ${
-                      lastMsg
-                        ? `<div class="text-xs text-white/60 mb-2 line-clamp-1">
-                            ${
-                              lastMsg.from === 'user'
-                                ? 'شما: '
-                                : lastMsg.from === 'admin'
-                                ? 'مدیر: '
-                                : 'AI: '
-                            }${aryEsc(lastMsg.text)}
-                          </div>`
-                        : ''
-                    }
-                    <div class="space-y-2 max-h-44 overflow-auto">
-                      ${
-                        msgs
-                          .map(
-                            m => `
-                          <div class="text-xs ${
-                            m.from === 'user'
-                              ? 'text-white/80'
-                              : m.from === 'ai'
-                              ? 'text-violet-300'
-                              : 'text-emerald-300'
-                          }">
-                            <span class="font-bold">
-                              ${
-                                m.from === 'user'
-                                  ? 'شما'
-                                  : m.from === 'ai'
-                                  ? 'AI'
-                                  : 'مدیر'
-                              }:
-                            </span>
-                            <span>${aryEsc(m.text)}</span>
-                            <span class="text-white/30">
-                              - ${
-                                window.utils && utils.formatDateTime
-                                  ? utils.formatDateTime(m.at)
-                                  : m.at || ''
-                              }
-                            </span>
-                          </div>
-                        `
-                          )
-                          .join('')
-                      }
-                    </div>
-                    ${
-                      t.status === 'open'
-                        ? `
-                          <form class="mt-3" onsubmit="event.preventDefault(); replyTicket('${t.id}', this.reply.value); this.reset();">
-                            <div class="flex gap-2">
-                              <input name="reply" class="flex-1 input-style" placeholder="پاسخ شما..." required>
-                              <button class="btn-ghost px-4 rounded-xl" type="submit">ارسال</button>
-                            </div>
-                          </form>
-                        `
-                        : ''
-                    }
+                    <button type="button" onclick="toggleUserTicketThread('${t.id}')"
+                      class="btn-ghost px-4 py-2.5 rounded-2xl text-xs font-bold flex items-center gap-1.5 shrink-0">
+                      <span class="inline-flex transition-transform duration-300 ${expanded ? 'rotate-180' : ''}">${aryIcon('chevrondown','w-4 h-4')}</span>
+                      ${expanded ? 'بستن گفتگو' : `مشاهده گفتگو (${msgs.length})`}
+                    </button>
                   </div>
-                `;
-                    })
-                    .join('')
-            }
-          </div>
+
+                  ${!expanded && lastMsg ? `
+                    <div class="mt-4 glass rounded-2xl px-4 py-3 text-xs leading-6 text-white/60 line-clamp-2">
+                      <b class="${lastMsg.from === 'user' ? 'text-blue-300' : 'text-emerald-300'}">${lastMsg.from === 'user' ? 'شما: ' : (lastMsg.from === 'admin' ? 'پشتیبانی: ' : 'دستیار: ')}</b>${aryEsc(String(lastMsg.text || '').slice(0, 160))}
+                    </div>` : ''}
+
+                  ${expanded ? `
+                    <div class="mt-4 rounded-2xl bg-black/25 border border-white/5 p-4 sm:p-5">
+                      <div class="space-y-3 max-h-[26rem] overflow-y-auto pl-1" style="scrollbar-width:thin">
+                        ${msgs.map(m => {
+                          const mine = m.from === 'user';
+                          return `
+                          <div class="flex ${mine ? 'justify-end' : 'justify-start'}">
+                            <div class="${mine ? 'ary-chat-bubble-user text-white' : 'ary-chat-bubble-sup text-white/85'} max-w-[88%] px-4 py-2.5 text-[13px] leading-7">
+                              <p class="text-[10px] opacity-60 mb-1 font-bold">${mine ? 'شما' : (m.from === 'admin' ? 'کارشناس پشتیبانی' : 'دستیار هوشمند')} • ${m.at ? (window.utils && utils.formatDateTime ? utils.formatDateTime(m.at) : m.at) : ''}</p>
+                              <p class="whitespace-pre-line break-words">${aryEsc(m.text || '')}</p>
+                            </div>
+                          </div>`;
+                        }).join('')}
+                      </div>
+
+                      ${isOpenT || isAns ? `
+                        <form class="mt-4 flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5" onsubmit="event.preventDefault(); const v = this.elements.reply.value.trim(); if (!v) { toast('متن پاسخ خالی است','warning'); return; } replyTicket('${t.id}', v); this.reset();">
+                          <div class="flex-1">
+                            <textarea name="reply" rows="2" required placeholder="پاسخ شما… (برای ارسال: Ctrl+Enter)"
+                              onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();this.closest('form').requestSubmit();}"
+                              class="input-style w-full resize-none text-sm py-3"></textarea>
+                          </div>
+                          <button class="btn-primary px-5 py-3 rounded-xl text-sm font-bold whitespace-nowrap" type="submit">ارسال پاسخ</button>
+                        </form>
+                      ` : `
+                        <p class="mt-4 text-[11px] text-white/40 flex items-center gap-2">${aryIcon('info','w-4 h-4')} این تیکت بسته شده است؛ در صورت نیاز یک تیکت جدید ارسال کنید.</p>
+                      `}
+                    </div>` : ''}
+                </div>`;
+                })
+                .join('')}
+            </div>
+          `}
         </div>
 
         ` : ''}
@@ -4313,33 +4379,35 @@ function renderProductPage() {
 
           <!-- اطلاعات حساب -->
           <div class="glass rounded-2xl p-4 sm:p-6">
-            <h2 class="text-lg font-bold mb-5 flex items-center gap-2"><span class="inline-flex text-violet-300">${aryIcon('user', 'w-5 h-5')}</span><span>مشخصات حساب</span></h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
-              <div class="glass rounded-xl p-3">
-                <div class="text-white/40 text-xs mb-1">نام</div>
-                <div class="font-medium">${user.name || '—'}</div>
+            <h2 class="text-lg font-bold mb-5 flex items-center gap-2"><span class="inline-flex text-blue-300">${aryIcon('user', 'w-5 h-5')}</span><span>مشخصات حساب</span></h2>
+            <form onsubmit="event.preventDefault(); updateUserAccount();" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <label class="block text-white/55 text-xs mb-1.5">نام و نام خانوادگی *</label>
+                <input id="settings-name" class="input-style w-full" value="${user.name || ''}" placeholder="نام کامل">
               </div>
-              <div class="glass rounded-xl p-3">
-                <div class="text-white/40 text-xs mb-1">ایمیل</div>
-                <div class="font-medium break-all">${user.email || '—'}</div>
+              <div>
+                <label class="block text-white/55 text-xs mb-1.5">ایمیل</label>
+                <input id="settings-email" type="email" dir="ltr" class="input-style w-full text-left" value="${user.email || ''}" placeholder="example@mail.com" autocomplete="email">
               </div>
-              <div class="glass rounded-xl p-3">
-                <div class="text-white/40 text-xs mb-1">شماره موبایل</div>
-                <div class="font-medium" dir="ltr">${user.phone || '—'}</div>
+              <div>
+                <label class="block text-white/55 text-xs mb-1.5">شماره موبایل *</label>
+                <input id="settings-phone" dir="ltr" inputmode="tel" class="input-style w-full text-left" value="${user.phone || ''}" placeholder="09123456789">
               </div>
-              <div class="glass rounded-xl p-3">
-                <div class="text-white/40 text-xs mb-1">شناسه کاربری</div>
-                <div class="font-mono text-xs text-white/60">${user.id || '—'}</div>
+              <div>
+                <label class="block text-white/55 text-xs mb-1.5">کد ملی (غیرقابل تغییر)</label>
+                <div class="glass rounded-xl p-3 flex items-center justify-between gap-2">
+                  <span class="font-mono text-sm ${user.nationalId ? '' : 'text-white/40'}" dir="ltr">${user.nationalId || 'ثبت نشده'}</span>
+                  <span class="inline-flex text-white/35">${aryIcon('lock', 'w-4 h-4')}</span>
+                </div>
               </div>
-            </div>
-
-            <form onsubmit="event.preventDefault(); updateUserNationalId();" class="flex flex-col sm:flex-row items-stretch sm:items-end gap-3">
-              <div class="flex-1">
-                <label class="block text-sm text-white/70 mb-1">کد ملی (۱۰ رقمی)</label>
-                <input id="settings-nid" class="input-style w-full text-left" dir="ltr" inputmode="numeric" maxlength="10"
-                  value="${user.nationalId || ''}" placeholder="1234567890" oninput="numericMask(this, 10)">
+              <div class="glass rounded-xl p-3 sm:col-span-2 text-xs text-white/50 flex items-center justify-between gap-3">
+                <span>شناسه کاربری (فقط‌نمایش): <b dir="ltr" class="font-mono text-white/70">${user.id || '—'}</b></span>
+                <span class="text-[10px] text-white/35">این شناسه قابل تغییر نیست</span>
               </div>
-              <button type="submit" class="btn-primary px-6 py-3 rounded-xl font-bold whitespace-nowrap">ذخیره کد ملی</button>
+              <div class="sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
+                <button type="submit" class="btn-primary px-6 py-3 rounded-xl font-bold whitespace-nowrap">ذخیره تغییرات</button>
+                <p class="text-xs text-white/40">برای اصلاح کد ملی (مثلاً اشتباه تایپی) یک تیکت «فوری» در بخش پشتیبانی ثبت کنید تا کارشناس هویت، آن را در پنل بررسی و اصلاح کند.</p>
+              </div>
             </form>
           </div>
 
@@ -4357,6 +4425,7 @@ function renderProductPage() {
   window.logoutUser           = logoutUser;
   window.numericMask          = numericMask;
   window.updateUserProfile    = updateUserProfile;
+  window.updateUserAccount    = updateUserAccount;
   window.updateUserNationalId = updateUserNationalId;
   window.addAddressFromForm   = addAddressFromForm;
   window.openEditAddressModal = openEditAddressModal;
@@ -4365,6 +4434,8 @@ function renderProductPage() {
   window.removeWishlist       = removeWishlist;
   window.createTicketUser     = createTicketUser;
   window.replyTicket          = replyTicket;
+  window.toggleUserTicketThread = toggleUserTicketThread;
+  window.aryUserCopyTracking   = aryUserCopyTracking;
   window.openUserTicketModal  = openUserTicketModal;
   window.closeUserTicketModal = closeUserTicketModal;
 })();
@@ -4399,7 +4470,7 @@ function renderProductPage() {
             <!-- Customer info -->
             <div class="glass rounded-2xl p-6">
               <h2 class="font-bold text-lg mb-5 flex items-center gap-2">
-                <span class="inline-flex text-violet-300">${aryIcon('user', 'w-5 h-5')}</span> اطلاعات خریدار
+                <span class="inline-flex text-blue-300">${aryIcon('user', 'w-5 h-5')}</span> اطلاعات خریدار
               </h2>
               <div class="grid gap-4 grid-cols-1 lg:grid-cols-2">
                 <div>
@@ -4459,7 +4530,7 @@ function renderProductPage() {
             <!-- Order summary -->
             <div class="glass rounded-2xl p-6">
               <h2 class="font-bold text-lg mb-5 flex items-center gap-2">
-                <span class="inline-flex text-violet-300">${aryIcon('card', 'w-5 h-5')}</span> خلاصه سفارش
+                <span class="inline-flex text-blue-300">${aryIcon('card', 'w-5 h-5')}</span> خلاصه سفارش
               </h2>
 
               <div class="space-y-3 mb-5">
@@ -4573,7 +4644,7 @@ function renderProductPage() {
       type: 'payment',
       title: 'تایید پرداخت',
       message: `پرداخت مبلغ ${utils.formatPrice(amount)} انجام شود؟`,
-      icon: aryIcon('card', 'w-14 h-14 text-violet-300'),
+      icon: aryIcon('card', 'w-14 h-14 text-blue-300'),
       confirmText: 'پرداخت',
       confirmClass: 'btn-success',
       onConfirm: async () => {

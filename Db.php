@@ -913,6 +913,18 @@ if ($action === 'user_update') {
         if ($v !== '' && strlen($v) > 10) fail('کد ملی نامعتبر است.');
         $fields[] = 'national_id = ?'; $params[] = $v;
     }
+    if (array_key_exists('email', $rawBody)) {
+        $v = mb_strtolower(ary_clean_text((string) ($rawBody['email'] ?? ''), 255));
+        if ($v !== '') {
+            if (!filter_var($v, FILTER_VALIDATE_EMAIL)) fail('قالب ایمیل نامعتبر است.');
+            $dup = $eng->pdo()->prepare("SELECT id FROM $q WHERE email = ? AND id <> ? LIMIT 1");
+            $dup->execute([$v, $userId]);
+            if ($dup->fetch()) fail('این ایمیل روی حساب دیگری ثبت شده است.');
+            $fields[] = 'email = ?'; $params[] = $v;
+        } else {
+            $fields[] = 'email = ?'; $params[] = '';
+        }
+    }
     if (array_key_exists('phone', $rawBody)) {
         $v = preg_replace('/\D/', '', ary_clean_text((string) $rawBody['phone']));
         if ($v !== '') {
@@ -1066,11 +1078,12 @@ if ($action === 'ticket_create') {
     if (!ary_is_ir_phone($phone)) fail('شماره موبایل معتبر لازم است تا پاسخ تیکت به شما برسد.');
     if ($subject === '' || $msg === '') fail('موضوع و متن تیکت الزامی است.');
     $id = 'tkt_' . bin2hex(random_bytes(8));
+    $prio = strtolower(ary_clean_text((string) ($rawBody['priority'] ?? 'normal'), 20)) === 'urgent' ? 'urgent' : 'normal';
     $q = AryaDbEngine::quoteIdent($eng->driver, 'tickets');
     $messages = json_encode([['from' => 'user', 'text' => $msg, 'at' => date('c')]], JSON_UNESCAPED_UNICODE);
     $eng->pdo()->prepare("INSERT INTO $q (id, user_phone, user_name, subject, status, priority, messages, created_at)
-        VALUES (?,?,?,?,'open','normal',?,{$eng->nowExpr()})")
-        ->execute([$id, $phone, $name, $subject, $messages]);
+        VALUES (?,?,?,?,'open',?,?,{$eng->nowExpr()})")
+        ->execute([$id, $phone, $name, $subject, $prio, $messages]);
     ok(['id' => $id], 'تیکت ثبت شد.');
 }
 
@@ -1095,18 +1108,21 @@ if ($action === 'ticket_reply') {
         $from = 'admin';
     }
     $q = AryaDbEngine::quoteIdent($eng->driver, 'tickets');
-    $sel = $eng->pdo()->prepare("SELECT messages, user_phone FROM $q WHERE id = ? LIMIT 1");
+    $sel = $eng->pdo()->prepare("SELECT messages, user_phone, status FROM $q WHERE id = ? LIMIT 1");
     $sel->execute([$id]);
     $row = $sel->fetch();
     if (!$row) fail('تیکت یافت نشد.', 404);
     if ($from === 'user' && (!ary_is_ir_phone($phone) || $phone !== (string) $row['user_phone'])) {
         fail('شما فقط می‌توانید به تیکت شماره خودتان پاسخ دهید.', 403);
     }
+    $curStatus = strtolower((string) ($row['status'] ?? 'open'));
+    if ($from === 'user' && $curStatus === 'closed') fail('این تیکت بسته شده است؛ برای ادامه گفتگو تیکت جدیدی ثبت کنید.', 409);
     $msgs = json_decode((string) $row['messages'], true) ?: [];
     $msgs[] = ['from' => $from, 'text' => $text, 'at' => date('c')];
-    $eng->pdo()->prepare("UPDATE $q SET messages = ? WHERE id = ?")
-        ->execute([json_encode(array_slice($msgs, -200), JSON_UNESCAPED_UNICODE), $id]);
-    ok(['count' => count($msgs)]);
+    $newStatus = $from === 'admin' ? 'answered' : 'open';
+    $eng->pdo()->prepare("UPDATE $q SET messages = ?, status = ? WHERE id = ?")
+        ->execute([json_encode(array_slice($msgs, -200), JSON_UNESCAPED_UNICODE), $newStatus, $id]);
+    ok(['count' => count($msgs), 'status' => $newStatus]);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1222,7 +1238,8 @@ switch ($action) {
     }
 
     case 'upsert': {
-        if ($table === 'users' || $table === 'tickets') fail('برای این جدول از اکشن‌های اختصاصی (user_*/ticket_*) استفاده کنید.', 403);
+        if ($table === 'users') fail('ویرایش مستقیم جدول users مجاز نیست.', 403);
+        if ($table === 'tickets' && !$isAdmin) fail('برای این جدول از اکشن‌های اختصاصی (user_*/ticket_*) استفاده کنید.', 403);
         if (in_array($table, ADMIN_ONLY_TABLES, true) && !$isAdmin) fail('این عملیات فقط برای مدیر پنل است.', 403);
         write_guard();
 

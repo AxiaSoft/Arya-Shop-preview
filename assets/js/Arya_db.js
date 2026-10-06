@@ -205,7 +205,7 @@
   async function loadFromServer() {
     const isAdminPage = /admin\.html/.test(location.pathname) || location.hash.includes('admin');
     const wanted = [['products'], ['categories'], ['reviews']];
-    if (isAdminPage) wanted.push(['orders']);
+    if (isAdminPage) wanted.push(['orders'], ['tickets']);
     for (const [table] of wanted) {
       try {
         const r = await AryaServer.crud.getAll(table, isAdminPage && table === 'reviews' ? { include_all: 1 } : {});
@@ -221,6 +221,10 @@
             if (typeof o.items === 'string') { try { o.items = JSON.parse(o.items); } catch { o.items = []; } }
             return o;
           }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          if (table === 'tickets') state.tickets = rows.map(t => {
+            if (typeof t.messages === 'string') { try { t.messages = JSON.parse(t.messages); } catch { t.messages = []; } }
+            return t;
+          }).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
         }
       } catch (e) { console.warn('[AryaDB] server load failed for', table, e); }
     }

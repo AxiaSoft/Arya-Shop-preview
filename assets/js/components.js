@@ -40,6 +40,9 @@ window.ARYA_ICONS = {
   clock: '<circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" />',
   box: '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" /> <path d="m7.5 4.27 9 5.15" />',
   ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /> <path d="M13 5v2" /> <path d="M13 17v2" /> <path d="M13 11v2" />',
+  plus: '<path d="M5 12h14" /> <path d="M12 5v14" />',
+  chevrondown: '<path d="m6 9 6 6 6-6" />',
+  info: '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
   return: '<path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />',
   eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" />',
   eyeoff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" />',
@@ -543,10 +546,10 @@ window.aryCatIcon = function (cat, extra) {
             <div>
               <h4 class="font-bold text-sm mb-5">ارتباط با ما</h4>
               <ul class="space-y-3 text-white/60 text-sm">
-                <li class="flex items-center gap-2">${aryIcon("phone","w-4 h-4 text-violet-300")}<span class="font-mono" dir="ltr">۰۲۱-۱۲۳۴۵۶۸</span></li>
-                <li class="flex items-center gap-2">${aryIcon("mail","w-4 h-4 text-violet-300")}<span>info@premium-shop.ir</span></li>
-                <li class="flex items-center gap-2">${aryIcon("pin","w-4 h-4 text-violet-300")}<span>تهران، ایران</span></li>
-                <li class="flex items-center gap-2">${aryIcon("clock","w-4 h-4 text-violet-300")}<span>شنبه تا پنج‌شنبه ۹-۱۸</span></li>
+                <li class="flex items-center gap-2">${aryIcon("phone","w-4 h-4 text-blue-300")}<span class="font-mono" dir="ltr">۰۲۱-۱۲۳۴۵۶۸</span></li>
+                <li class="flex items-center gap-2">${aryIcon("mail","w-4 h-4 text-blue-300")}<span>info@premium-shop.ir</span></li>
+                <li class="flex items-center gap-2">${aryIcon("pin","w-4 h-4 text-blue-300")}<span>تهران، ایران</span></li>
+                <li class="flex items-center gap-2">${aryIcon("clock","w-4 h-4 text-blue-300")}<span>شنبه تا پنج‌شنبه ۹-۱۸</span></li>
               </ul>
             </div>
           </div>
@@ -625,7 +628,7 @@ function renderProductCard(product, index = 0) {
       
       <!-- Product Image با مدیریت خطا -->
       <div 
-        class="product-image aspect-square flex items-center justify-center text-6xl lg:text-8xl cursor-pointer relative bg-gradient-to-br from-violet-500/10 to-purple-600/10"
+        class="product-image aspect-square flex items-center justify-center text-6xl lg:text-8xl cursor-pointer relative bg-gradient-to-br from-blue-500/10 to-sky-600/10"
         onclick="state.selectedProduct = state.products.find(p => p.id === '${product.id}'); goTo('product')"
       >
         ${productImage ? `
@@ -659,7 +662,7 @@ function renderProductCard(product, index = 0) {
       <!-- Product Info -->
       <div class="p-4 lg:p-5">
         ${product.category ? `
-          <span class="text-[10px] lg:text-xs text-violet-400 font-medium mb-2 block">
+          <span class="text-[10px] lg:text-xs text-blue-400 font-medium mb-2 block">
             ${state.categories.find(c => c.id === product.category)?.title || product.category}
           </span>
         ` : ''}

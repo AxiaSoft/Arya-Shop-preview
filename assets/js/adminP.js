@@ -48,7 +48,7 @@ function renderAdminDashboard() {
         ${dashboardStatCard("coins", "کل فروش", utils.formatPriceShort(totalSales), "from-emerald-500 to-green-600", todayOrders.length + ' سفارش امروز')}
         ${dashboardStatCard("trending", "سفارشات امروز", todayOrders.length, "from-blue-500 to-cyan-600", 'میانگین ' + utils.formatPriceShort(todayOrders.length ? Math.round(totalSales / Math.max(orders.length,1)) : 0) + ' تومان')}
         ${dashboardStatCard("hourglass", "در انتظار پردازش", pendingOrders, "from-amber-500 to-orange-600", 'نیازمند بررسی')}
-        ${dashboardStatCard("box", "محصولات فعال", products.length, "from-violet-500 to-purple-600", users.length + ' کاربر ثبت‌نامی')}
+        ${dashboardStatCard("box", "محصولات فعال", products.length, "from-blue-500 to-sky-600", users.length + ' کاربر ثبت‌نامی')}
       </div>
 
       <!-- Essential Charts -->
@@ -292,7 +292,7 @@ function renderStatusDonut(orders) {
   const defs = [
     ['pending',    'در انتظار',   '#f59e0b'],
     ['processing', 'پردازش',      '#38bdf8'],
-    ['shipped',    'ارسال‌شده',    '#818cf8'],
+    ['shipped',    'ارسال‌شده',    '#60a5fa'],
     ['delivered',  'تحویل‌شده',    '#34d399'],
     ['canceled',   'لغوشده',       '#fb7185'],
   ];
@@ -343,18 +343,25 @@ function renderAdminOrders() {
     filteredOrders = filteredOrders.filter(o => o.status === state.orderFilter.status);
   }
   const returnsRequestedCount = (state.orders || []).filter(o => o.return_status === 'requested').length;
+  const canceledCount = (state.orders || []).filter(o => (o.status || 'pending') === 'canceled').length;
   const _ordIcon = (n, c) => (typeof aryIcon === 'function' ? aryIcon(n, c) : '');
   
   return `
     <div class="animate-fade">
-      <h1 class="text-2xl lg:text-3xl font-black mb-8">سفارشات (${filteredOrders.length})</h1>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-8">
+        <h1 class="text-2xl lg:text-3xl font-black">سفارشات (${filteredOrders.length})</h1>
+        <div class="flex items-center gap-2">
+          ${canceledCount > 0 ? `<button type="button" onclick="state.orderFilter.status='canceled'; state.orderFilter.view=''; render()" class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-rose-500/15 text-rose-300 border border-rose-500/25 hover:bg-rose-500/25 transition-all">✕ ${canceledCount} لغوشده</button>` : ''}
+          <button type="button" onclick="aryAdminRefreshNow(this)" title="دریافت آخرین سفارش‌ها از سرور" class="px-3.5 py-2 rounded-xl text-xs font-bold glass hover:bg-white/10 text-white/70">↻ بازخوانی سرور</button>
+        </div>
+      </div>
       
       <!-- Filter -->
       <div class="glass rounded-2xl p-4 lg:p-5 mb-6 space-y-3">
         <div class="flex flex-wrap gap-2">
           <button
             onclick="state.orderFilter.status = ''; state.orderFilter.view = ''; render()"
-            class="px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all ${!state.orderFilter.status && !state.orderFilter.view ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10'}"
+            class="px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all ${!state.orderFilter.status && !state.orderFilter.view ? 'bg-blue-500 text-white' : 'glass hover:bg-white/10'}"
           >همه</button>
           ${[
             { value: 'pending', label: 'در انتظار', color: 'bg-amber-500' },
@@ -458,7 +465,7 @@ function renderAdminOrderCard(order, i) {
                     <select 
                       id="status-${order.id}"
                       onchange="updateOrderStatus(state.orders.find(o => o.id === '${order.id}'), this.value)"
-                      class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-violet-500"
+                      class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-blue-500"
                     >
                       <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>در انتظار</option>
                       <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>در حال پردازش</option>
@@ -497,11 +504,55 @@ function renderAdminOrderCard(order, i) {
                 </div>
               </div>
                 ${canceled && order.cancel_reason ? `<p class="mt-3 text-[11px] text-rose-300/85">دلیل لغو مشتری: ${escapeHtml(String(order.cancel_reason).slice(0,300))}</p>` : ''}
+                <!-- کالاهای سفارش -->
+                <div class="mt-4 rounded-2xl bg-black/25 border border-white/5 p-3.5">
+                  <p class="text-[11px] font-bold text-white/55 mb-2 flex items-center gap-1.5">${typeof aryIcon === 'function' ? aryIcon('box', 'w-3.5 h-3.5') : ''} اقلام (${items.length})</p>
+                  ${items.length === 0 ? `<p class="text-[11px] text-white/40">—</p>` : `
+                    <div class="divide-y divide-white/5">
+                      ${items.map(it => `
+                        <div class="flex items-center justify-between gap-3 py-1.5 text-xs">
+                          <span class="text-white/85 truncate min-w-0">${escapeHtml(it.title || it.name || 'محصول')}</span>
+                          <span class="shrink-0 text-white/55 font-mono" dir="ltr">${Number(it.qty || it.count || 1)} × ${utils.formatPrice(it.price || 0)}</span>
+                        </div>`).join('')}
+                      ${Number(order.discount || 0) > 0 ? `<div class="flex items-center justify-between gap-3 py-1.5 text-xs"><span class="text-emerald-300">تخفیف</span><span class="text-emerald-300 font-mono" dir="ltr">-${utils.formatPrice(order.discount)}</span></div>` : ''}
+                      ${Number(order.shipping_cost || order.shipping || 0) > 0 ? `<div class="flex items-center justify-between gap-3 py-1.5 text-xs"><span class="text-white/60">هزینه ارسال</span><span class="text-white/70 font-mono" dir="ltr">${utils.formatPrice(order.shipping_cost || order.shipping)}</span></div>` : ''}
+                    </div>`}
+                </div>
+
+                <!-- نقشه راه وضعیت -->
+                ${canceled ? `
+                  <div class="mt-3 rounded-xl bg-rose-500/10 border border-rose-500/25 px-3.5 py-2 text-[11px] text-rose-200 inline-flex items-center gap-2">✕ این سفارش لغو شده است${order.cancel_reason ? ' — ' + escapeHtml(String(order.cancel_reason).slice(0,120)) : ''}</div>
+                ` : `
+                  <div class="mt-3 flex items-center gap-0 flex-wrap">
+                    ${[
+                      { k: 'pending',    l: 'ثبت' },
+                      { k: 'processing', l: 'پردازش' },
+                      { k: 'shipped',    l: 'ارسال' },
+                      { k: 'delivered',  l: 'تحویل' }
+                    ].map((st, si, arr) => {
+                      const orderIdx = ['pending','processing','shipped','delivered'].indexOf(order.status || 'pending');
+                      const done = si <= orderIdx;
+                      const cur = si === orderIdx;
+                      return `<div class="flex items-center">
+                        <div class="flex flex-col items-center gap-1 w-14">
+                          <span class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold border transition
+                            ${done ? 'bg-blue-600 border-blue-500 text-white' : 'bg-white/5 border-white/15 text-white/35'}
+                            ${cur ? 'ring-2 ring-blue-400/50 scale-110' : ''}">${done ? (typeof aryIcon === 'function' ? aryIcon('check', 'w-3 h-3') : '✓') : si + 1}</span>
+                          <span class="text-[9.5px] ${cur ? 'text-blue-300 font-bold' : done ? 'text-white/60' : 'text-white/35'}">${st.l}</span>
+                        </div>
+                        ${si < arr.length - 1 ? `<span class="w-6 h-0.5 rounded ${si < orderIdx ? 'bg-blue-500/70' : 'bg-white/10'} -mt-4"></span>` : ''}
+                      </div>`;
+                    }).join('')}
+                    ${order.tracking_code ? `<span dir="ltr" class="mr-2 text-[10px] font-mono text-white/50 bg-white/5 rounded-lg px-2 py-1 border border-white/10">TRK ${escapeHtml(String(order.tracking_code).slice(0, 24))}</span>` : ''}
+                  </div>
+                `}
+
                 <div class="mt-4 pt-3.5 border-t border-white/5 flex flex-wrap items-center gap-2">
                   ${delivered && !ret ? `<button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-300 hover:bg-sky-500/25 transition-all inline-flex items-center gap-1.5" onclick="aryAdminOpenReturn('${order.id}')">${ai('hourglass','w-3.5 h-3.5')}ثبت مرجوعی مشتری</button>` : ''}
                   ${order.status === 'shipped' || order.tracking_code ? `<span class="text-[11px] text-white/50">کد رهگیری: <b dir="ltr" class="font-mono text-white/85">${escapeHtml(order.tracking_code || '-')}</b></span>` : ''}
                   ${ret ? `<span class="text-[10px] text-white/45">وضعیت عودت: <b class="text-white/70">${order.return_status}</b>${order.refund_status && order.refund_status !== 'none' ? ` • بازگشت وجه: <b class="text-white/70">${order.refund_status}</b>` : ''}</span>` : ''}
                   <span class="flex-1"></span>
+                  ${!canceled ? `<button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/25 transition-all inline-flex items-center gap-1.5 border border-blue-500/20" onclick="aryAdminOpenTracking('${order.id}')">${ai('truck','w-3.5 h-3.5')}${order.tracking_code ? 'ویرایش رهگیری' : 'ثبت کد رهگیری'}</button>` : ''}
                   <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 text-white/70 hover:bg-white/10 transition-all" onclick="aryAdminCopyOrderCode('${order.id}')">کپی شناسه</button>
                   <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/25 transition-all inline-flex items-center gap-1.5" onclick="adminDeleteOrder('${order.id}')">${ai('trash','w-3.5 h-3.5')}حذف سفارش</button>
                 </div>
@@ -553,6 +604,55 @@ window.aryAdminOpenReturn = function (id) {
       <button type="button" class="flex-1 btn-primary py-2.5 rounded-xl text-sm" onclick="aryAdminSubmitReturn('${o.id}')">ثبت درخواست مرجوعی</button>
     </div></div>`;
   document.body.appendChild(wrap);
+};
+
+window.aryAdminOpenTracking = function (id) {
+  const o = (state.orders || []).find(x => x.id === id);
+  if (!o) return;
+  const cur = document.getElementById('ary-track-modal');
+  if (cur) cur.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'ary-track-modal';
+  wrap.className = 'fixed inset-0 z-[110] flex items-center justify-center p-4 modal-overlay';
+  const willShip = (o.status || 'pending') !== 'delivered' && (o.status || 'pending') !== 'shipped';
+  wrap.innerHTML = `<div class="glass-strong rounded-3xl p-6 max-w-lg w-full animate-scale text-right">
+    <h3 class="font-bold text-lg mb-1">پیگیری و ارسال سفارش #${String(o.id || '').slice(-8)}</h3>
+    <p class="text-xs text-white/55 mb-4">کد رهگیری باربری را ثبت کنید؛ مشتری همین کد را در «پیگیری سفارش» سایت می‌بیند.</p>
+    <label class="block text-xs text-white/60 mb-1.5">کد رهگیری (باربری/پست تیپاکس و…)</label>
+    <input id="ary-track-code" dir="ltr" class="input-style w-full text-left font-mono" placeholder="مثلاً 1234567890123" value="${(o.tracking_code || '').replace(/"/g, '&quot;')}">
+    <label class="block text-xs text-white/60 mt-4 mb-1.5">یادداشت داخلی برای مشتری (اختیاری)</label>
+    <textarea id="ary-track-note" rows="2" class="input-style w-full text-sm" placeholder="مثلاً: بسته فردا صبح تحویل پست شد">${(o.admin_note || '').replace(/</g, '&lt;')}</textarea>
+    ${willShip ? `<label class="mt-4 flex items-center gap-2 text-xs text-white/70 cursor-pointer select-none"><input id="ary-track-ship" type="checkbox" class="accent-blue-500 w-4 h-4" checked> وضعیت سفارش هم به «ارسال شده» تغییر کند</label>` : ''}
+    <div class="flex gap-3 mt-5">
+      <button type="button" class="flex-1 btn-ghost py-2.5 rounded-xl" onclick="document.getElementById('ary-track-modal').remove()">انصراف</button>
+      <button type="button" class="flex-1 btn-primary py-2.5 rounded-xl text-sm font-bold" onclick="aryAdminSaveTracking('${o.id}', ${willShip ? 1 : 0})">ذخیره رهگیری</button>
+    </div></div>`;
+  document.body.appendChild(wrap);
+  setTimeout(() => { const el = document.getElementById('ary-track-code'); if (el) el.focus(); }, 40);
+};
+
+window.aryAdminSaveTracking = async function (id, willShip) {
+  const code = String((document.getElementById('ary-track-code') || {}).value || '').trim();
+  const note = String((document.getElementById('ary-track-note') || {}).value || '').trim().slice(0, 500);
+  if (!code) { if (window.toast) toast('کد رهگیری را وارد کنید', 'warning'); return; }
+  const shipEl = document.getElementById('ary-track-ship');
+  const setShipped = willShip && (!shipEl || shipEl.checked);
+  const o = (state.orders || []).find(x => x.id === id);
+  const patch = { id: String(id), tracking_code: code };
+  if (note !== '') patch.admin_note = note; else if (o && o.admin_note !== undefined) patch.admin_note = o.admin_note;
+  if (setShipped) patch.status = 'shipped';
+  let failed = null;
+  if (window.AryaServer && AryaServer.isConfigured()) {
+    const r = await AryaServer.crud.upsert('orders', patch).catch(e => ({ ok: false, msg: 'خطای شبکه' }));
+    if (r && r.ok === false) failed = r.msg || 'ذخیره روی سرور ناموفق بود';
+  }
+  if (failed) { if (window.toast) toast(failed, 'error'); return; }
+  if (o) { o.tracking_code = code; if (note !== '') o.admin_note = note; if (setShipped) o.status = 'shipped'; }
+  if (window.AryaDB) { try { AryaDB.upsert('orders', patch); } catch (e) {} }
+  const m = document.getElementById('ary-track-modal'); if (m) m.remove();
+  window.__aryOrdersSig = ''; // بگذار لاگ زنده تغییر را ببیند
+  if (window.toast) toast('کد رهگیری ثبت شد' + (setShipped ? ' و سفارش «ارسال شده» شد' : ''), 'success');
+  render();
 };
 
 window.aryAdminSubmitReturn = async function (id) {
@@ -803,7 +903,7 @@ function renderAdminPanel() {
       <header class="lg:hidden glass-dark border-b border-white/5 p-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3 min-w-0">
-            <span class="w-9 h-9 rounded-xl bg-violet-500/20 text-violet-300 flex items-center justify-center shrink-0">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-5 h-5') : '⚙️'}</span>
+            <span class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-5 h-5') : '⚙️'}</span>
             <h1 class="font-bold truncate">پنل مدیریت</h1>
           </div>
           <div class="flex gap-2">
@@ -1340,7 +1440,7 @@ function renderAdminReviews() {
           </div>
           ${
             shownIds.length > 0
-              ? `<button type="button" class="w-full text-right px-3 py-2 rounded-xl text-xs mb-1 flex items-center justify-between ${activeProductId === '__all__' ? 'bg-violet-500/20 text-violet-200' : 'glass hover:bg-white/10'}" onclick="state.adminReviewsSelectedProductId='__all__'; render()">
+              ? `<button type="button" class="w-full text-right px-3 py-2 rounded-xl text-xs mb-1 flex items-center justify-between ${activeProductId === '__all__' ? 'bg-blue-500/20 text-blue-200' : 'glass hover:bg-white/10'}" onclick="state.adminReviewsSelectedProductId='__all__'; render()">
                   <span>همه محصولات</span><span class="text-[10px] text-white/60">${state.reviews.length} نظر</span>
                 </button>`
               : ''
@@ -1395,7 +1495,7 @@ function renderAdminReviews() {
             </div>
 
             <div class="glass rounded-2xl p-2.5 mb-4 flex flex-wrap items-center gap-2">
-              ${[['','همه',rCounts.all,'bg-violet-500'],['pending','در انتظار',rCounts.pending,'bg-amber-500'],['approved','تأییدشده',rCounts.approved,'bg-emerald-600'],['rejected','ردشده',rCounts.rejected,'bg-rose-600']]
+              ${[['','همه',rCounts.all,'bg-blue-500'],['pending','در انتظار',rCounts.pending,'bg-amber-500'],['approved','تأییدشده',rCounts.approved,'bg-emerald-600'],['rejected','ردشده',rCounts.rejected,'bg-rose-600']]
                 .map(([v,label,n,col]) => `<button type="button" onclick="state.adminReviewsFilter.status='${v}'; render()"
                   class="px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all ${(_rf.status||'')===v ? col + ' text-white' : 'glass hover:bg-white/10 text-white/70'}">${label} <b class="opacity-80">${n}</b></button>`).join('')}
               <span class="flex-1"></span>
@@ -1537,7 +1637,7 @@ function renderOrderFilterButton(value, label) {
     <button 
       onclick="state.orderFilter.status='${value}'; render()"
       class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all 
-      ${active ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10'}"
+      ${active ? 'bg-blue-500 text-white' : 'glass hover:bg-white/10'}"
     >
       ${label}
     </button>
@@ -1592,7 +1692,7 @@ function renderOrderCard(order) {
         <div>
           <select 
             onchange="updateOrder('${order.id}', { status: this.value })"
-            class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-violet-500"
+            class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-blue-500"
           >
             ${renderOrderStatusOption("pending", "⏳ در انتظار", order.status)}
             ${renderOrderStatusOption("processing", "⚙️ پردازش", order.status)}
@@ -1695,6 +1795,15 @@ function addTicketMessage(ticket, payload) {
 
   if (window.AppState) AppState.set({ tickets: state.tickets });
 
+  // همگام‌سازی روی سرور: پاسخ ادمین + باز/پاسخ‌داده‌شده شدن وضعیت (خودکار سمت سرور)
+  if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+    AryaServer.replyTicket({ id: String(ticket.id), reply: text }).then(function (r) {
+      if (r && r.ok === false) { if (window.toast) toast('پاسخ روی سرور ثبت نشد: ' + (r.msg || ''), 'error'); return; }
+      if (r && r.data && r.data.status) ticket.status = r.data.status;
+      window.__aryTicketsSig = '';
+    }).catch(function () { if (window.toast) toast('پاسخ روی سرور ثبت نشد', 'error'); });
+  }
+
   render();
   return Promise.resolve(true);
 }
@@ -1703,6 +1812,12 @@ function updateTicketStatus(ticket, status) {
   if (!ticket) return;
   ticket.status = status;
   if (window.AppState) AppState.set({ tickets: state.tickets });
+  if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+    AryaServer.crud.upsert('tickets', { id: String(ticket.id), status: String(status) }).then(function (r) {
+      if (r && r.ok === false) { ticket.status = status === 'closed' ? 'open' : 'closed'; if (window.toast) toast('تغییر وضعیت روی سرور ناموفق بود', 'error'); render(); return; }
+      window.__aryTicketsSig = '';
+    });
+  }
   render();
 }
 
@@ -1836,6 +1951,7 @@ function renderAdminSupportSafe() {
   const statusButtons = [
     { value: '', label: 'همه' },
     { value: 'open', label: 'باز' },
+    { value: 'answered', label: 'پاسخ‌داده‌شده' },
     { value: 'closed', label: 'بسته' }
   ];
 
@@ -1847,7 +1963,15 @@ function renderAdminSupportSafe() {
 
   return `
     <div class="animate-fade">
-      <h1 class="text-2xl lg:text-3xl font-black mb-4">پشتیبانی و تیکت‌ها 💬</h1>
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h1 class="text-2xl lg:text-3xl font-black flex items-center gap-2.5">
+          <span class="inline-flex text-blue-300">${typeof aryIcon === 'function' ? aryIcon('ticket', 'w-6 h-6') : ''}</span>
+          پشتیبانی و تیکت‌ها
+          ${(allTickets.filter(t => t.status !== 'closed').length) > 0 ? `<span class="align-middle text-[11px] font-bold bg-rose-500 text-white rounded-full px-2 py-0.5">${allTickets.filter(t => t.status !== 'closed').length} باز</span>` : ''}
+        </h1>
+        <button type="button" onclick="aryAdminRefreshNow(this)" title="دریافت آخرین تیکت‌ها از سرور"
+          class="px-3.5 py-2 rounded-xl text-xs font-bold glass hover:bg-white/10 inline-flex items-center gap-1.5 text-white/70">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-3.5 h-3.5 animate-spin [animation-duration:3s]') : '↻'} بازخوانی سرور</button>
+      </div>
 
       <div class="glass rounded-2xl p-4 mb-4 flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
         <div class="flex flex-wrap gap-2">
@@ -1858,7 +1982,7 @@ function renderAdminSupportSafe() {
             <button
               type="button"
               class="px-3 py-1.5 rounded-xl text-xs font-medium ${
-                state.supportFilter.status === b.value ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10'
+                state.supportFilter.status === b.value ? 'bg-blue-500 text-white' : 'glass hover:bg-white/10'
               }"
               onclick="state.supportFilter.status='${b.value}'; render()"
             >
@@ -1948,9 +2072,7 @@ function renderAdminSupportSafe() {
               <div class="flex items-center gap-2 text-[11px]">
                 <span class="px-2 py-1 rounded-lg bg-white/5 text-white/70">
                   ${
-                    activeTicket.status === 'closed'
-                      ? 'بسته'
-                      : 'باز'
+                    activeTicket.status === 'closed' ? 'بسته' : (activeTicket.status === 'answered' ? 'پاسخ داده شده — در انتظار کاربر' : 'باز — در انتظار پاسخ شما')
                   }
                 </span>
                 ${
@@ -1977,7 +2099,7 @@ function renderAdminSupportSafe() {
                         return `
                           <div class="flex ${isAdmin ? 'justify-start' : 'justify-end'}">
                             <div class="max-w-[80%] rounded-2xl px-3 py-2 text-xs ${
-                              isAdmin ? 'bg-white/10 text-white' : 'bg-violet-500 text-white'
+                              isAdmin ? 'bg-white/10 text-white' : 'bg-blue-500 text-white'
                             }">
                               <div class="mb-1 text-[10px] opacity-70">
                                 ${isAdmin ? 'پشتیبانی' : (activeTicket.user_name || activeTicket.userName || 'کاربر')}
@@ -2037,7 +2159,7 @@ function renderAdminSupportSafe() {
                 <div class="flex flex-col gap-1.5">
                   <button
                     type="submit"
-                    class="px-3.5 py-2 rounded-xl bg-violet-500 text-white text-xs font-semibold hover:bg-violet-600 inline-flex items-center gap-1.5"
+                    class="px-3.5 py-2 rounded-xl bg-blue-500 text-white text-xs font-semibold hover:bg-blue-600 inline-flex items-center gap-1.5"
                   >ارسال</button>
                   <label class="text-[10px] text-white/55 flex items-center gap-1 cursor-pointer select-none">
                     <input id="admin-reply-close" type="checkbox" class="accent-emerald-500 w-3 h-3"> ارسال و بستن
@@ -2311,7 +2433,7 @@ function setTextSize(size) {
 
 // ========== SEPARATOR ==========
 function insertSeparator() {
-  const html = `<hr class="custom-separator" style="border: none; height: 2px; background: #4f46e5; margin: 20px 0; border-radius: 2px;">`;
+  const html = `<hr class="custom-separator" style="border: none; height: 2px; background: #1e40af; margin: 20px 0; border-radius: 2px;">`;
   insertHtmlAtCaret(html);
 }
 
@@ -3003,7 +3125,7 @@ function renderAdminProductsEditor() {
             oninput="state.productSearchQ = this.value; updateAdminProductsList()" autocomplete="off">
         </div>
         <button type="button" onclick="state.productVideosOnly = !state.productVideosOnly; render()"
-          class="px-3.5 py-2 rounded-xl text-xs font-medium transition-all inline-flex items-center gap-1.5 ${state.productVideosOnly ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10 text-white/70'}">
+          class="px-3.5 py-2 rounded-xl text-xs font-medium transition-all inline-flex items-center gap-1.5 ${state.productVideosOnly ? 'bg-blue-500 text-white' : 'glass hover:bg-white/10 text-white/70'}">
           ${typeof aryIcon === 'function' ? aryIcon('play', 'w-3.5 h-3.5') : '▶'} فقط دارای ویدیو
         </button>
         <span class="text-[11px] text-white/45">${filteredProducts.length} نتیجه</span>
@@ -3036,7 +3158,7 @@ function adminProductsListHtml(filteredProducts) {
                   <h3 class="font-bold leading-6 break-words">${escapeHtml(String(product.title || 'بدون نام'))}</h3>
                   <p class="text-white/60 text-sm truncate">${escapeHtml(state.categories.find(c => c.id === product.category)?.title || 'بدون دسته')}</p>
                   ${product.slug ? `<p class="text-white/40 text-xs mt-1 break-all line-clamp-1">/${escapeHtml(String(product.slug))}</p>` : ''}
-                  ${(() => { const vids = adminProductVideos(product); if (!vids.length) return ''; return `<button type="button" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/25 border border-violet-500/20 transition-all" onclick="aryAdminPlayProductVideos('${product.id}', 0)">${typeof aryIcon === 'function' ? aryIcon('play', 'w-3 h-3') : '▶'} <bdi dir="rtl">${vids.length} ویدیوی محصول${vids[0] ? '' : ''}</bdi></button>`; })()}
+                  ${(() => { const vids = adminProductVideos(product); if (!vids.length) return ''; return `<button type="button" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/25 border border-blue-500/20 transition-all" onclick="aryAdminPlayProductVideos('${product.id}', 0)">${typeof aryIcon === 'function' ? aryIcon('play', 'w-3 h-3') : '▶'} <bdi dir="rtl">${vids.length} ویدیوی محصول${vids[0] ? '' : ''}</bdi></button>`; })()}
                 </div>
 
                 <div class="text-left sm:text-right shrink-0">
@@ -3156,7 +3278,7 @@ function renderProductModal() {
 
             <div>
               <label class="block text-sm text-white/70 mb-2">تصویر اصلی</label>
-              <div class="glass rounded-2xl p-4 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-violet-400 transition" onclick="document.getElementById('main-image-input').click()">
+              <div class="glass rounded-2xl p-4 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-blue-400 transition" onclick="document.getElementById('main-image-input').click()">
                 ${ d.mainImage ? `
                   <div class="w-full max-h-56 rounded-xl overflow-hidden mb-3"><img src="${d.mainImage}" class="w-full h-full object-cover"></div>
                   <div class="flex gap-2">
@@ -3179,7 +3301,7 @@ function renderProductModal() {
                   </div>`).join('') }
               </div>
 
-              <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-violet-400 transition" onclick="document.getElementById('gallery-image-input').click()">
+              <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-blue-400 transition" onclick="document.getElementById('gallery-image-input').click()">
                 <div class="text-3xl">🖼️</div>
                 <p class="text-sm text-white/70 text-center">برای افزودن تصاویر کلیک کنید</p>
                 <input id="gallery-image-input" type="file" accept="image/*" multiple class="hidden" onchange="handleGalleryFiles(this.files)">
@@ -3213,7 +3335,7 @@ function renderProductModal() {
                   </div>`).join('') }
               </div>
 
-              <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-violet-400 transition" onclick="document.getElementById('video-upload-input').click()">
+              <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-blue-400 transition" onclick="document.getElementById('video-upload-input').click()">
                 <div class="text-3xl">🎥</div>
                 <p class="text-sm text-white/70 text-center">برای افزودن ویدیو کلیک کنید</p>
                 <input id="video-upload-input" type="file" accept="video/*" multiple class="hidden" onchange="handleVideoFilesUpload(this.files)">
@@ -3510,9 +3632,9 @@ function saveSeoSettings() {
       border-color: rgba(255, 255, 255, 0.1);
     }
     .article-toolbar .tool-btn.active-tool { 
-      background: linear-gradient(145deg, #4f46e5, #7c3aed);
-      border-color: #a78bfa;
-      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.3);
+      background: linear-gradient(145deg, #1e40af, #2563eb);
+      border-color: #93c5fd;
+      box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.3);
       color: white;
     }
     
@@ -3533,15 +3655,15 @@ function saveSeoSettings() {
     }
     .editor-white-box blockquote {
       color: #333;
-      border-right-color: #8b5cf6;
-      background: rgba(139, 92, 246, 0.05);
+      border-right-color: #3b82f6;
+      background: rgba(59, 130, 246, 0.05);
     }
     
     /* استایل نقل قول با آیکون */
     .custom-blockquote {
       position: relative;
-      background: rgba(139, 92, 246, 0.05);
-      border-right: 4px solid #8b5cf6;
+      background: rgba(59, 130, 246, 0.05);
+      border-right: 4px solid #3b82f6;
       padding: 20px 48px 20px 20px;
       margin: 20px 0;
       border-radius: 12px;
@@ -3555,7 +3677,7 @@ function saveSeoSettings() {
       right: 16px;
       top: 12px;
       font-size: 48px;
-      color: #8b5cf6;
+      color: #3b82f6;
       opacity: 0.2;
       font-family: serif;
       line-height: 1;
@@ -3564,14 +3686,14 @@ function saveSeoSettings() {
     
     /* پیش‌نمایش */
     .preview-mode-active {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
       color: white;
       padding: 6px 16px;
       border-radius: 30px;
       font-size: 13px;
       font-weight: 500;
       margin-right: 16px;
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+      box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
     }
     
     /* استایل‌های ریسپانسیو */
@@ -4037,7 +4159,7 @@ function showDbExportPanel() {
           <p class="text-[11px] text-white/40 mt-2 leading-relaxed">
             اتصال از طریق ویزارد نصب صفحه اصلی انجام می‌شود (MySQL/MariaDB، PostgreSQL، SQLite، SQL Server)
             و پشتیبانی از پنل‌های cPanel/DirectAdmin/Plesk برای ساخت خودکار دیتابیس.
-            نمونه تنظیمات دستی: <code class="text-violet-300">config.sample.php</code>
+            نمونه تنظیمات دستی: <code class="text-blue-300">config.sample.php</code>
           </p>
         </div>
 
@@ -4088,7 +4210,7 @@ function showDbExportPanel() {
         container.innerHTML = Object.entries(stats).filter(([k]) => k !== 'settings').map(([k,v]) => `
           <div class="flex items-center justify-between text-xs">
             <span class="flex items-center gap-2"><span>${icons[k]||'•'}</span><span>${labels[k]||k}</span></span>
-            <span class="font-bold text-violet-400">${v} رکورد</span>
+            <span class="font-bold text-blue-400">${v} رکورد</span>
           </div>
         `).join('');
       } else {
@@ -4102,7 +4224,7 @@ function showDbExportPanel() {
         };
         container.innerHTML = Object.entries(statMap).map(([k,v]) => `
           <div class="flex items-center justify-between text-xs">
-            <span>${k}</span><span class="font-bold text-violet-400">${v}</span>
+            <span>${k}</span><span class="font-bold text-blue-400">${v}</span>
           </div>
         `).join('');
       }
@@ -4202,6 +4324,47 @@ window.downloadDbJSON = downloadDbJSON;
 // ═══════════════════════════════════════════════════════════════
 
 // ── فراخوان امن Db.php با CSRF (توکن از admin.html / AryaServer) ──
+/* ========== همگام‌سازی زندهٔ پنل (تیکت‌ها و سفارش‌ها هر ۳۰ ثانیه) ========== */
+(async function () {
+  async function pull() {
+    try {
+      if (!window.AryaServer || !AryaServer.isConfigured || !AryaServer.isConfigured()) return;
+      const ae = document.activeElement;
+      if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) return;         // وسط تایپ رفرش نکن
+      if (window.state && (state.editProduct || state.confirmModal || state.categoryModal)) return; // وسط فرم/مودال نه
+      const results = await Promise.all([
+        AryaServer.crud.getAll('tickets', {}),
+        AryaServer.crud.getAll('orders', {})
+      ]);
+      let changed = false;
+      const t = results[0], o = results[1];
+      if (t && t.ok && Array.isArray(t.data)) {
+        const rows = t.data.map(x => { if (typeof x.messages === 'string') { try { x.messages = JSON.parse(x.messages); } catch (e) { x.messages = []; } } return x; })
+          .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+        const sig = JSON.stringify(rows);
+        if (sig !== (window.__aryTicketsSig || '')) { window.__aryTicketsSig = sig; state.tickets = rows; changed = true; }
+      }
+      if (o && o.ok && Array.isArray(o.data)) {
+        const rows = o.data.map(x => { if (typeof x.items === 'string') { try { x.items = JSON.parse(x.items); } catch (e) { x.items = []; } } return x; })
+          .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        const sig = JSON.stringify(rows);
+        if (sig !== (window.__aryOrdersSig || '')) { window.__aryOrdersSig = sig; state.orders = rows; changed = true; }
+      }
+      if (changed && typeof render === 'function') render();
+      return changed;
+    } catch (e) { return false; }
+  }
+  setInterval(pull, 30000);
+  window.aryAdminLiveSync = pull;
+  window.aryAdminRefreshNow = function (btn) {
+    if (btn) { btn.disabled = true; btn.style.opacity = '.55'; }
+    Promise.resolve(pull()).then(function () {
+      if (btn) { btn.disabled = false; btn.style.opacity = ''; }
+      if (window.toast) toast('اطلاعات از سرور تازه شد', 'info');
+    });
+  };
+})();
+
 async function adminApiCall(action, body) {
   if (window.aryaAdminCall) return window.aryaAdminCall(action, body);
   const isGet = body === null || body === undefined;
