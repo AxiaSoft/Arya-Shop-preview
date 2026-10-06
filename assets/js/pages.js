@@ -136,11 +136,6 @@ function renderHomePage() {
           <div class="absolute top-1/3 left-1/4 w-24 h-24 rounded-full bg-cyan-300/10 blur-2xl animate-pulse-slow"></div>
 
           <div class="max-w-7xl mx-auto px-4 lg:px-8 text-center relative z-10">
-            <div class="inline-flex items-center gap-2 glass px-4 py-1.5 rounded-full text-xs lg:text-sm mb-6 animate-fade-up">
-              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>فروشگاه آنلاین معتبر و امن</span>
-            </div>
-
             <h1 class="text-4xl md:text-5xl lg:text-7xl font-black mb-6 animate-fade-up">
               ${config.hero_title}
             </h1>
@@ -242,7 +237,7 @@ function renderHomePage() {
                 </div>
               </div>
               <div class="flex items-center gap-2 lg:gap-3">
-                ${discountedProducts.length ? `<div class="flex items-center gap-1 text-white text-xs lg:text-base" id="home-deals-countdown">${renderHomeCountdownHTML()}</div>` : ''}
+                ${discountedProducts.length ? `<div class="flex items-center gap-1 text-white text-xs lg:text-base" id="home-deals-countdown" dir="ltr">${renderHomeCountdownHTML()}</div>` : ''}
                 <div class="flex items-center gap-1.5">
                   <button type="button" onclick="aryDealsScroll(-1)" aria-label="قبلی" class="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-colors rotate-180">${aryIcon('arrowleft','w-4 h-4')}</button>
                   <button type="button" onclick="aryDealsScroll(1)" aria-label="بعدی" class="w-8 h-8 lg:w-9 lg:h-9 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition-colors">${aryIcon('arrowleft','w-4 h-4')}</button>
@@ -446,14 +441,15 @@ window.AryaSupportChat = (function () {
   }
   function myTickets() {
     const me = u(); if (!me) return [];
-    const ph = String(me.phone || '');
-    return (state.tickets || []).filter(t => ph && String(t.user_phone || '') === ph); // فقط تیکت‌های خودِ کاربر
+    const nz = (v) => String(v || '').replace(/\D/g, '').replace(/^(?:0098|98|9)/, m => (m === '9' ? '09' : '09')).slice(0, 11);
+    const ph = nz(me.phone);
+    return (state.tickets || []).filter(t => ph && ph.length === 11 && nz(t.user_phone) === ph); // فقط تیکت‌های خودِ کاربر (فرمت‌مستقل)
   }
   async function pull() {
     const me = u(); if (!me || !me.phone) return;
     try {
       if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
-        const r = await AryaServer.crud.getAll('tickets', { user_phone: String(me.phone) });
+        const r = await AryaServer.crud.getAll('tickets', { user_phone: /^09\d{9}$/.test(String(me.phone)) ? String(me.phone) : (window.normIrPhone ? normIrPhone(me.phone) : String(me.phone)) });
         if (r && r.ok && Array.isArray(r.data)) {
           state.tickets = r.data.map(x => {
             if (typeof x.messages === 'string') { try { x.messages = JSON.parse(x.messages); } catch (e) { x.messages = []; } }
@@ -505,7 +501,7 @@ window.AryaSupportChat = (function () {
     if (openT && typeof window.replyTicket === 'function') window.replyTicket(String(openT.id), clean);
     else if (typeof window.createTicketUser === 'function') window.createTicketUser({ subject: 'گفتگوی پشتیبانی آنلاین', message: clean, priority: 'normal' });
     const inp = root.querySelector('#ary-chat-input'); if (inp) { inp.value = ''; inp.focus(); }
-    setTimeout(() => { pull(); paint(); }, 350);
+    setTimeout(() => { pull(); paint(); }, 800);
   }
   function open() {
     const me = u();
@@ -3445,103 +3441,145 @@ function renderProductPage() {
   }
 
   // ───────── Profile update (فقط نام و موبایل) ─────────
+  function normIrPhone(v) {
+    let p = String(v || '').replace(/[^\d]/g, '');
+    if (/^98\d{10}$/.test(p)) p = '0' + p.slice(2);
+    else if (/^9\d{9}$/.test(p)) p = '0' + p;
+    else if (/^0098\d{9}$/.test(p)) p = '0' + p.slice(4);
+    return p;
+  }
+
   function updateUserProfile() {
     const name = String(document.getElementById('profile-name')?.value || '').trim();
-    const phone = String(document.getElementById('profile-phone')?.value || '').trim();
-    const emailEl = document.getElementById('profile-email');
-    const email = String((emailEl && emailEl.value) || '').trim().toLowerCase();
-
     if (name.length < 3) return toast('نام و نام خانوادگی باید حداقل ۳ کاراکتر باشد', 'warning');
-    if (phone && !/^09[0-9]{9}$/.test(phone)) return toast('شماره موبایل نامعتبر است', 'warning');
-    if (emailEl && email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return toast('قالب ایمیل نامعتبر است', 'warning');
+
+    const done = () => {
+      state.user.name = name;
+      state.currentUser = { ...(state.currentUser || {}), name };
+      try {
+        const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
+        const uidx = users.findIndex(u => u.id === state.user.id || (state.user.email && u.email === state.user.email));
+        if (uidx >= 0) users[uidx] = { ...users[uidx], name };
+        localStorage.setItem('arya_users_v1', JSON.stringify(users));
+      } catch (e) {}
+      if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
+      if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name });
+      toast('پروفایل بروزرسانی شد');
+      render();
+    };
 
     if (serverAuth()) {
-      AryaServer.update({ name, ...(phone ? { phone } : {}), ...(emailEl && email ? { email } : {}) }).then(r => {
-        if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
-      });
+      AryaServer.update({ name })
+        .then(r => { if (!r || !r.ok) return toast((r && r.msg) || 'خطا در ذخیره روی سرور', 'warning'); done(); })
+        .catch(() => toast('ارتباط با سرور برقرار نشد', 'warning'));
+      return;
     }
-    state.user.name = name;
-    if (phone) state.user.phone = phone;
-    if (emailEl && email) state.user.email = email;
-
-    state.currentUser = { ...(state.currentUser || {}), name, phone, ...(emailEl && email ? { email } : {}) };
-
-    try {
-      const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
-      const uidx = users.findIndex(u => u.id === state.user.id || u.email === state.user.email);
-      if (uidx >= 0) { users[uidx] = { ...users[uidx], name, ...(phone ? {phone} : {}), ...(email ? {email} : {}) }; }
-      localStorage.setItem('arya_users_v1', JSON.stringify(users));
-    } catch(e) {}
-
-    if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
-    if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name, phone, ...(email ? { email } : {}) });
-    if (window.persistUserToServer) persistUserToServer({ id: state.user.id, name, phone, ...(email ? { email } : {}) });
-
-    toast('پروفایل بروزرسانی شد');
-    render();
+    done();
   }
 
-  // ───────── ذخیرهٔ مشخصات حساب (به‌جز کد ملی) از تب تنظیمات ─────────
-  function updateUserAccount() {
-    const name = String(document.getElementById('settings-name')?.value || '').trim();
-    const email = String(document.getElementById('settings-email')?.value || '').trim().toLowerCase();
-    const phone = String(document.getElementById('settings-phone')?.value || '').trim();
-
-    if (name.length < 3) return toast('نام و نام خانوادگی باید حداقل ۳ کاراکتر باشد', 'warning');
-    if (!/^09[0-9]{9}$/.test(phone)) return toast('شماره موبایل معتبر لازم است (۰۹xxxxxxxxx)', 'warning');
-    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(email)) return toast('قالب ایمیل نامعتبر است', 'warning');
-
-    const payload = { name, phone, ...(email ? { email } : {}) };
-    if (serverAuth()) {
-      AryaServer.update(payload).then(r => {
-        if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
-      });
-    }
-    state.user.name = name; state.user.phone = phone;
-    if (email) state.user.email = email;
-    state.currentUser = { ...(state.currentUser || {}), name, phone, ...(email ? { email } : {}) };
-
-    try {
-      const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
-      const uidx = users.findIndex(u => u.id === state.user.id || u.email === state.user.email);
-      if (uidx >= 0) users[uidx] = { ...users[uidx], name, phone, ...(email ? { email } : {}) };
-      localStorage.setItem('arya_users_v1', JSON.stringify(users));
-    } catch (e) {}
-
-    if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
-    if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name, phone, ...(email ? { email } : {}) });
-    if (window.persistUserToServer) persistUserToServer({ id: state.user.id, ...payload });
-
-    toast('مشخصات حساب ذخیره شد');
+  // ───────── تغییر ایمیل/موبایل با کد احراز (OTP) ─────────
+  function openContactChange(kind) {
+    if (!state.user) return;
+    state.contactChange = { open: true, kind, step: 'input', value: '', target: '', sending: false, verifying: false, err: '' };
     render();
   }
-
-  // ───────── کد ملی (در تب تنظیمات) ─────────
-  function updateUserNationalId() {
-    const nationalId = String(document.getElementById('settings-nid')?.value || '').trim();
-    if (nationalId && nationalId.length !== 10) return toast('کد ملی باید دقیقاً ۱۰ رقم باشد', 'warning');
-
-    if (serverAuth()) {
-      AryaServer.update({ national_id: nationalId }).then(r => {
-        if (!r.ok) toast(r.msg || 'خطا در ذخیره روی سرور', 'warning');
-      });
-    }
-    state.user.nationalId = nationalId;
-    state.currentUser = { ...(state.currentUser || {}), nationalId };
-
-    try {
-      const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
-      const uidx = users.findIndex(u => u.id === state.user.id || u.email === state.user.email);
-      if (uidx >= 0) { users[uidx] = { ...users[uidx], nationalId }; }
-      localStorage.setItem('arya_users_v1', JSON.stringify(users));
-    } catch(e) {}
-
-    if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
-    if (window.persistUserToServer) persistUserToServer({ id: state.user.id, national_id: nationalId });
-
-    toast('کد ملی ذخیره شد');
+  function closeContactChange() {
+    if (!state.contactChange) return;
+    state.contactChange = null;
     render();
   }
+  function contactSendOtp() {
+    const cc = state.contactChange;
+    if (!cc || cc.sending) return;
+    const kind = cc.kind;
+    let value = String(document.getElementById('contact-new-value')?.value || '').trim();
+    if (kind === 'phone') value = normIrPhone(value); else value = value.toLowerCase();
+    if (kind === 'phone' && !/^09[0-9]{9}$/.test(value)) { cc.err = 'شماره موبایل معتبر لازم است (۰۹xxxxxxxxx)'; return render(); }
+    if (kind === 'email' && !/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(value)) { cc.err = 'قالب ایمیل نامعتبر است'; return render(); }
+    const cur = kind === 'phone' ? (state.user.phone || '') : (state.user.email || '');
+    if (value === cur) { cc.err = 'مقدار جدید با مقدار فعلی فرقی نمی‌کند'; return render(); }
+    if (!serverAuth()) { cc.err = 'اتصال سرور برقرار نیست؛ تغییر ایمیل/موبایل فقط روی حساب سروری ممکن است.'; return render(); }
+    cc.sending = true; cc.err = ''; render();
+    AryaServer.requestContactChange(kind === 'phone' ? { new_phone: value } : { new_email: value })
+      .then(r => {
+        cc.sending = false;
+        if (!r || !r.ok) { cc.err = (r && r.msg) || 'ارسال کد احراز ناموفق بود'; return render(); }
+        cc.step = 'otp'; cc.value = value;
+        cc.target = (r.data && r.data.target_masked) || value;
+        toast('کد احراز برای ' + (kind === 'email' ? 'ایمیل' : 'موبایل') + ' جدید ارسال شد.', 'info', 5000);
+        render();
+        setTimeout(() => {
+          const inp = document.getElementById('contact-otp');
+          if (inp) { const d = r.data && r.data.otp_demo; inp.value = d ? String(d) : ''; if (!d) inp.focus(); }
+        }, 40);
+      })
+      .catch(() => { cc.sending = false; cc.err = 'ارتباط با سرور برقرار نشد'; render(); });
+  }
+  function contactVerifyOtp() {
+    const cc = state.contactChange;
+    if (!cc || cc.verifying) return;
+    const otp = String(document.getElementById('contact-otp')?.value || '').replace(/\D/g, '');
+    if (otp.length !== 6) { cc.err = 'کد ۶ رقمی را وارد کنید'; return render(); }
+    cc.verifying = true; cc.err = ''; render();
+    AryaServer.confirmContactChange({ otp })
+      .then(r => {
+        cc.verifying = false;
+        if (!r || !r.ok) { cc.err = (r && r.msg) || 'کد احراز نامعتبر یا منقضی شده است'; return render(); }
+        const kind = cc.kind, value = cc.value;
+        state.contactChange = null;
+        state.user[kind] = value;
+        state.currentUser = { ...(state.currentUser || {}), [kind]: value };
+        try {
+          const users = JSON.parse(localStorage.getItem('arya_users_v1') || '[]');
+          const uidx = users.findIndex(u => u.id === state.user.id || (state.user.phone && u.phone === state.user.phone) || (state.user.email && u.email === state.user.email));
+          if (uidx >= 0) users[uidx] = { ...users[uidx], [kind]: value };
+          localStorage.setItem('arya_users_v1', JSON.stringify(users));
+        } catch (e) {}
+        if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
+        if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, [kind]: value });
+        toast(kind === 'email' ? 'ایمیل حساب با موفقیت تغییر کرد' : 'شماره موبایل حساب با موفقیت تغییر کرد');
+        render();
+      })
+      .catch(() => { cc.verifying = false; cc.err = 'ارتباط با سرور برقرار نشد'; render(); });
+  }
+  function renderContactChangeModalHTML() {
+    const cc = state.contactChange;
+    if (!cc || !cc.open) return '';
+    const isPhone = cc.kind === 'phone';
+    const title = isPhone ? 'تغییر شماره موبایل' : 'تغییر ایمیل';
+    const xIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" class="w-4 h-4"><path d="M18 6 6 18M6 6l12 12"/></svg>';
+    return `
+      <div class="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade" onclick="if(event.target===this)closeContactChange()">
+        <div class="glass-strong w-full max-w-md rounded-2xl p-5 sm:p-6 animate-fade-up relative">
+          <button type="button" class="absolute top-3 left-3 w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/60" onclick="closeContactChange()" aria-label="بستن">${xIcon}</button>
+          <h3 class="text-lg font-black mb-2">${title}</h3>
+          ${cc.step === 'input' ? `
+            <p class="text-xs text-white/55 mb-4">${isPhone ? 'شماره موبایل جدید را وارد کنید؛ کد احراز به همان شماره ارسال می‌شود و تا تأیید، عدد عوض نمی‌شود.' : 'ایمیل جدید را وارد کنید؛ کد احراز به همان ایمیل ارسال می‌شود.'}</p>
+            <input id="contact-new-value" dir="ltr" ${isPhone ? 'inputmode="tel"' : 'type="email" autocomplete="email"'} class="input-style w-full text-left font-mono" placeholder="${isPhone ? '09123456789' : 'example@mail.com'}" value="${isPhone ? (state.user.phone || '') : (state.user.email || '')}" onkeydown="if(event.key==='Enter'){event.preventDefault();contactSendOtp();}">
+            ${cc.err ? `<p class="text-[11px] text-rose-300 mt-2">${cc.err}</p>` : ''}
+            <div class="flex gap-2 mt-5">
+              <button type="button" class="btn-primary flex-1 py-2.5 rounded-xl text-sm font-bold ${cc.sending ? 'opacity-60 pointer-events-none' : ''}" onclick="contactSendOtp()">${cc.sending ? 'در حال ارسال…' : 'ارسال کد احراز'}</button>
+              <button type="button" class="btn-ghost px-4 py-2.5 rounded-xl text-sm" onclick="closeContactChange()">انصراف</button>
+            </div>
+          ` : `
+            <p class="text-xs text-white/55 mb-3 leading-6">کد ۶ رقمی ارسال‌شده به <b class="font-mono text-white/80" dir="ltr">${aryEsc(cc.target || '')}</b> را وارد کنید.<br>مقدار جدید: <b dir="ltr" class="font-mono text-blue-200">${aryEsc(cc.value || '')}</b></p>
+            <input id="contact-otp" dir="ltr" inputmode="numeric" maxlength="6" class="input-style w-full text-center font-mono text-lg tracking-[0.5em] py-3" placeholder="۱۲۳۴۵۶" onkeydown="if(event.key==='Enter'){event.preventDefault();contactVerifyOtp();}">
+            ${cc.err ? `<p class="text-[11px] text-rose-300 mt-2">${cc.err}</p>` : ''}
+            <div class="flex gap-2 mt-5">
+              <button type="button" class="btn-primary flex-1 py-2.5 rounded-xl text-sm font-bold ${cc.verifying ? 'opacity-60 pointer-events-none' : ''}" onclick="contactVerifyOtp()">${cc.verifying ? 'در حال بررسی…' : 'تأیید و ثبت'}</button>
+              <button type="button" class="btn-ghost px-3 py-2.5 rounded-xl text-sm whitespace-nowrap" onclick="contactSendOtp()">ارسال مجدد</button>
+              <button type="button" class="btn-ghost px-4 py-2.5 rounded-xl text-sm" onclick="closeContactChange()">بستن</button>
+            </div>
+          `}
+        </div>
+      </div>`;
+  }
+  window.openContactChange = openContactChange;
+  window.closeContactChange = closeContactChange;
+  window.contactSendOtp = contactSendOtp;
+  window.contactVerifyOtp = contactVerifyOtp;
+  window.normIrPhone = normIrPhone;
+
 
   // ───────── Addresses ─────────
   let _addrSyncT = null;
@@ -3708,7 +3746,7 @@ function renderProductPage() {
   }
 
   // ───────── Tickets: create from user (with priority) ─────────
-  function createTicketUser(payload) {
+  async function createTicketUser(payload) {
     if (!state.user) {
       toast('ابتدا وارد شوید', 'warning');
       navigate('login');
@@ -3724,9 +3762,15 @@ function renderProductPage() {
       return;
     }
 
+    const phone = normIrPhone(state.user.phone || '');
+    if (phone && !/^09[0-9]{9}$/.test(phone)) {
+      toast('شماره موبایل حساب شما در سرور معتبر نیست؛ ابتدا از تب پروفایل و با کد احراز آن را اصلاح کنید', 'warning', 6000);
+      return;
+    }
+
     const ticket = {
       id: (window.utils && utils.uid ? utils.uid() : Date.now()).toString(),
-      user_phone: state.user.phone,
+      user_phone: phone || state.user.phone,
       user_name: state.user.name || 'کاربر',
       user_avatar: state.user.avatar || '',
       subject,
@@ -3742,45 +3786,52 @@ function renderProductPage() {
       created_at: new Date().toISOString()
     };
 
-    state.tickets = Array.isArray(state.tickets) ? state.tickets : [];
-    state.tickets.unshift(ticket);
-
+    // ثبت سمت سرور باید اول تأیید شود؛ تا تیکت maui در_UI جا نیفتد (وگرنه ادمین چیزی نمی‌بیند)
     if (serverAuth()) {
-      AryaServer.createTicket({ user_phone: ticket.user_phone, user_name: ticket.user_name, subject, message, priority })
-        .then(r => {
-          if (r.ok) { ticket.id = r.data.id; persistTickets(); }
-          else toast(r.msg || 'ثبت تیکت روی سرور ناموفق بود', 'warning');
-        })
-        .catch(() => toast('ثبت تیکت روی سرور ناموفق بود', 'warning'));
+      let r = null;
+      try {
+        r = await AryaServer.createTicket({ user_phone: ticket.user_phone, user_name: ticket.user_name, subject, message, priority });
+      } catch (e) { r = null; }
+      if (!r || !r.ok) {
+        toast((r && r.msg) || 'ارتباط با سرور برقرار نشد؛ تیکت ثبت نشد', 'warning', 5500);
+        return;
+      }
+      ticket.id = String((r.data && r.data.id) || ticket.id);
     }
 
+    state.tickets = Array.isArray(state.tickets) ? state.tickets : [];
+    state.tickets.unshift(ticket);
     persistTickets();
 
-    toast('تیکت ثبت شد');
+    toast('تیکت ثبت و برای پشتیبانی ارسال شد');
     state.userTicketModal = { open: false, subject: '', message: '', priority: 'normal' };
+    state.profileTab = 'tickets';
     render();
   }
 
-  function replyTicket(ticketId, text) {
+  async function replyTicket(ticketId, text) {
     const t = (state.tickets || []).find(x => String(x.id) === String(ticketId));
     if (!t || t.status !== 'open') return;
 
     const msg = String(text || '').trim();
     if (!msg) return;
 
+    const prevMsgs = Array.isArray(t.messages) ? t.messages.slice() : null;
     const msgs = normalizeTicketMessages(t);
-    msgs.push({
-      from: 'user',
-      text: msg,
-      at: new Date().toISOString()
-    });
+    msgs.push({ from: 'user', text: msg, at: new Date().toISOString() });
     t.messages = msgs;
 
     if (serverAuth()) {
-      t.status = 'open'; // منتظر پاسخ کارشناس
-      AryaServer.replyTicket({ id: String(ticketId), reply: msg, user_phone: (state.user && state.user.phone) || '' })
-        .then(r => { if (!r.ok) toast(r.msg || 'پاسخ روی سرور ثبت نشد', 'warning'); })
-        .catch(() => toast('پاسخ روی سرور ثبت نشد', 'warning'));
+      let r = null;
+      try {
+        r = await AryaServer.replyTicket({ id: String(ticketId), reply: msg, user_phone: normIrPhone((state.user && state.user.phone) || '') });
+      } catch (e) { r = null; }
+      if (!r || !r.ok) {
+        t.messages = prevMsgs || [];   // حذف پیام شبح‌وار از UI اگر سرور نپذیرفت
+        toast((r && r.msg) || 'پاسخ روی سرور ثبت نشد؛ دوباره تلاش کنید', 'warning');
+        render();
+        return;
+      }
     }
 
     persistTickets();
@@ -4024,7 +4075,6 @@ function renderProductPage() {
             {id:'addresses', label:'آدرس‌ها', icon:'pin'},
             {id:'wishlist', label:'علاقه‌مندی‌ها', icon:'heart'},
             {id:'tickets', label:'پشتیبانی', icon:'chat'},
-            {id:'settings', label:'تنظیمات', icon:'lock'},
           ].map(tab => `
             <button type="button"
               onclick="switchProfileTab('${tab.id}')""
@@ -4048,22 +4098,23 @@ function renderProductPage() {
             </div>
             <div>
               <label class="block text-sm text-white/70 mb-1">شماره موبایل *</label>
-              <input id="profile-phone" class="input-style w-full text-left" dir="ltr" inputmode="tel"
-                value="${user.phone || ''}" placeholder="09123456789">
+              <div class="glass rounded-xl p-3 flex items-center justify-between gap-2">
+                <span dir="ltr" class="font-mono text-sm ${user.phone ? '' : 'text-white/40'}">${user.phone || 'ثبت نشده'}</span>
+                <button type="button" class="text-[11px] font-bold text-blue-300 hover:text-blue-200 transition" onclick="openContactChange('phone')">تغییر با کد احراز</button>
+              </div>
             </div>
             <div class="md:col-span-2">
               <label class="block text-sm text-white/70 mb-1">ایمیل</label>
-              <input id="profile-email" type="email" class="input-style w-full text-left" dir="ltr"
-                value="${user.email || ''}" placeholder="example@mail.com" autocomplete="email">
-              <p class="text-[11px] text-white/40 mt-1.5">با تغییر ایمیل، ورود با ایمیل جدید انجام می‌شود. بازیابی رمز عبور هم به همین آدرس ارسال می‌گردد.</p>
+              <div class="glass rounded-xl p-3 flex items-center justify-between gap-2">
+                <span dir="ltr" class="font-mono text-sm ${user.email ? '' : 'text-white/40'}">${user.email || 'ثبت نشده'}</span>
+                <button type="button" class="text-[11px] font-bold text-blue-300 hover:text-blue-200 transition" onclick="openContactChange('email')">تغییر با کد احراز</button>
+              </div>
+              <p class="text-[11px] text-white/40 mt-1.5">تغییر موبایل و ایمیل برای امنیت، با ارسال کد احراز ۶ رقمی به مقصد جدید انجام می‌شود. ورود و بازیابی رمز عبور با همان اطلاعات تأییدشده است.</p>
             </div>
             <div class="md:col-span-2">
               <button type="submit" class="btn-primary w-full py-3 rounded-xl font-bold">ذخیره تغییرات</button>
             </div>
           </form>
-          <p class="text-xs text-white/40 mt-4">
-            برای ویرایش کد ملی یا حذف دائمی حساب، به بخش «تنظیمات» مراجعه کنید.
-          </p>
         </div>
 
         ` : ''}
@@ -4373,46 +4424,7 @@ function renderProductPage() {
 
         ` : ''}
 
-        <!-- TAB: Settings -->
-        ${state.profileTab === 'settings' ? `
-        <div class="space-y-6">
-
-          <!-- اطلاعات حساب -->
-          <div class="glass rounded-2xl p-4 sm:p-6">
-            <h2 class="text-lg font-bold mb-5 flex items-center gap-2"><span class="inline-flex text-blue-300">${aryIcon('user', 'w-5 h-5')}</span><span>مشخصات حساب</span></h2>
-            <form onsubmit="event.preventDefault(); updateUserAccount();" class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <label class="block text-white/55 text-xs mb-1.5">نام و نام خانوادگی *</label>
-                <input id="settings-name" class="input-style w-full" value="${user.name || ''}" placeholder="نام کامل">
-              </div>
-              <div>
-                <label class="block text-white/55 text-xs mb-1.5">ایمیل</label>
-                <input id="settings-email" type="email" dir="ltr" class="input-style w-full text-left" value="${user.email || ''}" placeholder="example@mail.com" autocomplete="email">
-              </div>
-              <div>
-                <label class="block text-white/55 text-xs mb-1.5">شماره موبایل *</label>
-                <input id="settings-phone" dir="ltr" inputmode="tel" class="input-style w-full text-left" value="${user.phone || ''}" placeholder="09123456789">
-              </div>
-              <div>
-                <label class="block text-white/55 text-xs mb-1.5">کد ملی (غیرقابل تغییر)</label>
-                <div class="glass rounded-xl p-3 flex items-center justify-between gap-2">
-                  <span class="font-mono text-sm ${user.nationalId ? '' : 'text-white/40'}" dir="ltr">${user.nationalId || 'ثبت نشده'}</span>
-                  <span class="inline-flex text-white/35">${aryIcon('lock', 'w-4 h-4')}</span>
-                </div>
-              </div>
-              <div class="glass rounded-xl p-3 sm:col-span-2 text-xs text-white/50 flex items-center justify-between gap-3">
-                <span>شناسه کاربری (فقط‌نمایش): <b dir="ltr" class="font-mono text-white/70">${user.id || '—'}</b></span>
-                <span class="text-[10px] text-white/35">این شناسه قابل تغییر نیست</span>
-              </div>
-              <div class="sm:col-span-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-1">
-                <button type="submit" class="btn-primary px-6 py-3 rounded-xl font-bold whitespace-nowrap">ذخیره تغییرات</button>
-                <p class="text-xs text-white/40">برای اصلاح کد ملی (مثلاً اشتباه تایپی) یک تیکت «فوری» در بخش پشتیبانی ثبت کنید تا کارشناس هویت، آن را در پنل بررسی و اصلاح کند.</p>
-              </div>
-            </form>
-          </div>
-
-        </div>
-        ` : ''}
+        ${renderContactChangeModalHTML()}
 
       </main>
 
@@ -4425,8 +4437,6 @@ function renderProductPage() {
   window.logoutUser           = logoutUser;
   window.numericMask          = numericMask;
   window.updateUserProfile    = updateUserProfile;
-  window.updateUserAccount    = updateUserAccount;
-  window.updateUserNationalId = updateUserNationalId;
   window.addAddressFromForm   = addAddressFromForm;
   window.openEditAddressModal = openEditAddressModal;
   window.saveEditedAddress    = saveEditedAddress;

@@ -530,7 +530,6 @@ function logout() {
   }
   function restoreKeepState(root, keep) {
     if (!keep) return;
-    const candScrollableY = el => el.scrollHeight - el.clientHeight >= 8;
     const apply = () => {
       try {
         const els = root.querySelectorAll(KEEP_SCROLL_SEL);
@@ -540,12 +539,19 @@ function logout() {
           if (simpleKey) el = document.getElementById(sn.key) || root.querySelector('[data-keep-scroll="' + sn.key + '"]');
           if (!el) {
             const cand = els[sn.i];
-            if (cand && sn.left > 0 && cand.scrollWidth - cand.clientWidth >= 12) el = cand; // فقط همان‌جا که واقعاً افقی اسکرول‌شدنی است
+            if (cand && sn.left > 1 && cand.scrollWidth - cand.clientWidth >= 12) el = cand; // فقط همان‌جا که واقعاً افقی اسکرول‌شدنی است
           }
-          if (el) {
-            if (sn.left) el.scrollLeft = sn.left;
-            if (sn.top && candScrollableY(el)) el.scrollTop = sn.top;
-          }
+          if (!el) return;
+          const hScrollable = el.scrollWidth - el.clientWidth >= 12;
+          if (hScrollable) el.style.scrollSnapType = 'none';     // اسنپ را لحظه‌ای خاموش کن تا پرش ریز ایجاد نشود
+          const prevBehavior = el.style.scrollBehavior;
+          el.style.scrollBehavior = 'auto';
+          if (sn.left > 1 && Math.abs(el.scrollLeft - sn.left) > 1) el.scrollLeft = sn.left;
+          if (sn.top > 1 && el.scrollHeight - el.clientHeight >= 8 && Math.abs(el.scrollTop - sn.top) > 1) el.scrollTop = sn.top;
+          requestAnimationFrame(() => {
+            el.style.scrollSnapType = '';
+            el.style.scrollBehavior = prevBehavior || '';
+          });
         });
       } catch (e) {}
       if (keep.focus && keep.focus.id) {
@@ -555,11 +561,11 @@ function logout() {
           try { if (keep.focus.start != null) nf.setSelectionRange(keep.focus.start, keep.focus.end); } catch (e) {}
         }
       }
-      if (window.scrollY !== keep.winY) {
+      if (Math.abs(window.scrollY - keep.winY) > 2) {
         try { window.scrollTo({ top: keep.winY, behavior: 'auto' }); } catch (e) {}
       }
     };
-    requestAnimationFrame(apply);
+    apply(); // هم‌فریم با رندر — بدون پرش دید
   }
 
   // ---------- Core render (batched with rAF) ----------
@@ -590,7 +596,8 @@ function logout() {
       window.syncHistoryWithState();
     }
 
-    if (state.prevPage !== state.page) {
+    if (state.prevPage !== state.page && lastHTML !== '') {
+      // رندر اول صفحه: اسکرول را دست نزن تا بازیابی طبیعی مرورگر (رفرش) حفظ شود
       try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
     }
   }

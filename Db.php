@@ -196,6 +196,15 @@ function validateTable(string $t): string {
 }
 
 // ── OTP و ابزار مشترک لاگین ───────────────────────────────────
+// نرمال‌سازی شماره ایران: 912…, 98912…, 0098912… → 0912…
+function ary_norm_ir_phone(string $v): string {
+    $p = preg_replace('/\D/', '', $v);
+    if (strlen($p) === 12 && str_starts_with($p, '98')) $p = '0' . substr($p, 2);
+    elseif (strlen($p) === 13 && str_starts_with($p, '0098')) $p = '0' . substr($p, 4);
+    elseif (strlen($p) === 10 && str_starts_with($p, '9')) $p = '0' . $p;
+    return $p;
+}
+
 function rememberPendingOtp(string $key, string $id, string $otp, string $target): void {
     $_SESSION["pending_{$key}_id"]   = $id;
     $_SESSION["pending_{$key}_otp"] = ary_otp_hash($otp);
@@ -926,7 +935,7 @@ if ($action === 'user_update') {
         }
     }
     if (array_key_exists('phone', $rawBody)) {
-        $v = preg_replace('/\D/', '', ary_clean_text((string) $rawBody['phone']));
+        $v = ary_norm_ir_phone(ary_clean_text((string) $rawBody['phone']));
         if ($v !== '') {
             if (!ary_is_ir_phone($v)) fail('شماره موبایل معتبر نیست.');
             $dup = $eng->pdo()->prepare("SELECT id FROM $q WHERE phone = ? AND id <> ? LIMIT 1");
@@ -966,6 +975,62 @@ if ($action === 'user_update') {
     $params[] = $userId;
     $eng->pdo()->prepare("UPDATE $q SET " . implode(', ', $fields) . ' WHERE id = ?')->execute($params);
     ok([], 'پروفایل به‌روز شد.');
+}
+
+// ── تغییر ایمیل/موبایل حساب کاربری — دو مرحله‌ای با OTP (اثبات دسترسی به مقصد جدید) ──
+if ($action === 'user_contact_step1') {
+    $userId = currentUserId();
+    if (!$userId) fail('ابتدا وارد حساب خود شوید.', 401);
+    ary_require_csrf('fail');
+    $eng = engine();
+    if (!ary_throttle('user-contact:' . $userId, 5, 600)) fail('به سقف دریافت کد احراز در این بازه رسیدید؛ چند دقیقه دیگر دوباره امتحان کنید.', 429);
+    $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
+
+    $newEmail = strtolower(ary_clean_text((string) ($rawBody['new_email'] ?? ''), 255));
+    $newPhone = ary_norm_ir_phone(ary_clean_text((string) ($rawBody['new_phone'] ?? '')));
+    if ($newPhone !== '' && !ary_is_ir_phone($newPhone)) fail('شماره موبایل جدید معتبر نیست (فرمت: 09xxxxxxxxx).');
+
+    $kind = ''; $value = '';
+    if ($newEmail !== '') { $kind = 'email'; $value = $newEmail; }
+    elseif ($newPhone !== '') { $kind = 'phone'; $value = $newPhone; }
+    else fail('مقدار جدید (ایمیل یا موبایل) ارسال نشده است.');
+
+    if ($kind === 'email' && !filter_var($value, FILTER_VALIDATE_EMAIL)) fail('قالب ایمیل نامعتبر است.');
+
+    $cur = $eng->pdo()->prepare("SELECT email, phone FROM $q WHERE id = ?");
+    $cur->execute([$userId]);
+    $rowc = $cur->fetch() ?: [];
+    if ((string) ($rowc[$kind] ?? '') === $value) fail('مقدار جدید با مقدار فعلی فرقی نمی‌کند.');
+
+    $dup = $eng->pdo()->prepare("SELECT id FROM $q WHERE $kind = ? AND id <> ? LIMIT 1");
+    $dup->execute([$value, $userId]);
+    if ($dup->fetch()) fail($kind === 'email' ? 'این ایمیل روی حساب دیگری ثبت شده است.' : 'این شماره موبایل روی حساب دیگری ثبت شده است.');
+
+    $otp = ary_generate_otp6();
+    rememberPendingOtp('usercontact', (string) $userId, $otp, $value);
+    $_SESSION['pending_usercontact_value'] = $kind . '|' . $value;
+    ok(otpResponse($otp, $value), 'کد احراز به ' . ($kind === 'email' ? 'ایمیل' : 'موبایل') . ' جدید ارسال شد.');
+}
+
+if ($action === 'user_contact_step2') {
+    $userId = currentUserId();
+    if (!$userId) fail('ابتدا وارد حساب خود شوید.', 401);
+    ary_require_csrf('fail');
+    $eng = engine();
+    $otp = preg_replace('/\D/', '', ary_clean_text((string) ($rawBody['otp'] ?? '')));
+    if ($otp === '') fail('کد احراز را وارد کنید.');
+    $chk = checkPendingOtp('usercontact', $otp);
+    if ($chk[0] !== true) fail($chk[1], 401);
+    if ((string) $chk[2] !== (string) $userId) { clearPending('usercontact'); fail('این درخواست برای حساب دیگری شروع شده بود.', 403); }
+    $pv = explode('|', (string) ($_SESSION['pending_usercontact_value'] ?? ''), 2);
+    $kind = (string) ($pv[0] ?? ''); $value = (string) ($pv[1] ?? '');
+    clearPending('usercontact');
+    unset($_SESSION['pending_usercontact_value']);
+    if (!in_array($kind, ['email', 'phone'], true) || $value === '') fail('درخواست نامعتبر یا منقضی شده است؛ از ابتدا شروع کنید.', 400);
+
+    $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
+    $eng->pdo()->prepare("UPDATE $q SET $kind = ? WHERE id = ?")->execute([$value, $userId]);
+    ok([$kind => $value], $kind === 'email' ? 'ایمیل حساب با موفقیت تغییر کرد.' : 'شماره موبایل حساب با موفقیت تغییر کرد.');
 }
 
 if ($action === 'user_change_password') {
@@ -1071,7 +1136,7 @@ if ($action === 'ticket_create') {
     checkRequestAuth();
     $eng = engine(); createSchema($eng);
     if (!ary_throttle('ticket:' . ary_client_ip(), 6, 600)) ary_throttle_fail('fail');
-    $phone = preg_replace('/\D/', '', ary_clean_text((string) ($rawBody['user_phone'] ?? $rawBody['phone'] ?? '')));
+    $phone = ary_norm_ir_phone(ary_clean_text((string) ($rawBody['user_phone'] ?? $rawBody['phone'] ?? '')));
     $name = ary_clean_text((string) ($rawBody['user_name'] ?? $rawBody['name'] ?? ''), 255);
     $subject = ary_clean_text($rawBody['subject'] ?? '', 500);
     $msg = ary_clean_text($rawBody['message'] ?? '', 4000);

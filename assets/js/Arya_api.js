@@ -106,6 +106,8 @@ window.AryaServer = (function () {
     reset1: (identifier) => call('user_reset_step1', { body: { identifier } }),
     reset2: (otp, password) => call('user_reset_step2', { body: { otp, password } }),
     update: (rec) => call('user_update', { body: rec }),
+    requestContactChange: (rec) => call('user_contact_step1', { body: rec }),
+    confirmContactChange: (rec) => call('user_contact_step2', { body: rec }),
     changePassword: (oldPw, newPw) => call('user_change_password', { body: { old_password: oldPw, new_password: newPw } }),
     removeAccount: () => call('user_delete', { body: {} }),
     // محتوا

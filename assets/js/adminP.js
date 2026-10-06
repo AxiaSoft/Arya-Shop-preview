@@ -1923,6 +1923,14 @@ function renderAdminSupportQuickReplies() {
 
 function renderAdminSupportSafe() {
   const allTickets = Array.isArray(state.tickets) ? state.tickets : [];
+  // خود-ترمیم: اگر لیست خالی است (اولین بازکردن یا لود قبل از لاگین) یک‌بار از سرور بگیر
+  if (!allTickets.length && window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured() && typeof window.aryAdminLiveSync === 'function') {
+    const last = window.__aryTicketsHealAt || 0;
+    if (Date.now() - last > 8000) {
+      window.__aryTicketsHealAt = Date.now();
+      Promise.resolve(window.aryAdminLiveSync()).catch(() => {});
+    }
+  }
 
   let filtered = allTickets;
   if (state.supportFilter.status) {
@@ -4354,8 +4362,9 @@ window.downloadDbJSON = downloadDbJSON;
       return changed;
     } catch (e) { return false; }
   }
-  setInterval(pull, 30000);
+  setInterval(pull, 15000);
   window.aryAdminLiveSync = pull;
+  setTimeout(pull, 2500);   // کورتاه فوری تیکت‌ها/سفارش‌ها هنگام بالا آمدن پنل
   window.aryAdminRefreshNow = function (btn) {
     if (btn) { btn.disabled = true; btn.style.opacity = '.55'; }
     Promise.resolve(pull()).then(function () {

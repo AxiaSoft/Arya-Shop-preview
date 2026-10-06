@@ -206,9 +206,14 @@
     const isAdminPage = /admin\.html/.test(location.pathname) || location.hash.includes('admin');
     const wanted = [['products'], ['categories'], ['reviews']];
     if (isAdminPage) wanted.push(['orders'], ['tickets']);
-    for (const [table] of wanted) {
+    else if (window.state && state.user && state.user.phone) {
+      // پنل کاربر: تیکت‌ها و سفارش‌ها از سرور (با فیلتر موبایل) — وگرنه تیکت‌های ارسال‌شده در دستگاه دیگر/بعد از پاک‌کردن کش دیده نمی‌شوند
+      const up = { user_phone: String(state.user.phone).replace(/\D/g, '') };
+      wanted.push(['orders', up], ['tickets', up]);
+    }
+    for (const [table, extra] of wanted) {
       try {
-        const r = await AryaServer.crud.getAll(table, isAdminPage && table === 'reviews' ? { include_all: 1 } : {});
+        const r = await AryaServer.crud.getAll(table, Object.assign({}, extra || {}, isAdminPage && table === 'reviews' ? { include_all: 1 } : {}));
         if (r && r.ok && Array.isArray(r.data)) {
           const rows = r.data.map(x => ({ ...x }));
           if (typeof getAll === 'function' && db) {

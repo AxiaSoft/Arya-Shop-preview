@@ -29,6 +29,15 @@ body {
       -webkit-backdrop-filter: blur(30px);
       border: 1px solid rgba(255, 255, 255, 0.1);
     }
+    /* پنل گفتگوی پشتیبانی: شیشه‌ای تیره و خوانا (پس‌زمینه سایت تیره است؛ شفافیت زیاد متن را گم می‌کند) */
+    #ary-chat-panel .glass-strong,
+    #ary-chat-panel.glass-strong {
+      background: rgba(13, 24, 48, 0.93);
+      backdrop-filter: blur(26px) saturate(1.4);
+      -webkit-backdrop-filter: blur(26px) saturate(1.4);
+      border-color: rgba(147, 197, 253, 0.22);
+      box-shadow: 0 24px 60px rgba(2, 6, 23, 0.65);
+    }
     .glass-dark {
       background: rgba(0, 0, 0, 0.4);
       backdrop-filter: blur(20px);
