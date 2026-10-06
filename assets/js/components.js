@@ -1,4 +1,64 @@
 // ═══════════════════════════════════════════════════════════════
+// سیستم آیکون SVG (جایگزین ایموجی) — خطی، هم‌وزن Tailwind
+// مصرف: aryIcon('cart') یا aryIcon('truck', 'w-6 h-6 text-emerald-400')
+// ═══════════════════════════════════════════════════════════════
+window.ARYA_ICONS = {
+  cart: '<path d="M2.25 3h1.386c.51 0 .955.343 1.087.835l.383 1.437M7.5 15.75V18a3 3 0 0 0 3 3h7.5m-7.5-3h13.076c.607 0 1.087-.518.966-1.115L23.25 5.25H6.375"/><circle cx="10.5" cy="19.5" r="1.5"/><circle cx="19.5" cy="19.5" r="1.5"/>',
+  search: '<circle cx="11.25" cy="11.25" r="7.5"/><path d="m20.25 20.25-4.35-4.35"/>',
+  user: '<path d="M17.98 20.873a9.03 9.03 0 0 0-11.96 0m15-4.53a6.75 6.75 0 1 0-18 0m9-12a4.5 4.5 0 1 1 0 9 4.5 4.5 0 0 1 0-9Z"/>',
+  heart: '<path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z"/>',
+  bolt: '<path d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z"/>',
+  truck: '<path d="M8.25 18.75a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Zm10.5 0a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0ZM6 18.75h4.5m1.5-12h3.75c.621 0 1.157.386 1.373.93l1.847 4.618a1.5 1.5 0 0 1-.302 1.52L17.25 17.25H15m-2.25 0h-5.25M3.75 6.75h6.75v9H3.75v-9Z"/>',
+  lock: '<path d="M16.5 10.5v-2.25a4.5 4.5 0 1 0-9 0v2.25m11.25 0h-13.5a.75.75 0 0 0-.75.75v7.5a.75.75 0 0 0 .75.75h13.5a.75.75 0 0 0 .75-.75v-7.5a.75.75 0 0 0-.75-.75Z"/>',
+  shield: '<path d="M9 12.75 11.25 15 15 9.75M22.5 11.25c0-4.97-3.75-7.5-10.5-9.75C5.25 3.75 1.5 6.28 1.5 11.25c0 8.25 7.5 10.5 10.5 12 3-1.5 10.5-3.75 10.5-12Z"/>',
+  check: '<path d="m4.5 12.75 6 6 9-13.5"/>',
+  card: '<path d="M2.25 8.25h19.5M2.25 18h19.5m-18-5.25h4.5m3 0h6m-9.75 5.25v-10.5a2.25 2.25 0 0 1 2.25-2.25h15a2.25 2.25 0 0 1 2.25 2.25v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25Z"/>',
+  chat: '<path d="M20.25 8.51A8.26 8.26 0 0 1 12 20.25a8.26 8.26 0 0 1-3.5-.79L3.75 20.25l1.25-3.23A8.25 8.25 0 1 1 20.25 8.51Z"/>',
+  star: '<path d="M11.48 3.5a.56.56 0 0 1 1.04 0l2.12 5.11 5.52.45c.5.04.7.67.32 1.01l-4.2 3.6 1.28 5.38a.56.56 0 0 1-.84.61L12 16.73l-4.72 2.93a.56.56 0 0 1-.84-.61l1.28-5.38-4.2-3.6a.56.56 0 0 1 .32-1l5.52-.46 2.12-5.11Z"/>',
+  gift: '<path d="M21 11.25v8.25a1.5 1.5 0 0 1-1.5 1.5H4.5a1.5 1.5 0 0 1-1.5-1.5v-8.25M12 20.25V3.75m0 0S9.75 6 8.625 6a2.625 2.625 0 1 1 0-5.25C10.5.75 12 3.75 12 3.75Zm0 0s2.25-3 3.375-3a2.625 2.625 0 1 1 0 5.25C13.5 6 12 3.75 12 3.75ZM3 7.5h18v3.75H3V7.5Z"/>',
+  bag: '<path d="M15.75 10.5V6a3.75 3.75 0 1 0-7.5 0v4.5m10.5-3v10.5a2.25 2.25 0 0 1-2.25 2.25H6.75A2.25 2.25 0 0 1 4.5 22.5V12"/><path d="M5.25 6.75h13.5a.75.75 0 0 1 .75.75v2.25H4.5V7.5a.75.75 0 0 1 .75-.75Z" fill="rgba(255,255,255,.08)"/>',
+  x: '<path d="M6 18 18 6M6 6l12 12"/>',
+  trash: '<path d="M14.25 5.25h5m-14 0h1.5m3 0v14.25a1.5 1.5 0 0 0 1.5 1.5h2.25a1.5 1.5 0 0 0 1.5-1.5V5.25m-7.5 0V3.75A2.25 2.25 0 0 1 9.75 1.5h1.5a2.25 2.25 0 0 1 2.25 2.25v1.5m-7.5 0h12"/>',
+  pin: '<path d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/><path d="M12 2.25c-4.14 0-7.5 3.17-7.5 7.08 0 5.22 7.5 12.42 7.5 12.42s7.5-7.2 7.5-12.42c0-3.91-3.36-7.08-7.5-7.08Z"/>',
+  phone: '<path d="M2.25 6.67c0 8.32 6.76 15.08 15.08 15.08h.82a1.13 1.13 0 0 0 1.13-1.13v-2.5a1.13 1.13 0 0 0-.97-1.12l-3.1-.52a1.13 1.13 0 0 0-1.1.46l-.66.99a9.72 9.72 0 0 1-4.63-4.63l.98-.66a1.13 1.13 0 0 0 .46-1.1l-.51-3.1a1.13 1.13 0 0 0-1.13-.97H3.38a1.13 1.13 0 0 0-1.13 1.13v2.07Z"/>',
+  mail: '<path d="M21.75 7.5v9a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25v-9m19.5 0a2.25 2.25 0 0 0-2.25-2.25h-15A2.25 2.25 0 0 0 2.25 7.5m19.5 0-9.75 6.1a.56.56 0 0 1-.64 0L1.5 7.5"/>',
+  clock: '<path d="M12 6.75v5.25l3 2.25M21.75 12a9.75 9.75 0 1 1-19.5 0 9.75 9.75 0 0 1 19.5 0Z"/>',
+  box: '<path d="m21 7.5-9-5.25L3 7.5m18 0-9 5.25m9-5.25v9l-9 5.25M3 7.5l9 5.25M3 7.5v9l9 5.25m0-9v9"/>',
+  ticket: '<path d="M16.5 6v.75m0 0v3m0-3h5.06a2.25 2.25 0 0 1 2.19 1.74c.04.17.06.34.06.51v1.5a2.25 2.25 0 0 0 0 4.5v1.5c0 .17-.02.35-.06.52A2.25 2.25 0 0 1 21.56 18.75H16.5v-3m0 3H2.44a2.25 2.25 0 0 1-2.19-1.73 2.5 2.5 0 0 1-.06-.52v-1.5a2.25 2.25 0 0 0 0-4.5V8.5c0-.17.02-.34.06-.51A2.25 2.25 0 0 1 2.44 6.75H16.5m0-.75V4.5"/>',
+  return: '<path d="M9 15 3 9m0 0 6-6M3 9h12.75A5.25 5.25 0 0 1 21 14.25V18"/>',
+  eye: '<path d="M2.25 12s3.75-7.5 9.75-7.5 9.75 7.5 9.75 7.5-3.75 7.5-9.75 7.5S2.25 12 2.25 12Z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3.99 5.29A11.94 11.94 0 0 1 12 3.75c6 0 9.75 7.5 9.75 7.5a17.46 17.46 0 0 1-2.64 3.78m-3.27 3.2A11.6 11.6 0 0 1 12 20.25c-6 0-9.75-7.5-9.75-7.5 0 0 .77-1.54 2.16-3.16M15 12a3 3 0 1 1-6 0M3.75 3.75l16.5 16.5"/>',
+  smartphone: '<path d="M10.5 1.5h3a1.5 1.5 0 0 1 1.5 1.5v18a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 21V3a1.5 1.5 0 0 1 1.5-1.5ZM10.87 19.5h2.26"/>',
+  headphones: '<path d="M4.5 15a7.5 7.5 0 1 1 15 0m-15 0v2.25a2.25 2.25 0 0 1-2.18 2.25 1.87 1.87 0 0 1-1.82-1.87v-.76A1.87 1.87 0 0 1 2.37 15a1.87 1.87 0 0 1 2.13 0Zm15 0v2.25a2.25 2.25 0 0 0 2.18 2.25 1.87 1.87 0 0 0 1.82-1.87v-.76A1.87 1.87 0 0 0 21.63 15a1.87 1.87 0 0 0-2.13 0Z"/>',
+  watch: '<path d="M12 6.75a5.25 5.25 0 1 0 0 10.5 5.25 5.25 0 0 0 0-10.5Zm0 0V3m0 15v3.75M12 10.5V12l1.5 1"/>',
+  gamepad: '<path d="M7.5 13.5h1.5m-.75-.75v1.5M16.5 13.5h.01M15 15h.01M6.37 6.75h11.26c1.6 0 2.94 1.18 3.13 2.77l.5 3.94a3.24 3.24 0 0 1-5.55 2.52l-.84-.9a1.5 1.5 0 0 0-1.13-.52H9.76a1.5 1.5 0 0 0-1.13.52l-.84.9a3.24 3.24 0 0 1-5.55-2.52l.5-3.94a3.24 3.24 0 0 1 3.13-2.77Z"/>',
+  shirt: '<path d="M15.75 3.75 18 4.9l2.7 1.35a.9.9 0 0 1 .48.72l.24 2.4c.05.5-.36.93-.86.93h-.81v8.1a1.5 1.5 0 0 1-1.5 1.5H5.75a1.5 1.5 0 0 1-1.5-1.5v-8.1h-.81c-.5 0-.9-.43-.86-.93l.24-2.4a.9.9 0 0 1 .48-.72L6 4.9l2.25-1.15a3 3 0 0 0 7.5 0Z"/>',
+  camera: '<path d="M6.83 5.5h-.25A2.25 2.25 0 0 0 4.33 7.75v9.5A2.25 2.25 0 0 0 6.58 19.5h10.84a2.25 2.25 0 0 0 2.25-2.25v-9.5a2.25 2.25 0 0 0-2.25-2.25h-.25m-12.84 0 1.4-2.1a1.5 1.5 0 0 1 1.22-.63h7.65c.48 0 .93.24 1.2.63l1.4 2.1M12 15.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>',
+  logout: '<path d="M15.75 9V6.75a2.25 2.25 0 0 0-2.25-2.25h-7.5A2.25 2.25 0 0 0 3.75 6.75v10.5A2.25 2.25 0 0 0 6 19.5h7.5a2.25 2.25 0 0 0 2.25-2.25V15m4.5-3H8.25m9.75 0-3-3m3 3-3 3"/>',
+  sparkles: '<path d="m9.81 2.9 1.28 3.31a2.25 2.25 0 0 0 1.32 1.32l3.32 1.29-3.32 1.32a2.25 2.25 0 0 0-1.32 1.32L9.81 14.85l-1.3-3.35a2.25 2.25 0 0 0-1.32-1.32l-3.35-1.32 3.35-1.29a2.25 2.25 0 0 0 1.32-1.32L9.8 2.9ZM18.75 13.5l.64 1.65c.1.25.29.44.53.54l1.66.64-1.66.66a1.13 1.13 0 0 0-.53.53l-.64 1.66-.66-1.66a1.13 1.13 0 0 0-.53-.53l-1.66-.66 1.66-.64c.24-.1.43-.29.53-.53l.66-1.66Z"/>',
+  arrowleft: '<path d="M10.5 19.5 3 12m7.5 7.5L18 12m-7.5 7.5V4.5M12 3l7.5 7.5L12 18"/>',
+  percent: '<path d="M12 3.75 3.75 12 12 20.25 20.25 12 12 3.75Zm0 5.25a2.25 2.25 0 1 0 0 4.5 2.25 2.25 0 0 0 0-4.5ZM6.75 6.75 7.5 7.5m9 9 .75.75"/>',
+  thumbup: '<path d="M7 22V10l4.2-7.4A1.9 1.9 0 0 1 14.6 4.9L13.4 10h5.4a2 2 0 0 1 2 2.5l-1.8 7.2A2.2 2.2 0 0 1 16.8 22H7z"/><path d="M7 10H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h4"/>',
+  thumbdown: '<path d="M17 2v12l-4.2 7.4A1.9 1.9 0 0 1 9.4 19.1l1.2-5.1H5.2a2 2 0 0 1-2-2.5l1.8-7.2A2.2 2.2 0 0 1 7.2 2H17z"/><path d="M17 14h4a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1h-4"/>',
+  video: '<rect x="2" y="6" width="13" height="12" rx="2.5"/><path d="m22 8.5-7 3.5 7 3.5z"/>',
+  edit: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+  alert: '<path d="M12 3 2.5 20h19L12 3z"/><path d="M12 10v4"/><path d="M12 17.4v.6"/>',
+  key: '<path d="M15.75 5.25a3 3 0 0 1 3 3m3 0a6 6 0 0 1-9.03 5.25l-6.3 6.3a1.5 1.5 0 0 1-2.12 0L2.7 18.3a1.5 1.5 0 0 1 0-2.12l6.3-6.3A6 6 0 1 1 21.75 8.25ZM18 9h.01"/>',
+};
+window.aryIcon = function (name, extra) {
+  var d = window.ARYA_ICONS[name] || ARYA_ICONS.box;
+  var cls = extra || 'w-5 h-5';
+  return '<svg class="ary-ic ' + cls + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+};
+window.ARYA_BOX_SVG = '<div class="w-full h-full flex items-center justify-center text-white/30">' + (window.ARYA_ICONS ? '<svg class="ary-ic w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + ARYA_ICONS.box + '</svg>' : '📦') + '</div>';
+// آیکون دسته‌بندی: اگر داده نام آیکون داشت SVG و اگر ایموجی/متن بود همان متن
+window.aryCatIcon = function (cat, extra) {
+  var ic = (cat && cat.icon) ? String(cat.icon) : '';
+  if (ARYA_ICONS[ic]) return aryIcon(ic, extra || 'w-6 h-6');
+  return ic ? '<span aria-hidden="true">' + ic + '</span>' : aryIcon('box', extra || 'w-6 h-6');
+};
+
+// ═══════════════════════════════════════════════════════════════
 // HEADER COMPONENT
 // File: assets/js/header component.js
 // ═══════════════════════════════════════════════════════════════
@@ -210,7 +270,7 @@
     const btn = document.getElementById('searchToggleBtn');
     if (!shell) return;
     shell.classList.toggle('open');
-    if (btn) btn.textContent = shell.classList.contains('open') ? '✕' : '🔍';
+    if (btn) btn.innerHTML = shell.classList.contains('open') ? '✕' : aryIcon('search','w-5 h-5');
   }
 
   function applySearch() {
@@ -278,18 +338,18 @@
                 aria-label="جستجو"
                 type="button"
               >
-                🔍
+                ${aryIcon('search','w-5 h-5 lg:w-6 lg:h-6')}
               </button>
 
               <!-- Cart -->
               <button onclick="navigate('cart')" class="relative p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="سبد خرید" type="button">
-                🛒
+                ${aryIcon('cart','w-5 h-5 lg:w-6 lg:h-6')}
                 ${cartCount>0?`<span class="absolute -top-1 -right-1 gpt5-badge">${cartCount>99?'99+':cartCount}</span>`:''}
               </button>
 
               <!-- Profile / Admin -->
               ${state.user?`
-                <button onclick="navigate('profile')" class="p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="پروفایل" type="button">👤</button>
+                <button onclick="navigate('profile')" class="p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="پروفایل" type="button">${aryIcon('user','w-5 h-5')}</button>
 
                 <button onclick="logout()" class="hidden lg:flex items-center gap-2 px-5 py-2.5 glass rounded-xl text-rose-400 hover:bg-rose-500/10" type="button">خروج</button>
               `:`
@@ -309,7 +369,7 @@
           <div class="gpt5-search-shell">
             <div class="gpt5-search">
               <div class="gpt5-search-inner">
-                <span class="gpt5-search-icon">🔍</span>
+                <span class="gpt5-search-icon">${aryIcon('search','w-4 h-4')}</span>
                 <input
                   id="header-search"
                   type="text"
@@ -358,9 +418,9 @@
           <div class="mt-3 border-t border-white/10"></div>
 
           <div class="flex items-center gap-2 mt-3">
-            <button onclick="toggleSearchBar(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button">🔍 جستجو</button>
+            <button onclick="toggleSearchBar(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('search','w-4 h-4')}جستجو</span></button>
             ${state.user?`
-              <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button">👤 پروفایل</button>
+              <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('user','w-4 h-4')}پروفایل</span></button>
 
             `:''}
           </div>
@@ -399,6 +459,14 @@
     return new Intl.DateTimeFormat('fa-IR-u-nu-latn', { year: 'numeric' })
       .format(new Date());
   }
+
+  // پلاک مجوز: اگر url داشت، لینک تأیید بیرونی (eNamad/Samandehi) با noopener
+  function aryBadgeHtml(b) {
+    var img = '<img src="' + b.img + '" alt="' + (b.alt || '') + '" title="' + (b.alt || '') + '" class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 object-contain rounded-lg glass p-1 transition hover:scale-110 hover:bg-white/10" loading="lazy">';
+    if (b.url) return '<a href="' + b.url + '" target="_blank" rel="noopener noreferrer" title="مشاهده و تأیید اصالت این مجوز">' + img + '</a>';
+    return img;
+  }
+  window.aryBadgeHtml = window.aryBadgeHtml || aryBadgeHtml;
 
   function renderFooter() {
     const currentYear = getShamsiYear();
@@ -465,10 +533,10 @@
             <div>
               <h4 class="font-bold text-sm mb-5">ارتباط با ما</h4>
               <ul class="space-y-3 text-white/60 text-sm">
-                <li class="flex items-center gap-2"><span aria-hidden="true">📞</span><span class="font-mono" dir="ltr">۰۲۱-۱۲۳۴۵۶۸</span></li>
-                <li class="flex items-center gap-2"><span aria-hidden="true">📧</span><span>info@premium-shop.ir</span></li>
-                <li class="flex items-center gap-2"><span aria-hidden="true">📍</span><span>تهران، ایران</span></li>
-                <li class="flex items-center gap-2"><span aria-hidden="true">⏰</span><span>شنبه تا پنج‌شنبه ۹-۱۸</span></li>
+                <li class="flex items-center gap-2">${aryIcon("phone","w-4 h-4 text-violet-300")}<span class="font-mono" dir="ltr">۰۲۱-۱۲۳۴۵۶۸</span></li>
+                <li class="flex items-center gap-2">${aryIcon("mail","w-4 h-4 text-violet-300")}<span>info@premium-shop.ir</span></li>
+                <li class="flex items-center gap-2">${aryIcon("pin","w-4 h-4 text-violet-300")}<span>تهران، ایران</span></li>
+                <li class="flex items-center gap-2">${aryIcon("clock","w-4 h-4 text-violet-300")}<span>شنبه تا پنج‌شنبه ۹-۱۸</span></li>
               </ul>
             </div>
           </div>
@@ -482,22 +550,10 @@
               ${badges.length === 0
                 ? `
                 <div class="flex flex-wrap items-center gap-3">
-                  ${trustBadges.map(b => `
-                    <img 
-                      src="${b.img}" 
-                      alt="${b.alt}" 
-                      class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 object-contain rounded-lg glass p-1"
-                    >
-                  `).join('')}
+                  ${trustBadges.map(aryBadgeHtml).join('')}
                 </div>
                 `
-                : badges.map(b => `
-                  <img 
-                    src="${b.img}" 
-                    alt="${b.alt || ''}" 
-                    class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 object-contain rounded-lg glass p-1"
-                  >
-                `).join('')}
+                : badges.map(aryBadgeHtml).join('')}
             </div>
           </div>
         </div>
@@ -573,7 +629,7 @@ function renderProductCard(product, index = 0) {
             onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-6xl lg:text-8xl\\'>📦</div>'; this.parentElement.classList.add('no-image')"
           >
         ` : `
-          <div class="text-6xl lg:text-8xl">📦</div>
+          <div class="flex items-center justify-center w-full h-full text-white/15">' + (window.ARYA_ICONS ? '<svg class="ary-ic w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">' + ARYA_ICONS.box + '</svg>' : '📦') + '</div>
         `}
         
         <!-- Badges -->
@@ -624,7 +680,7 @@ function renderProductCard(product, index = 0) {
           ${!inStock ? 'disabled' : ''}
           class="w-full btn-primary py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
         >
-          <span>🛒</span>
+          <span>${aryIcon('cart','w-6 h-6')}</span>
           <span>افزودن به سبد</span>
         </button>
       </div>

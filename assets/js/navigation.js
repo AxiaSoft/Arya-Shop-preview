@@ -77,9 +77,19 @@ function applyHashToState() {
 }
 
 // ───────── goTo مشترک بین سایت اصلی و پنل مدیریت ─────────
+function resetProductFilters() {
+  state.productFilter = { category: '', search: '', sort: 'newest', minPrice: '', maxPrice: '', brand: '', color: '', size: '' };
+  try { if (window.AppState) AppState.set({ productFilter: state.productFilter }); } catch (e) {}
+}
+window.resetProductFilters = resetProductFilters;
+
 function goTo(page, data = null) {
+  var _prev = state.page;
   state.prevPage = state.page;
   state.page = page;
+  // ترک صفحهٔ فروشگاه/محصول ⇒ پاک‌سازی فیلترها (سفر بعدی از بالای صفحه و بدون فیلتر شروع می‌شود)
+  if (_prev === 'shop' && page !== 'shop') resetProductFilters();
+  if (_prev === 'product' && page !== 'product') resetProductFilters();
   state.mobileMenuOpen = false;
 
   if (data && page === 'product') {

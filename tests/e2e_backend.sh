@@ -76,7 +76,7 @@ t "user update profile" ok "$(curl -s -b $KU -X POST "$U?action=user_update" -H 
 
 echo "— 5) Orders / reviews / tickets —"
 t "guest order w/o csrf blocked" fail "$(curl -s -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order0","user_phone":"09123456789","items":"[]","total":1,"status":"pending"}}')"
-t "guest order (with csrf)" ok "$(curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order1","user_phone":"09123456789","items":"[]","total":500000,"status":"shipped-by-hack"}}')"
+t "guest order (with csrf)" ok "$(curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order1","user_phone":"09123456789","address":"تهران، خیابان آزادی، پلاک ۱۲","items":"[]","total":500000,"status":"shipped-by-hack"}}')"
 t "guest status forced to pending" ok "$(curl -s "$U?action=getById&table=orders&id=ar_order1&user_phone=09123456789" | python3 -c "
 import json,sys; d=json.load(sys.stdin)
 print(json.dumps({'ok': d.get('data',{}).get('status')=='pending'}))")"
@@ -112,6 +112,24 @@ t "right phone can reply (guest+csrf)" ok "$(curl -s -b $G -X POST "$U?action=ti
 t "ticket visible to owner" ok "$(curl -s "$U?action=getById&table=tickets&id=$TID&user_phone=09123456789" | python3 -c "
 import json,sys; d=json.load(sys.stdin)
 print(json.dumps({'ok': bool(d.get('data'))}))")"
+
+echo "— 5b) Tracking: cancel + return per policy (customer) —"
+CANCEL() { curl -s -b $G -X POST "$U?action=order_cancel" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d "$1"; }
+RETRY()  { curl -s -b $G -X POST "$U?action=order_return" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d "$1"; }
+t "new order w/o address blocked"  fail "$(curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order9","user_phone":"09123456789","items":"[]","total":1,"status":"pending"}}')"
+t "customer cancels own processing order" ok "$(CANCEL '{"id":"ar_order1","phone":"09123456789","reason":"پشیمانی از خرید"}')"
+t "order became canceled + reason stored" ok "$(curl -s "$U?action=getById&table=orders&id=ar_order1&user_phone=09123456789" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('status')=='canceled' and bool(d.get('cancel_reason'))}))")"
+t "double cancel blocked"              fail "$(CANCEL '{"id":"ar_order1","phone":"09123456789"}')"
+t "cancel other's order blocked"       fail "$(CANCEL '{"id":"ar_ghost","phone":"09120000001"}')"
+t "admin can mark delivered"           ok "$(A 'upsert&table=orders' '{"record":{"id":"ar_order3","user_phone":"09123456789","address":"تهران، پاستور، کوچه ۵","items":"[]","total":900000,"status":"delivered"}}')"
+t "return before delivery blocked"     fail "$(RETRY '{"id":"ar_order9","phone":"09123456789","reason":"سلام، لطفا مرجوع کنید"}')"
+t "short return reason rejected"       fail "$(RETRY '{"id":"ar_order3","phone":"09123456789","reason":"خراب"}')"
+t "return ok after delivery"           ok "$(RETRY '{"id":"ar_order3","phone":"09123456789","reason":"قطعه معیوب بود و جعبه باز نشده است"}')"
+t "return_status persisted requested"  ok "$(curl -s "$U?action=getById&table=orders&id=ar_order3&user_phone=09123456789" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('return_status')=='requested'}))")"
+t "double return blocked"              fail "$(RETRY '{"id":"ar_order3","phone":"09123456789","reason":"دوباره همان دلیل برای تست تکرار"}')"
+t "admin approves return (upsert)"     ok "$(A 'upsert&table=orders' '{"record":{"id":"ar_order3","user_phone":"09123456789","address":"تهران، پاستور، کوچه ۵","items":"[]","total":900000,"status":"delivered","return_status":"approved"}}')"
+t "customer sees approved return"      ok "$(curl -s "$U?action=getById&table=orders&id=ar_order3&user_phone=09123456789" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('return_status')=='approved'}))")"
+t "status endpoint exposes window"     ok "$(curl -s "$U?action=status" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':int(d.get('return_window_days') or 0)>=7}))")"
 
 echo "— 6) Import / stats / delete / locks —"
 t "import small batch" ok "$(A 'import&table=categories' '{"records":[{"id":"cat_a","name":"Audio","ic":"🎧","active":1},{"id":"cat_b","name":"Mobile","ic":"📱","active":1}]}')"

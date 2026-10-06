@@ -105,6 +105,12 @@ function renderHomePage() {
         }
       ];
 
+  const heroSlides = (window.aryHeroSlides || []).filter(sl => sl && sl.img);
+  const slidesHtml = heroSlides.map((sl, i) =>
+    `<div class="ary-hero-slide ${i === 0 ? 'is-on' : ''}" data-idx="${i}" style="background-image:url('${sl.img}')"></div>`
+  ).join('');
+
+  setTimeout(() => { try { setupHomeHeroSlider(); } catch (e) {} }, 0);
   setTimeout(startHomeCountdownTimer, 0);
 
   return `
@@ -112,10 +118,11 @@ function renderHomePage() {
     
     <main class="overflow-x-hidden">
       
-      <!-- Hero Section -->
+      <!-- Hero Slider -->
       <section class="relative overflow-hidden">
-        <div class="bg-hero-gradient py-20 lg:py-32 rounded-b-[4rem] lg:rounded-b-[6rem] relative">
-          <div class="absolute inset-0 bg-black/20"></div>
+        <div id="home-hero" class="bg-hero-gradient ary-hero py-20 lg:py-32 rounded-b-[4rem] lg:rounded-b-[6rem] relative">
+          ${slidesHtml}
+          <div class="absolute inset-0 bg-gradient-to-b from-slate-950/65 via-slate-950/40 to-slate-950/75 z-[1]"></div>
 
           <!-- عناصر تزئینی شناور -->
           <div class="absolute -top-10 right-10 w-40 h-40 rounded-full bg-white/10 blur-3xl animate-float" style="animation-duration:6s"></div>
@@ -138,25 +145,26 @@ function renderHomePage() {
 
             <div class="flex flex-col sm:flex-row gap-4 justify-center animate-fade-up" style="animation-delay:0.2s">
               <button onclick="goTo('shop')" class="btn-primary px-10 py-5 rounded-2xl font-bold text-lg flex items-center gap-3 hover:scale-105 transition-transform">
-                <span>🛍️</span>
+                <span class="inline-flex">${aryIcon('bag','w-6 h-6')}</span>
                 <span>شروع خرید</span>
               </button>
             </div>
 
             <div class="flex flex-wrap items-center justify-center gap-3 lg:gap-6 mt-10 animate-fade-up" style="animation-delay:0.3s">
               <div class="flex items-center gap-2 text-white/80 text-xs lg:text-sm">
-                <span class="text-lg">🚚</span><span>ارسال سریع سراسری</span>
+                <span class="text-sky-300 inline-flex">${aryIcon('truck','w-5 h-5')}</span><span>ارسال سریع سراسری</span>
               </div>
               <span class="w-1 h-1 rounded-full bg-white/30 hidden sm:block"></span>
               <div class="flex items-center gap-2 text-white/80 text-xs lg:text-sm">
-                <span class="text-lg">🔒</span><span>پرداخت ۱۰۰٪ امن</span>
+                <span class="text-emerald-300 inline-flex">${aryIcon('lock','w-5 h-5')}</span><span>پرداخت ۱۰۰٪ امن</span>
               </div>
               <span class="w-1 h-1 rounded-full bg-white/30 hidden sm:block"></span>
               <div class="flex items-center gap-2 text-white/80 text-xs lg:text-sm">
-                <span class="text-lg">⭐</span><span>رضایت مشتریان</span>
+                <span class="text-amber-300 inline-flex">${aryIcon('star','w-5 h-5 fill-current')}</span><span>رضایت مشتریان</span>
               </div>
             </div>
           </div>
+          ${heroSlides.length > 1 ? `<div class="ary-hero-dots">${heroSlides.map((sl, i) => `<button type="button" aria-label="اسلاید ${i + 1}" class="${i === 0 ? 'on' : ''}" onclick="window.aryHeroGo && window.aryHeroGo(${i})"></button>`).join('')}</div>` : ''}
         </div>
       </section>
 
@@ -166,13 +174,13 @@ function renderHomePage() {
           <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
 
             ${[
-              { icon: '🚚', title: 'ارسال رایگان', desc: 'سفارش بالای ۵۰۰ هزار' },
-              { icon: '✅', title: 'ضمانت اصالت', desc: 'تضمین کیفیت کالا' },
-              { icon: '💳', title: 'پرداخت امن', desc: 'درگاه معتبر بانکی' },
-              { icon: '💬', title: 'پشتیبانی ۲۴/۷', desc: 'همیشه در کنار شما' },
+              { icon: 'truck',     tint: 'text-sky-300',   title: 'ارسال رایگان', desc: 'سفارش بالای ۵۰۰ هزار' },
+              { icon: 'shield',    tint: 'text-emerald-300', title: 'ضمانت اصالت', desc: 'تضمین کیفیت کالا' },
+              { icon: 'card',      tint: 'text-violet-300', title: 'پرداخت امن', desc: 'درگاه معتبر بانکی' },
+              { icon: 'chat',      tint: 'text-amber-300',  title: 'پشتیبانی ۲۴/۷', desc: 'همیشه در کنار شما' },
             ].map((f, i) => `
               <div class="glass rounded-2xl p-5 lg:p-7 text-center card group animate-fade" style="animation-delay:${i * 0.1}s">
-                <div class="text-4xl lg:text-5xl mb-3 inline-block transition-transform duration-300 group-hover:scale-125 group-hover:-rotate-6">${f.icon}</div>
+                <div class="mb-3 inline-flex p-3 rounded-2xl bg-white/5 ${f.tint} transition-transform duration-300 group-hover:scale-110">${aryIcon(f.icon, 'w-7 h-7 lg:w-9 lg:h-9')}</div>
                 <h3 class="font-bold text-sm lg:text-base mb-1">${f.title}</h3>
                 <p class="text-white/50 text-xs lg:text-sm">${f.desc}</p>
               </div>
@@ -196,12 +204,12 @@ function renderHomePage() {
               .map(
                 (cat, i) => `
               <button 
-                onclick="state.productFilter.category='${cat.id}'; goTo('shop')"
+                onclick="state.productFilter.category='${aryEsc(String(cat.id))}'; goTo('shop')"
                 class="glass rounded-2xl p-5 lg:p-6 text-center card animate-fade hover:shadow-lg hover:shadow-violet-500/10 transition-shadow group"
                 style="animation-delay:${i * 0.06}s"
               >
-                ${cat.icon ? `<div class="text-2xl lg:text-3xl mb-2 transition-transform group-hover:scale-110">${cat.icon}</div>` : ''}
-                <h3 class="font-semibold text-xs lg:text-sm">${cat.title}</h3>
+                <div class="mb-2 inline-flex text-violet-300 transition-transform group-hover:scale-110">${aryCatIcon(cat, 'w-6 h-6 lg:w-8 lg:h-8')}</div>
+                <h3 class="font-semibold text-xs lg:text-sm">${aryEsc(cat.title)}</h3>
               </button>
             `
               )
@@ -211,84 +219,63 @@ function renderHomePage() {
         </div>
       </section>
 
-      <!-- Flash Deals (سبک شگفت‌انگیز دیجی‌کالا، هماهنگ با دیزاین سایت) -->
+      <!-- شگفت‌انگیزها — همه‌چیز در یک پنل، گرید واکنش‌گرا با دکمهٔ افزودن سریع -->
       ${
         discountedProducts.length > 0
           ? `
       <section class="py-12 lg:py-16">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
+          <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-rose-600 via-pink-600 to-violet-700 p-5 lg:p-8 shadow-2xl shadow-rose-500/15">
+            <div class="absolute -top-12 -left-12 w-44 h-44 rounded-full bg-white/10 blur-2xl animate-pulse-slow"></div>
+            <div class="absolute -bottom-16 -right-10 w-52 h-52 rounded-full bg-amber-300/10 blur-3xl"></div>
 
-          <div class="relative overflow-hidden rounded-3xl bg-gradient-to-l from-rose-600 via-pink-600 to-violet-700 p-5 lg:p-7 mb-6 shadow-xl shadow-rose-500/10">
-            <div class="absolute -top-8 -left-8 w-32 h-32 rounded-full bg-white/10 blur-2xl animate-pulse-slow"></div>
-            <div class="relative flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center text-2xl animate-bounce" style="animation-duration:2.5s">⚡</div>
-                <div>
-                  <h2 class="text-xl lg:text-2xl font-black flex items-center gap-2">
-                    پیشنهادهای شگفت‌انگیز امروز
-                  </h2>
-                  <p class="text-white/80 text-xs lg:text-sm mt-0.5">فقط تا پایان امروز، تخفیف‌های ویژه</p>
-                </div>
-              </div>
-
+            <div class="relative flex flex-wrap items-center justify-between gap-3 mb-6">
               <div class="flex items-center gap-3">
-                <div class="flex items-center gap-1 text-white text-sm lg:text-base" id="home-deals-countdown">
-                  ${renderHomeCountdownHTML()}
+                <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center text-white shadow-lg">${aryIcon('bolt','w-6 h-6')}</div>
+                <div>
+                  <h2 class="text-lg lg:text-2xl font-black leading-tight">شگفت‌انگیزهای امروز</h2>
+                  <p class="text-white/75 text-[11px] lg:text-sm">فقط تا پایان امشب — تعداد محدود، از دست نده!</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between mb-4">
-            <button onclick="goTo('shop')" class="text-violet-400 hover:text-violet-300 text-sm font-medium flex items-center gap-1">
-              مشاهده همه <span>←</span>
-            </button>
-            <div class="hidden lg:flex items-center gap-2">
-              <button onclick="scrollDealsCarousel(1)" type="button" class="w-9 h-9 glass rounded-xl flex items-center justify-center hover:bg-white/10">→</button>
-              <button onclick="scrollDealsCarousel(-1)" type="button" class="w-9 h-9 glass rounded-xl flex items-center justify-center hover:bg-white/10">←</button>
-            </div>
-          </div>
-
-          <div id="home-deals-track" class="flex gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar">
-            ${discountedProducts
-              .map((p, i) => {
-                const discount = utils.calculateDiscount(p.original_price, p.price);
-                const soldPct = estimateSoldPercent(p);
-                const img = p.image || p.main_image || (p.images && p.images[0]) || '';
-                return `
-              <div
-                class="snap-start flex-shrink-0 w-40 sm:w-48 lg:w-52 glass rounded-2xl overflow-hidden group cursor-pointer transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-violet-500/20 animate-fade"
-                style="animation-delay:${i * 0.05}s"
-                onclick="state.selectedProduct = state.products.find(x => x.id === '${p.id}'); if (state.selectedProduct) goTo('product')"
-              >
-                <div class="relative aspect-square bg-white/5 overflow-hidden">
-                  ${img
-                    ? `<img src="${img}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy">`
-                    : `<div class="w-full h-full flex items-center justify-center text-5xl">📦</div>`
-                  }
-                  ${discount > 0 ? `
-                    <span class="absolute top-2 right-2 bg-gradient-to-r from-rose-500 to-pink-600 text-white text-[11px] font-black px-2 py-1 rounded-lg shadow-lg">
-                      ${discount}%-
-                    </span>
-                  ` : ''}
-                </div>
-                <div class="p-3">
-                  <h3 class="text-xs font-medium line-clamp-2 min-h-[2rem] mb-2">${p.title}</h3>
-                  <div class="flex items-center gap-1.5 mb-1">
-                    ${p.original_price > p.price ? `<span class="text-white/40 text-[10px] line-through">${utils.formatPrice(p.original_price)}</span>` : ''}
-                  </div>
-                  <div class="text-emerald-400 font-bold text-sm mb-2">${utils.formatPrice(p.price)}</div>
-                  <div class="h-1.5 bg-white/10 rounded-full overflow-hidden mb-1">
-                    <div class="h-full bg-gradient-to-r from-rose-500 to-orange-400 rounded-full transition-all duration-700" style="width:${soldPct}%"></div>
-                  </div>
-                  <p class="text-[10px] text-white/40">${soldPct}٪ فروخته شده</p>
-                </div>
+              <div class="flex items-center gap-3">
+                <div class="flex items-center gap-1 text-white text-xs lg:text-base" id="home-deals-countdown">${renderHomeCountdownHTML()}</div>
+                <button onclick="goTo('shop'); setTimeout(()=>utils.scrollTop(),0)" class="text-[11px] lg:text-xs font-black bg-white text-rose-600 hover:bg-rose-50 px-3.5 py-2 rounded-xl transition-colors shadow-lg">همه تخفیف‌ها</button>
               </div>
-            `;
-              })
-              .join('')}
-          </div>
+            </div>
 
+            <div class="relative grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 lg:gap-4">
+              ${discountedProducts
+                .map((p, i) => {
+                  const discount = utils.calculateDiscount(p.original_price, p.price);
+                  const soldPct = estimateSoldPercent(p);
+                  const img = p.image || p.main_image || (p.images && p.images[0]) || '';
+                  return `
+                <div
+                  class="group rounded-2xl bg-white/10 backdrop-blur p-2.5 lg:p-3 transition-all duration-300 hover:bg-white/20 hover:-translate-y-1 cursor-pointer animate-fade"
+                  style="animation-delay:${i * 0.05}s"
+                  onclick="openProductById('${aryEsc(String(p.id))}')"
+                >
+                  <div class="relative aspect-square rounded-xl overflow-hidden bg-slate-950/25 mb-2">
+                    ${img
+                      ? `<img src="${img}" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" loading="lazy">`
+                      : `<div class="w-full h-full flex items-center justify-center text-white/30">${aryIcon('box','w-10 h-10')}</div>`}
+                    ${discount > 0 ? `<span class="absolute top-1.5 right-1.5 bg-white text-rose-600 text-[10px] lg:text-xs font-black px-1.5 py-0.5 rounded-lg shadow">${discount}٪−</span>` : ''}
+                  </div>
+                  <h3 class="text-[11px] lg:text-xs font-bold line-clamp-2 leading-5 min-h-[2.4rem]">${aryEsc(p.title)}</h3>
+                  <div class="mt-1">
+                    ${p.original_price > p.price ? `<div class="text-white/45 text-[10px] line-through">${utils.formatPrice(p.original_price)}</div>` : ''}
+                    <div class="text-emerald-300 font-black text-xs lg:text-sm">${utils.formatPrice(p.price)}<span class="text-[9px] font-normal opacity-75">تومان</span></div>
+                  </div>
+                  <div class="h-1.5 bg-white/15 rounded-full overflow-hidden mt-2"><div class="h-full bg-gradient-to-r from-amber-300 to-rose-400 rounded-full" style="width:${soldPct}%"></div></div>
+                  <div class="flex items-center justify-between gap-1 mt-1.5">
+                    <p class="text-[9px] lg:text-[10px] text-white/55">${soldPct}٪ فروخته شده</p>
+                    <button type="button" class="inline-flex items-center gap-1 text-[10px] font-black bg-white text-rose-600 rounded-lg px-2 py-1.5 hover:bg-rose-50 transition-colors shadow" onclick="event.stopPropagation(); addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-3.5 h-3.5')}افزودن</button>
+                  </div>
+                </div>`;
+                })
+                .join('')}
+            </div>
+          </div>
         </div>
       </section>
       `
@@ -335,7 +322,8 @@ function renderHomePage() {
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
 
           <div class="bg-hero-gradient rounded-3xl lg:rounded-[2.5rem] p-10 lg:p-20 text-center relative overflow-hidden">
-            <div class="absolute inset-0 bg-black/10"></div>
+            <div class="ary-cta-banner" style="background-image:url('assets/img/home/cta-banner.jpg')"></div>
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/45 to-slate-950/70"></div>
             <div class="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-3xl animate-float" style="animation-duration:7s"></div>
 
             <div class="relative z-10">
@@ -344,8 +332,8 @@ function renderHomePage() {
                 از تخفیف‌های استثنایی و ارسال رایگان بهره‌مند شوید
               </p>
 
-              <button onclick="goTo('shop')" class="btn-ghost bg-white/10 hover:bg-white/20 px-10 py-5 rounded-2xl font-bold text-lg hover:scale-105 transition-transform">
-                🛍️ رفتن به فروشگاه
+              <button onclick="goTo('shop')" class="btn-ghost bg-white/10 hover:bg-white/20 px-10 py-5 rounded-2xl font-bold text-lg hover:scale-105 transition-transform inline-flex items-center gap-2 mx-auto">
+                ${aryIcon('bag','w-5 h-5')}<span>رفتن به فروشگاه</span>
               </button>
             </div>
 
@@ -364,6 +352,29 @@ function renderHomePage() {
 // ═══════════════════════════════════════════════════════════════
 // USER AUTH SYSTEM — Email/Phone + Password
 // ═══════════════════════════════════════════════════════════════
+
+// ── اسلایدر هیرو صفحهٔ اصلی: autoplay + dots + توقف روی hover ──
+window._aryHero = window._aryHero || { i: 0, timer: null, paused: false };
+function setupHomeHeroSlider() {
+  const root = document.getElementById('home-hero');
+  const H = window._aryHero;
+  const slides = root ? Array.from(root.querySelectorAll('.ary-hero-slide')) : [];
+  const dots = root && root.parentElement ? Array.from(root.parentElement.querySelectorAll('.ary-hero-dots button')) : [];
+  if (H.timer) { clearInterval(H.timer); H.timer = null; }
+  if (slides.length < 2) return;
+  H.i = 0;
+  window.aryHeroGo = function (i) {
+    H.i = ((i % slides.length) + slides.length) % slides.length;
+    slides.forEach((el, k) => el.classList.toggle('is-on', k === H.i));
+    dots.forEach((el, k) => el.classList.toggle('on', k === H.i));
+  };
+  if (root.parentElement) {
+    root.parentElement.onmouseenter = () => { H.paused = true; };
+    root.parentElement.onmouseleave = () => { H.paused = false; };
+  }
+  H.timer = setInterval(() => { if (!H.paused && window.aryHeroGo) window.aryHeroGo(H.i + 1); }, 6000);
+}
+window.setupHomeHeroSlider = setupHomeHeroSlider;
 
 (function () {
   const USERS_KEY = 'arya_users_v1';
@@ -441,7 +452,7 @@ function renderHomePage() {
     const el = document.getElementById(inputId);
     if (!el) return;
     el.type = el.type === 'password' ? 'text' : 'password';
-    btn.textContent = el.type === 'password' ? '👁' : '🙈';
+    btn.innerHTML = el.type === 'password' ? aryIcon('eye', 'w-5 h-5') : aryIcon('eyeoff', 'w-5 h-5');
   }
   window.togglePassVis = togglePassVis;
 
@@ -460,8 +471,7 @@ function renderHomePage() {
         state.authOtp = r.data.otp_demo || '';
         state.authOtpStep = true;
         startLoginOtpCountdown(120);
-        if (r.data.otp_demo) toast(`کد تایید (حالت نمایشی): ${r.data.otp_demo} — هدف ${r.data.target_masked || ''}`, 'info', 8000);
-        else toast(`کد تایید به ${r.data.target_masked || id} ارسال شد.`, 'info', 6000);
+        toast(`کد تایید به ${r.data.target_masked || id} ارسال شد.`, 'info', 6000);
         render();
       }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
       return;
@@ -509,7 +519,7 @@ function renderHomePage() {
     // شبیه‌سازی‌شده نمایش داده می‌شود. برای استفاده واقعی، این بخش باید
     // به یک سرویس ارسال پیامک/ایمیل روی سرور (PHP) متصل شود.
     const target = state.pendingLoginUser?.phone || state.pendingLoginUser?.email || '';
-    toast(`کد تایید ${state.authOtp} برای ${target} ارسال شد (نسخه آزمایشی)`, 'info', 6000);
+    toast(`کد تایید برای ${target} آماده شد`, 'info', 4000);
     render();
   }
 
@@ -547,7 +557,6 @@ function renderHomePage() {
         if (!r.ok) { state.authError = r.msg || 'ارسال مجدد ناموفق.'; render(); return; }
         state.authOtp = r.data.otp_demo || '';
         startLoginOtpCountdown(120);
-        if (r.data.otp_demo) toast(`کد جدید (نمایشی): ${r.data.otp_demo}`, 'info', 6000);
         render();
       }).catch(() => {});
       return;
@@ -577,7 +586,7 @@ function renderHomePage() {
         state.pendingForgotPass = ''; state.forgotIdentifier = ''; resendCred = null;
         if (mode === 'forgot') {
           state.authTab = 'login'; state.authError = '';
-          toast('✅ رمز عبور بازنشانی شد؛ اکنون وارد شوید.');
+          toast('رمز عبور بازنشانی شد؛ اکنون وارد شوید.');
           render(); return;
         }
         const u = r.data.user || {};
@@ -591,7 +600,7 @@ function renderHomePage() {
         };
         state.currentUser = userObj; state.user = userObj; state.isAdmin = false; state.authError = '';
         if (window.AppState) AppState.set({ loggedIn: true, currentUser: userObj, user: userObj, isAdmin: false });
-        toast('✅ با موفقیت وارد شدید');
+        toast('با موفقیت وارد شدید');
         goTo('profile');
         render();
       }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
@@ -632,7 +641,7 @@ function renderHomePage() {
       created_at: new Date().toISOString()
     });
 
-    toast('✅ با موفقیت وارد شدید');
+    toast('با موفقیت وارد شدید');
     goTo('profile');
     render();
   }
@@ -672,7 +681,7 @@ function renderHomePage() {
       AryaServer.register({ name, email, phone, password: pass }).then(r => {
         if (!r.ok) { state.authError = r.msg || 'خطا در ثبت‌نام.'; render(); return; }
         state.authError = ''; state.authTab = 'login';
-        toast('✅ ثبت‌نام انجام شد. برای ادامه وارد حساب شوید.');
+        toast('ثبت‌نام انجام شد. برای ادامه وارد حساب شوید.');
         render();
       }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
       return;
@@ -708,7 +717,7 @@ function renderHomePage() {
 
     state.authError = '';
     state.authTab = 'login';
-    toast('✅ ثبت‌نام موفق! وارد شوید.');
+    toast('ثبت‌نام موفق! وارد شوید.');
     render();
   }
 
@@ -731,7 +740,6 @@ function renderHomePage() {
         state.pendingLoginUser = { phone: r.data.target_masked || id, email: '' };
         state.authOtpStep = true; state.authError = '';
         startLoginOtpCountdown(120);
-        if (r.data.otp_demo) toast(`کد بازیابی (نمایشی): ${r.data.otp_demo}`, 'info', 8000);
         render();
       }).catch(() => { state.authError = 'ارتباط با سرور برقرار نشد.'; render(); });
       return;
@@ -748,7 +756,7 @@ function renderHomePage() {
 
     state.authError = '';
     state.authTab = 'login';
-    toast('✅ رمز عبور با موفقیت تغییر یافت.');
+    toast('رمز عبور با موفقیت تغییر یافت.');
     render();
   }
 
@@ -785,7 +793,7 @@ function renderHomePage() {
         ${typeof renderHeader === 'function' ? renderHeader() : ''}
         <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
           <div class="text-center mb-8">
-            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">🔒</div>
+            <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">${aryIcon('lock', 'w-10 h-10 text-violet-100')}</div>
             <h1 class="text-2xl font-black mb-1">${state.authOtpMode === 'forgot' ? 'بازیابی رمز عبور' : 'تایید هویت'}</h1>
             <p class="text-white/50 text-sm">کد ۶ رقمی ارسال‌شده به ${target} را وارد کنید</p>
           </div>
@@ -797,6 +805,11 @@ function renderHomePage() {
                   class="input-style w-full text-center tracking-[0.5em] text-xl font-bold" dir="ltr"
                   placeholder="------" autocomplete="one-time-code" required autofocus>
               </div>
+              ${state.authOtp ? `
+              <div class="glass rounded-xl px-4 py-3 border border-violet-500/30 bg-violet-500/10 flex items-center justify-between gap-3">
+                <p class="text-xs text-white/70">حالت نمایشی — کد شما: <b dir="ltr" class="tracking-[0.3em] text-violet-200">${aryEsc(String(state.authOtp))}</b></p>
+                <button type="button" class="text-xs font-bold text-violet-300 hover:text-white transition-colors" onclick="document.querySelector('input[name=otp]').value='${aryEsc(String(state.authOtp))}'">استفاده از کد</button>
+              </div>` : ''}
               <div class="text-center text-sm">
                 <span id="login-otp-timer">${timerHtml}</span>
               </div>
@@ -839,7 +852,8 @@ function renderHomePage() {
             </div>
             <div class="relative">
               <input name="password" id="login-pass" type="password" class="input-style w-full pl-12" placeholder="رمز عبور" autocomplete="off" readonly onfocus="this.removeAttribute('readonly')" required>
-              <button type="button" onclick="togglePassVis('login-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-lg">👁</button>
+              <button type="button" onclick="togglePassVis('login-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                <span class="inline-flex">${aryIcon('eye','w-5 h-5')}</span></button>
             </div>
           </div>
           ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
@@ -868,7 +882,8 @@ function renderHomePage() {
               <input name="password" id="reg-pass" type="password" class="input-style w-full pl-12" placeholder="حداقل ۸ کاراکتر" required minlength="8"
                 autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')"
                 oninput="onPassInput(this.value)">
-              <button type="button" onclick="togglePassVis('reg-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-lg">👁</button>
+              <button type="button" onclick="togglePassVis('reg-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                <span class="inline-flex">${aryIcon('eye','w-5 h-5')}</span></button>
             </div>
             <div class="flex gap-1 mt-2">
               ${[1,2,3,4,5].map(()=>`<div class="auth-strength-bar flex-1 h-1.5 rounded-full bg-white/10"></div>`).join('')}
@@ -880,11 +895,12 @@ function renderHomePage() {
             <div class="relative">
               <input name="password2" id="reg-pass2" type="password" class="input-style w-full pl-12" placeholder="تکرار رمز" required
                 autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
-              <button type="button" onclick="togglePassVis('reg-pass2', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-lg">👁</button>
+              <button type="button" onclick="togglePassVis('reg-pass2', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                <span class="inline-flex">${aryIcon('eye','w-5 h-5')}</span></button>
             </div>
           </div>
           <div class="glass rounded-xl p-3 text-xs text-white/40 space-y-0.5">
-            <p>🔐 رمز باید: حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد داشته باشد</p>
+            <p>${aryIcon('key', 'w-4 h-4 inline-block align-[-3px] ml-1')} رمز باید: حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد داشته باشد</p>
           </div>
           ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
           <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">ثبت‌نام</button>
@@ -893,7 +909,7 @@ function renderHomePage() {
     } else if (tab === 'forgot') {
       formContent = `
         <div class="text-center mb-6">
-          <div class="text-5xl mb-3">🔑</div>
+          <div class="text-violet-300 flex justify-center mb-3">${aryIcon('key','w-11 h-11')}</div>
           <h2 class="text-xl font-black mb-1">بازیابی رمز</h2>
           <p class="text-white/50 text-sm">ایمیل یا شماره ثبت‌شده را وارد کنید</p>
         </div>
@@ -906,7 +922,8 @@ function renderHomePage() {
             <label class="block text-sm text-white/70 mb-2">رمز عبور جدید</label>
             <div class="relative">
               <input name="newpass" id="forgot-pass" type="password" class="input-style w-full pl-12" placeholder="حداقل ۸ کاراکتر" required minlength="8" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
-              <button type="button" onclick="togglePassVis('forgot-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white text-lg">👁</button>
+              <button type="button" onclick="togglePassVis('forgot-pass', this)" class="absolute left-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white">
+                <span class="inline-flex">${aryIcon('eye','w-5 h-5')}</span></button>
             </div>
           </div>
           <div>
@@ -924,7 +941,7 @@ function renderHomePage() {
       ${typeof renderHeader === 'function' ? renderHeader() : ''}
       <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
         <div class="text-center mb-8">
-          <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">🔐</div>
+          <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-violet-500/30 animate-float">${aryIcon('key', 'w-9 h-9 text-violet-100')}</div>
           <h1 class="text-2xl font-black mb-1">${tab === 'login' ? 'ورود به حساب' : tab === 'register' ? 'ایجاد حساب' : 'بازیابی رمز'}</h1>
           <p class="text-white/50 text-sm">فروشگاه آریا</p>
         </div>
@@ -1019,7 +1036,7 @@ function renderShopProductsOnly() {
 
   return `
     <div class="glass rounded-3xl p-16 text-center">
-      <div class="text-7xl mb-6">🔍</div>
+      <div class="mb-6 flex justify-center text-white/30">${aryIcon('search', 'w-20 h-20')}</div>
       <h3 class="text-2xl font-bold mb-3">محصولی یافت نشد</h3>
       <p class="text-white/60 mb-6">فیلترهای جستجو را تغییر دهید</p>
       <button
@@ -1191,7 +1208,7 @@ function renderShopPage() {
 
           <div class="mb-6" style="padding: 0 1.5rem;">
             <div class="relative">
-              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 text-xl">🔍</span>
+              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 inline-flex">${aryIcon('search', 'w-5 h-5')}</span>
               <input 
                 type="text"
                 placeholder="جستجوی محصول..."
@@ -1751,10 +1768,10 @@ function renderReviewRepliesModal(productId) {
         
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-base sm:text-lg font-black flex items-center gap-2">
-            <span>💬</span>
+            <span class="inline-flex text-sky-300">${aryIcon('chat', 'w-5 h-5')}</span>
             <span>گفت‌وگوی مربوط به این نظر</span>
           </h2>
-          <button type="button" class="text-white/60 hover:text-white text-lg" onclick="closeReviewRepliesModal()">✖️</button>
+          <button type="button" class="text-white/60 hover:text-white text-lg" onclick="closeReviewRepliesModal()">${aryIcon('x', 'w-5 h-5')}</button>
         </div>
 
         <div class="flex-1 overflow-y-auto no-scrollbar rounded-3xl bg-black/40 p-3 sm:p-4 space-y-3">
@@ -1809,7 +1826,7 @@ function renderReviewRepliesModal(productId) {
                             : 'bg-white/5 hover:bg-white/10'
                         }"
                       >
-                        👍 <span>${c.likes || 0}</span>
+                        ${aryIcon('thumbup', 'w-4 h-4')} <span>${c.likes || 0}</span>
                       </button>
                       <button 
                         type="button"
@@ -1821,7 +1838,7 @@ function renderReviewRepliesModal(productId) {
                             : 'bg-white/5 hover:bg-white/10'
                         }"
                       >
-                        👎 <span>${c.dislikes || 0}</span>
+                        ${aryIcon('thumbdown', 'w-4 h-4')} <span>${c.dislikes || 0}</span>
                       </button>
                     </div>
                   </div>
@@ -1905,7 +1922,7 @@ function renderReviewItem(review, depth, productId, options) {
             }"
             aria-label="پسندیدن این نظر"
           >
-            👍 <span>${review.likes || 0}</span>
+            ${aryIcon('thumbup', 'w-4 h-4')} <span>${review.likes || 0}</span>
           </button>
           <button 
             type="button"
@@ -1918,7 +1935,7 @@ function renderReviewItem(review, depth, productId, options) {
             }"
             aria-label="نپسندیدن این نظر"
           >
-            👎 <span>${review.dislikes || 0}</span>
+            ${aryIcon('thumbdown', 'w-4 h-4')} <span>${review.dislikes || 0}</span>
           </button>
         </div>
 
@@ -1931,7 +1948,7 @@ function renderReviewItem(review, depth, productId, options) {
               class="px-2 py-1 rounded-lg glass text-[11px] flex items-center gap-1 hover:bg-white/10 transition-all"
               onclick="openReviewRepliesModal('${review.id}', '${productId}')"
             >
-              💬 پاسخ‌ها (${review.children.length})
+              ${aryIcon('chat', 'w-4 h-4 inline-block align-[-3px] ml-1')} پاسخ‌ها (${review.children.length})
             </button>
           `
               : ''
@@ -2141,7 +2158,7 @@ function renderProductGalleryLightbox(product, gallery) {
               onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-6xl text-white/60\\'>📦</div>';"
             >
           ` : `
-            <div class="text-6xl text-white/60">📦</div>
+            <div class="flex items-center justify-center text-white/30">${aryIcon('box', 'w-16 h-16')}</div>
           `}
 
           ${gallery.length > 1 ? `
@@ -2175,23 +2192,32 @@ function renderProductGalleryLightbox(product, gallery) {
 }
 
 // ========== افزودن به سبد خرید (اصلاح شده) ==========
-function addToCartFromProduct(product) {
-  // پیدا کردن محصول کامل از state
-  const fullProduct = state.products.find(p => p.id === product.id);
-  if (!fullProduct) {
-    toast('محصول یافت نشد', 'error');
-    return;
-  }
-  
-  // بررسی موجودی
-  if ((fullProduct.stock || 0) <= 0) {
-    toast('این محصول موجود نیست', 'warning');
-    return;
-  }
-  
-  // استفاده از addToCart اصلی
-  addToCart(fullProduct);
+function findProductById(id) {
+  id = String(id);
+  return (state.products || []).find(p => String(p.id) === id)
+      || (state.selectedProduct && String(state.selectedProduct.id) === id ? state.selectedProduct : null);
 }
+
+// افزودن به سبد از روی شناسه — امن برای onclick (بدون جاسازی JSON در HTML)
+function addToCartById(id) {
+  const product = findProductById(id);
+  if (!product) { toast('محصول یافت نشد', 'error'); return; }
+  if ((product.stock || 0) <= 0) { toast('این محصول موجود نیست', 'warning'); return; }
+  addToCart(product);
+}
+
+function openProductById(id) {
+  const product = findProductById(id);
+  if (product) { state.selectedProduct = product; goTo('product'); }
+  else toast('محصول یافت نشد', 'error');
+}
+
+// سازگاری با فراخوانی‌های قدیمی
+function addToCartFromProduct(product) { addToCartById(product && product.id); }
+
+window.addToCartById = addToCartById;
+window.openProductById = openProductById;
+window.findProductById = findProductById;
 
 // ========== بخش ویدیو محصول (بی‌رنگ) ==========
 
@@ -2360,7 +2386,7 @@ function renderVideoPlayerModal() {
                   }"
                   onclick="state.videoPlayer.index = ${i}; state.videoPlayer.currentVideo = state.videoPlayer.videos[${i}]; render()"
                 >
-                  <span class="text-xs whitespace-nowrap">🎥 ${thumbTitle}</span>
+                  <span class="text-xs whitespace-nowrap inline-flex items-center gap-1">${aryIcon('video', 'w-3.5 h-3.5')}${thumbTitle}</span>
                 </button>
               `;
             }).join('')}
@@ -2389,7 +2415,7 @@ function renderProductVideos(product) {
       <!-- هدر ویدیوها -->
       <div class="flex items-center gap-3 mb-6">
         <div class="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-xl">
-          🎥
+          ${aryIcon('video', 'w-6 h-6 text-violet-300')}
         </div>
         <div>
           <h2 class="text-2xl font-black">ویدیوهای محصول</h2>
@@ -2410,7 +2436,7 @@ function renderProductVideos(product) {
               onclick="openVideoPlayer(${index})"
             >
               <div class="relative aspect-video bg-white/5 flex items-center justify-center">
-                <div class="text-3xl text-white/20">🎥</div>
+                <div class="flex justify-center text-white/20">${aryIcon('video', 'w-10 h-10')}</div>
                 
                 <!-- آیکون پخش -->
                 <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -2546,7 +2572,7 @@ function shareArticle() {
     }).catch(() => {});
   } else {
     navigator.clipboard.writeText(window.location.href).then(() => {
-      toast('لینک محصول کپی شد 📋', 'success');
+      toast('لینک محصول کپی شد', 'success');
     }).catch(() => {
       toast('خطا در کپی لینک', 'error');
     });
@@ -2645,7 +2671,7 @@ function renderProductPage() {
                     class="w-full h-full object-contain"
                   >
                 `
-                : `<div class="text-[6rem] lg:text-[8rem]" aria-hidden="true">📦</div>`
+                : `<div class="text-white/25 flex justify-center" aria-hidden="true">${aryIcon('box','w-24 h-24 lg:w-32 lg:h-32')}</div>`
             }
           </div>
 
@@ -2665,7 +2691,7 @@ function renderProductPage() {
                   ${
                     img
                       ? `<img src="${img}" alt="${product.title}" class="w-full h-full object-cover">`
-                      : `<div class="w-full h-full flex items-center justify-center text-2xl">📦</div>`
+                      : `<div class="w-full h-full flex items-center justify-center text-white/30">${aryIcon('box','w-6 h-6')}</div>`
                   }
                 </button>
               `
@@ -2753,7 +2779,7 @@ function renderProductPage() {
                 }"
                 aria-pressed="${inWishlist ? 'true' : 'false'}"
               >
-                <span>${inWishlist ? '❤️' : '🤍'}</span>
+                <span class="inline-flex ${inWishlist ? 'text-rose-400' : 'text-white/50'}">${aryIcon('heart','w-5 h-5' + (inWishlist ? ' fill-current' : ''))}</span>
                 <span>${inWishlist ? 'در لیست' : 'افزودن'}</span>
               </button>
             </div>
@@ -2763,12 +2789,7 @@ function renderProductPage() {
               id="main-add-to-cart"
               type="button"
               class="btn-primary w-full mt-2 py-3 rounded-2xl text-sm font-bold disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
-              onclick="addToCartFromProduct(${JSON.stringify({
-                id: product.id,
-                title: product.title,
-                price: product.price,
-                image: product.image || product.main_image || ''
-              })})"
+              onclick="addToCartById('${aryEsc(String(product.id))}')"
               ${inStock ? '' : 'disabled'}
             >
               ${inStock ? 'افزودن به سبد خرید' : 'ناموجود'}
@@ -2828,7 +2849,7 @@ function renderProductPage() {
                   
                   return `
                     <div class="flex items-center gap-2 text-sm">
-                      <span class="w-8 text-amber-400">${star} ★</span>
+                      <span class="w-8 text-amber-400 inline-flex items-center gap-1">${star}${aryIcon('star', 'w-4 h-4')}</span>
                       <div class="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
                         <div class="h-full bg-amber-400 rounded-full transition-all duration-500" style="width: ${percentage}%"></div>
                       </div>
@@ -2871,7 +2892,7 @@ function renderProductPage() {
                       : 'glass hover:bg-white/10'
                   }"
                 >
-                  <span>${star} ★</span>
+                  <span class="inline-flex items-center gap-1 text-amber-400">${star}${aryIcon('star', 'w-4 h-4')}</span>
                   <span class="text-[10px] opacity-70">(${count})</span>
                 </button>
               `;
@@ -2898,7 +2919,7 @@ function renderProductPage() {
             ` : ''}
           ` : `
             <div class="glass rounded-3xl p-12 text-center">
-              <div class="text-6xl mb-4 animate-float">💬</div>
+              <div class="mb-4 animate-float flex justify-center text-white/30">${aryIcon('chat', 'w-16 h-16')}</div>
               <h3 class="text-xl font-bold mb-2">هنوز نظری ثبت نشده است</h3>
               <p class="text-white/60 mb-6">شما می‌توانید اولین نفری باشید که نظر می‌دهید</p>
             </div>
@@ -2907,7 +2928,7 @@ function renderProductPage() {
 
         <div id="review-form-container" class="glass rounded-2xl p-6 md:p-8">
           <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-            <span>✍️</span>
+            <span class="inline-flex">${aryIcon('edit', 'w-5 h-5')}</span>
             <span>ثبت نظر شما</span>
           </h3>
 
@@ -2927,7 +2948,7 @@ function renderProductPage() {
                         currentDraftRating >= v ? 'text-amber-400' : 'text-white/30'
                       }"
                     >
-                      ★
+                      ${aryIcon('star', 'w-5 h-5 fill-amber-400/60 text-amber-400')}
                     </button>
                   `).join('')}
                   <input type="hidden" name="rating" value="${currentDraftRating}">
@@ -2986,7 +3007,7 @@ function renderProductPage() {
       <section class="mb-10">
         <div class="flex items-center justify-between mb-4">
           <h2 class="text-lg md:text-xl font-black flex items-center gap-2">
-            <span>🛍️</span>
+            <span class="inline-flex">${aryIcon('bag', 'w-5 h-5')}</span>
             <span>محصولات مرتبط</span>
           </h2>
         </div>
@@ -2996,14 +3017,14 @@ function renderProductPage() {
               p => `
             <button
               type="button"
-              onclick="state.selectedProduct = ${JSON.stringify(p)}; goTo('product')"
+              onclick="openProductById('${aryEsc(String(p.id))}')"
               class="glass rounded-2xl p-3 flex flex-col items-stretch text-right hover:bg-white/5 transition-colors"
             >
               <div class="w-full aspect-[4/3] rounded-xl overflow-hidden bg-black/30 mb-3 flex items-center justify-center">
                 ${
                   p.image || p.main_image
                     ? `<img src="${p.image || p.main_image}" alt="${p.title}" class="w-full h-full object-contain">`
-                    : `<div class="text-4xl">📦</div>`
+                    : `<div class="flex justify-center text-white/30">${aryIcon('box', 'w-10 h-10')}</div>`
                 }
               </div>
               <div class="text-xs text-white/70 line-clamp-2 mb-1">${p.title}</div>
@@ -3036,12 +3057,7 @@ function renderProductPage() {
           <button
             type="button"
             class="btn-primary flex-1 py-2.5 rounded-2xl text-sm font-bold disabled:opacity-60 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
-            onclick="addToCartFromProduct(${JSON.stringify({
-              id: product.id,
-              title: product.title,
-              price: product.price,
-              image: product.image || product.main_image || ''
-            })})"
+            onclick="addToCartById('${aryEsc(String(product.id))}')"
             ${inStock ? '' : 'disabled'}
           >
             ${inStock ? 'افزودن به سبد خرید' : 'ناموجود'}
@@ -3140,7 +3156,7 @@ function renderProductPage() {
       type: 'logout',
       title: 'خروج از حساب کاربری',
       message: 'آیا مطمئن هستید که می‌خواهید از حساب خود خارج شوید؟',
-      icon: '🚪',
+      icon: aryIcon('logout', 'w-14 h-14 text-rose-300'),
       confirmText: 'خروج',
       confirmClass: 'btn-danger',
       onConfirm: () => {
@@ -3216,7 +3232,7 @@ function renderProductPage() {
     if (window.AryaDB) AryaDB.upsert('users', { id: state.user.id, name, phone });
     if (window.persistUserToServer) persistUserToServer({ id: state.user.id, name, phone });
 
-    toast('✅ پروفایل بروزرسانی شد');
+    toast('پروفایل بروزرسانی شد');
     render();
   }
 
@@ -3243,7 +3259,7 @@ function renderProductPage() {
     if (window.AppState) AppState.set({ user: state.user, currentUser: state.currentUser });
     if (window.persistUserToServer) persistUserToServer({ id: state.user.id, national_id: nationalId });
 
-    toast('✅ کد ملی ذخیره شد');
+    toast('کد ملی ذخیره شد');
     render();
   }
 
@@ -3252,7 +3268,7 @@ function renderProductPage() {
     state.confirmModal = {
       type: 'deleteAccount',
       title: 'حذف دائمی حساب کاربری',
-      icon: '🗑️',
+      icon: aryIcon('trash', 'w-14 h-14 text-rose-300'),
       message: `
         <div class="text-right space-y-3">
           <p class="text-white/70 text-sm leading-relaxed">
@@ -3347,7 +3363,7 @@ function renderProductPage() {
 
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
 
-    toast('✅ آدرس جدید ذخیره شد');
+    toast('آدرس جدید ذخیره شد');
     render();
   }
 
@@ -3361,7 +3377,7 @@ function renderProductPage() {
     state.confirmModal = {
       type: 'editAddress',
       title: 'ویرایش آدرس',
-      icon: '📍',
+      icon: aryIcon('pin', 'w-14 h-14 text-sky-300'),
       message: `
         <form id="edit-address-form" class="space-y-4">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -3421,7 +3437,7 @@ function renderProductPage() {
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
 
     state.confirmModal = null;
-    toast('✅ آدرس ویرایش شد');
+    toast('آدرس ویرایش شد');
     render();
   }
 
@@ -3527,7 +3543,7 @@ function renderProductPage() {
 
     persistTickets();
 
-    toast('✅ تیکت ثبت شد');
+    toast('تیکت ثبت شد');
     state.userTicketModal = { open: false, subject: '', message: '', priority: 'normal' };
     render();
   }
@@ -3555,19 +3571,93 @@ function renderProductPage() {
 
     persistTickets();
 
-    toast('✅ پاسخ شما ارسال شد');
+    toast('پاسخ شما ارسال شد');
     render();
   }
 
   // ───────── Orders status helper ─────────
   function getStatusInfo(status) {
-    const s = String(status || '').toLowerCase();
-    if (s === 'processing') return { badge: 'badge-processing', icon: '⏳', label: 'در حال پردازش' };
-    if (s === 'shipped')    return { badge: 'badge-shipped',    icon: '🚚', label: 'ارسال شد' };
-    if (s === 'delivered')  return { badge: 'badge-delivered',  icon: '✅', label: 'تحویل شده' };
-    if (s === 'canceled')   return { badge: 'badge-canceled',   icon: '✖️', label: 'لغو شده' };
-    return { badge: 'badge-new', icon: '📦', label: 'ثبت شده' };
+    const t = String(status || '').toLowerCase();
+    if (t === 'processing') return { badge: 'badge-processing', icon: aryIcon('clock', 'w-3.5 h-3.5'), label: 'در حال پردازش' };
+    if (t === 'shipped')    return { badge: 'badge-shipped',    icon: aryIcon('truck', 'w-3.5 h-3.5'), label: 'ارسال شد' };
+    if (t === 'delivered')  return { badge: 'badge-delivered',  icon: aryIcon('check', 'w-3.5 h-3.5'), label: 'تحویل شده' };
+    if (t === 'canceled')   return { badge: 'badge-canceled',   icon: aryIcon('x', 'w-3.5 h-3.5'), label: 'لغو شده' };
+    return { badge: 'badge-new', icon: aryIcon('box', 'w-3.5 h-3.5'), label: 'ثبت شده' };
   }
+
+  // ───────── پیگیری سفارش: لغو و درخواست مرجوعی (طبق قوانین) ─────────
+  function getOrderPhone() { return String((state.user && state.user.phone) || (state.currentUser && state.currentUser.phone) || ''); }
+  function findTrackedOrder(id) { id = String(id); return (state.orders || []).find(o => String(o.id) === id); }
+  function returnWindowDays() {
+    try {
+      const st = window.AryaServer && AryaServer.getStatus ? AryaServer.getStatus() : null;
+      if (st && st.return_window_days) return Number(st.return_window_days);
+    } catch (e) {}
+    return 7;
+  }
+  function inReturnWindow(order) {
+    const raw = String(order.created_at || '').replace(' ', 'T');
+    const t = Date.parse(raw);
+    if (!t) return false;
+    return (Date.now() - t) <= returnWindowDays() * 86400000;
+  }
+  async function afterOrderAction() {
+    try { if (window.AryaDB && AryaDB.loadToState) await AryaDB.loadToState(); } catch (e) {}
+    if (typeof render === 'function') render();
+  }
+
+  window.requestOrderCancel = function (id) {
+    const order = findTrackedOrder(id);
+    if (!order) { toast('سفارش یافت نشد', 'error'); return; }
+    state.confirmModal = {
+      type: 'warning',
+      title: 'لغو سفارش',
+      message: 'آیا از لغو سفارش #' + String(order.id || '').slice(-8) + ' مطمئن هستید؟ اگر پرداخت آنلاین انجام شده، مبلغ تا ۷۲ ساعت کاری عودت می‌شود.',
+      confirmText: 'بله، لغو شود',
+      confirmClass: 'btn-danger bg-rose-600 hover:bg-rose-700 text-white',
+      onConfirm: async () => {
+        state.confirmModal = null;
+        try {
+          if (window.AryaServer && AryaServer.isConfigured()) {
+            const r = await AryaServer.call('order_cancel', { body: { id: String(order.id), phone: getOrderPhone(), reason: 'لغو از پنل کاربر — انصراف' } });
+            if (!r || !r.ok) { toast((r && r.msg) || 'لغو سفارش ناموفق بود', 'error'); render(); return; }
+          } else {
+            order.status = 'canceled';
+            order.cancel_reason = 'لغو از پنل کاربر';
+            try { if (window.AryaDB && AryaDB.upsert) await AryaDB.upsert('orders', order); } catch (e) {}
+          }
+          toast('سفارش لغو شد؛ عودت وجه در صف پردازش است');
+        } finally { await afterOrderAction(); }
+      }
+    };
+    render();
+  };
+
+  window.toggleOrderReturnForm = function (id) {
+    state.returnFormFor = (state.returnFormFor === String(id)) ? null : String(id);
+    render();
+  };
+
+  window.submitOrderReturn = async function (id) {
+    const el = document.getElementById('ret-reason-' + id);
+    const reason = ((el && el.value) || '').trim();
+    if (reason.length < 10) { toast('دلیل مرجوعی را کامل بنویسید (حداقل ۱۰ کاراکتر)', 'warning'); return; }
+    if (window.AryaServer && AryaServer.isConfigured()) {
+      const r = await AryaServer.call('order_return', { body: { id: String(id), phone: getOrderPhone(), reason } });
+      if (!r || !r.ok) { toast((r && r.msg) || 'ثبت درخواست مرجوعی ناموفق بود', 'error'); return; }
+      toast('درخواست مرجوعی ثبت شد؛ پاسخ کارشناس تا ۴۸ ساعت');
+    } else {
+      const order = findTrackedOrder(id);
+      if (!order) { toast('سفارش یافت نشد', 'error'); return; }
+      order.return_status = 'requested';
+      order.return_reason = reason;
+      order.return_at = new Date().toISOString().slice(0, 19).replace('T', ' ');
+      try { if (window.AryaDB && AryaDB.upsert) await AryaDB.upsert('orders', order); } catch (e) {}
+      toast('درخواست مرجوعی (محلی) ثبت شد');
+    }
+    state.returnFormFor = null;
+    await afterOrderAction();
+  };
 
   // ───────── User ticket modal ─────────
   function openUserTicketModal() {
@@ -3588,7 +3678,7 @@ function renderProductPage() {
       <div class="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay">
         <div class="glass-strong rounded-3xl p-6 lg:p-8 max-w-lg w-full max-h-[90%] overflow-y-auto animate-scale">
           <h2 class="text-xl font-black mb-4 flex items-center gap-2">
-            <span>🎫</span><span>ارسال تیکت پشتیبانی</span>
+            <span class="inline-flex">${aryIcon('ticket', 'w-5 h-5')}</span><span>ارسال تیکت پشتیبانی</span>
           </h2>
           <p class="text-xs text-white/60 mb-4">
             لطفاً موضوع و توضیحات مشکل را وارد کنید. در صورت فوری بودن، گزینه «فوری» را فعال کنید تا تیکت شما در اولویت پاسخ‌گویی قرار بگیرد.
@@ -3678,7 +3768,7 @@ function renderProductPage() {
           <div class="absolute inset-0 bg-gradient-to-br from-violet-500/8 to-purple-500/4 pointer-events-none"></div>
           <div class="relative flex flex-col sm:flex-row items-center sm:items-start gap-5">
             <div class="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-4xl shadow-lg shadow-violet-500/25 flex-shrink-0">
-              👤
+              ${aryIcon('user', 'w-10 h-10 text-violet-200')}
             </div>
             <div class="flex-1 min-w-0 text-center sm:text-right w-full">
               <h1 class="text-xl sm:text-2xl font-black mb-1 truncate">${user.name || 'کاربر'}</h1>
@@ -3692,7 +3782,7 @@ function renderProductPage() {
               </div>
             </div>
             <button type="button" class="btn-ghost text-rose-400 px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 flex-shrink-0 w-full sm:w-auto justify-center" onclick="logoutUser()">
-              🚪 خروج
+              ${aryIcon('logout', 'w-4 h-4 inline-block align-[-3px] ml-1')} خروج
             </button>
           </div>
         </div>
@@ -3700,18 +3790,18 @@ function renderProductPage() {
         <!-- Tab Navigation -->
         <div class="flex gap-2 overflow-x-auto pb-2 mb-6" style="-ms-overflow-style:none;scrollbar-width:none;">
           ${[
-            {id:'profile', label:'پروفایل', icon:'👤'},
-            {id:'orders', label:'سفارشات', icon:'📦'},
-            {id:'addresses', label:'آدرس‌ها', icon:'📍'},
-            {id:'wishlist', label:'علاقه‌مندی‌ها', icon:'❤️'},
-            {id:'tickets', label:'پشتیبانی', icon:'💬'},
-            {id:'settings', label:'تنظیمات', icon:'⚙️'},
+            {id:'profile', label:'پروفایل', icon:'user'},
+            {id:'orders', label:'سفارشات', icon:'box'},
+            {id:'addresses', label:'آدرس‌ها', icon:'pin'},
+            {id:'wishlist', label:'علاقه‌مندی‌ها', icon:'heart'},
+            {id:'tickets', label:'پشتیبانی', icon:'chat'},
+            {id:'settings', label:'تنظیمات', icon:'lock'},
           ].map(tab => `
             <button type="button"
               onclick="state.profileTab='${tab.id}'; render()"
               class="flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap
                 ${state.profileTab===tab.id ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30' : 'glass text-white/60 hover:bg-white/10'}">
-              <span>${tab.icon}</span><span>${tab.label}</span>
+              <span class="inline-flex ${state.profileTab === tab.id ? '' : 'opacity-70'}">${aryCatIcon({ icon: tab.icon }, 'w-4 h-4')}</span><span>${tab.label}</span>
             </button>
           `).join('')}
         </div>
@@ -3721,7 +3811,7 @@ function renderProductPage() {
 
         <!-- Profile editor -->
         <div class="glass rounded-2xl p-4 sm:p-6 mb-8">
-          <h2 class="text-lg sm:text-xl font-bold mb-6 flex items-center gap-2"><span>👤</span><span>ویرایش پروفایل کاربری</span></h2>
+          <h2 class="text-lg sm:text-xl font-bold mb-6 flex items-center gap-2"><span class="inline-flex text-violet-300">${aryIcon('user', 'w-5 h-5')}</span><span>ویرایش پروفایل کاربری</span></h2>
           <form onsubmit="event.preventDefault(); updateUserProfile();" class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             <div>
               <label class="block text-sm text-white/70 mb-1">نام و نام خانوادگی *</label>
@@ -3748,7 +3838,7 @@ function renderProductPage() {
         <!-- Address manager -->
         <div class="glass rounded-2xl p-6 mb-8">
           <div class="flex items-center justify-between mb-4">
-            <h3 class="font-bold flex items-center gap-2"><span>📍</span><span>مدیریت آدرس‌ها</span></h3>
+            <h3 class="font-bold flex items-center gap-2"><span class="inline-flex text-sky-300">${aryIcon('pin', 'w-5 h-5')}</span><span>مدیریت آدرس‌ها</span></h3>
             <span class="text-xs text-white/50">حداکثر ۱۰ آدرس قابل ذخیره است</span>
           </div>
 
@@ -3794,7 +3884,7 @@ function renderProductPage() {
                   <div class="glass rounded-2xl p-4">
                     <div class="flex flex-col md:flex-row md:items-center gap-3 justify-between">
                       <div class="flex items-center gap-2">
-                        <span class="text-xl">🏷️</span>
+                        <span class="inline-flex">${aryIcon('percent', 'w-5 h-5')}</span>
                         <span class="font-bold line-clamp-1">${addr.title || autoTitle(i)}</span>
                         <span class="text-white/40 text-xs md:ml-2">کد پستی: ${addr.postal || '—'}</span>
                       </div>
@@ -3817,7 +3907,19 @@ function renderProductPage() {
         ${state.profileTab === 'orders' ? `
         <!-- Orders -->
         <div class="glass rounded-2xl p-6 mb-8">
-          <h2 class="font-bold text-lg mb-4">سفارش‌های شما و وضعیت آن‌ها</h2>
+          <div class="flex items-center justify-between gap-3 mb-4 flex-wrap">
+            <h2 class="font-bold text-lg">سفارش‌های شما و وضعیت آن‌ها</h2>
+          </div>
+          <details class="mb-5 rounded-xl border border-white/10 bg-white/5">
+            <summary class="cursor-pointer text-sm text-white/70 px-4 py-3 flex items-center gap-2 select-none list-none">${aryIcon('return','w-4 h-4 text-sky-300')}<span>قوانین و شرایط مرجوعی</span></summary>
+            <ul class="px-5 pb-4 text-xs text-white/50 space-y-1.5 leading-6 list-disc">
+              <li>تا <b class="text-white/70">${returnWindowDays()} روز</b> پس از ثبت سفارش، بدون ذکر دلیل (محاسبه از تاریخ ثبت)</li>
+              <li>کالا باید <b class="text-white/70">نو، پلمب و با بسته‌بندی و ملحق‌های کامل</b> باشد</li>
+              <li>کالاهای دیجیتال باز/فعال‌شده، لباس استفاده‌شده و کالاهای مصرفی مشمول مرجوعی نیستند</li>
+              <li>پس از تایید کارشناس، عودت وجه حداکثر تا <b class="text-white/70">۷۲ ساعت کاری</b> انجام می‌شود</li>
+              <li>هزینه ارسال مجدد مرجوعی بر عهده فروشگاه است، مگر در مورد کالای معیوب یا اشتباه ارسالی</li>
+            </ul>
+          </details>
           ${
             userOrders.length === 0
               ? `<div class="text-sm text-white/60">سفارشی ثبت نشده است.</div>`
@@ -3826,28 +3928,45 @@ function renderProductPage() {
                   ${userOrders
                     .map(order => {
                       const s = getStatusInfo(order.status);
+                      const st = String(order.status || '').toLowerCase();
+                      const rs = String(order.return_status || '').toLowerCase();
+                      const canCancel = st === 'pending' || st === 'processing';
+                      const rsBusy = rs === 'requested' || rs === 'approved';
+                      const canReturn = st === 'delivered' && !rsBusy && inReturnWindow(order);
+                      const windowExpired = st === 'delivered' && !rsBusy && !canReturn;
+                      const addrTxt = typeof order.address === 'string' ? order.address : '';
+                      const retLabels = { requested: 'مرجوعی: در حال بررسی', approved: 'مرجوعی: تایید شد — بسته را به آدرس انبار ارسال کنید', rejected: 'مرجوعی: رد شد', completed: 'مرجوع و عودت وجه شد' };
                       return `
-                      <div class="glass rounded-xl p-4">
-                        <div class="flex items-center justify-between mb-2">
-                          <div class="font-mono text-xs">#${String(order.id || '').slice(-8)}</div>
-                          <span class="badge ${s.badge}">${s.icon} ${s.label}</span>
+                      <div class="glass rounded-xl p-4 space-y-2.5">
+                        <div class="flex items-center justify-between gap-2 flex-wrap">
+                          <div class="font-mono text-xs text-white/70">#${aryEsc(String(order.id || '').slice(-8))}</div>
+                          <div class="flex items-center gap-2 flex-wrap">
+                            <span class="badge ${s.badge} inline-flex items-center gap-1">${s.icon} ${s.label}</span>
+                            ${rs ? `<span class="badge ${rs === 'approved' || rs === 'completed' ? 'badge-delivered' : (rs === 'rejected' ? 'badge-canceled' : 'badge-processing')} inline-flex items-center gap-1">${aryIcon('return', 'w-3.5 h-3.5')}${retLabels[rs] || ('مرجوعی: ' + rs)}</span>` : ''}
+                          </div>
                         </div>
-                        <div class="flex items-center justify-between">
-                          <span class="text-white/60 text-sm">
-                            ${
-                              window.utils && utils.formatDate
-                                ? utils.formatDate(order.created_at)
-                                : order.created_at || ''
-                            }
-                          </span>
-                          <span class="text-emerald-400 font-bold">
-                            ${
-                              window.utils && utils.formatPrice
-                                ? utils.formatPrice(order.total)
-                                : order.total || ''
-                            }
-                          </span>
+                        <div class="flex items-center justify-between gap-3 text-sm">
+                          <span class="text-white/60">${window.utils && utils.formatDate ? utils.formatDate(order.created_at) : (order.created_at || '')}</span>
+                          <span class="text-emerald-400 font-bold">${window.utils && utils.formatPrice ? utils.formatPrice(order.total) : (order.total || '')}</span>
                         </div>
+                        ${addrTxt ? `<p class="text-[11px] text-white/40 leading-5 flex items-start gap-1.5"><span class="mt-0.5 inline-flex text-violet-300/70">${aryIcon('pin', 'w-3.5 h-3.5')}</span><span class="min-w-0 break-words">${aryEsc(addrTxt)}</span></p>` : ''}
+                        ${st === 'canceled' && order.cancel_reason ? `<p class="text-[11px] text-rose-300/80">دلیل لغو: ${aryEsc(String(order.cancel_reason))}</p>` : ''}
+                        ${rs && order.return_reason ? `<p class="text-[11px] text-white/50">دلیل مرجوعی: ${aryEsc(String(order.return_reason))}</p>` : ''}
+                        ${(canCancel || canReturn || windowExpired) ? `
+                        <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+                          ${canCancel ? `<button type="button" onclick="requestOrderCancel('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 transition-colors inline-flex items-center gap-1.5">${aryIcon('x', 'w-3.5 h-3.5')}لغو سفارش</button>` : ''}
+                          ${canReturn ? `<button type="button" onclick="toggleOrderReturnForm('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 transition-colors inline-flex items-center gap-1.5">${aryIcon('return', 'w-3.5 h-3.5')}درخواست مرجوعی</button>` : ''}
+                          ${windowExpired ? `<span class="text-[10px] text-white/35">مهلت ${returnWindowDays()} روزه‌ی مرجوعی این سفارش به پایان رسیده است</span>` : ''}
+                        </div>` : ''}
+                        ${state.returnFormFor === String(order.id) ? `
+                        <div class="rounded-xl border border-sky-500/25 bg-sky-500/5 p-3">
+                          <label class="block text-[11px] text-white/60 mb-1.5">دلیل مرجوعی را بنویسید — کالا باید نو و با بسته‌بندی سالم باشد (مهلت: ${returnWindowDays()} روز پس از ثبت)</label>
+                          <textarea id="ret-reason-${aryEsc(String(order.id))}" rows="2" class="input-style w-full text-sm" placeholder="مثلاً: قطعه خراب رسیده / مدل اشتباه ارسال شده"></textarea>
+                          <div class="flex gap-2 mt-2">
+                            <button type="button" onclick="submitOrderReturn('${aryEsc(String(order.id))}')" class="btn-primary text-xs px-4 py-1.5 rounded-lg">ثبت درخواست</button>
+                            <button type="button" onclick="toggleOrderReturnForm('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg text-white/50 hover:text-white transition-colors">انصراف</button>
+                          </div>
+                        </div>` : ''}
                       </div>
                     `;
                     })
@@ -3863,7 +3982,7 @@ function renderProductPage() {
         ${state.profileTab === 'wishlist' ? `
         <!-- Wishlist -->
         <div class="glass rounded-2xl p-6 mb-8">
-          <h2 class="font-bold text-lg mb-4">لیست علاقه‌مندی‌ها ❤️</h2>
+          <h2 class="font-bold text-lg mb-4 flex items-center gap-2"><span class="text-rose-400 inline-flex">${aryIcon('heart','w-5 h-5 fill-current')}</span>لیست علاقه‌مندی‌ها</h2>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             ${
               wishlist.length === 0
@@ -3879,7 +3998,7 @@ function renderProductPage() {
                     <button type="button" onclick="state.selectedProduct=state.products.find(p=>p.id==='${productId}'); if(state.selectedProduct)goTo('product')" class="flex-shrink-0">
                       ${wImg
                         ? `<img src="${wImg}" class="w-16 h-16 rounded-xl object-cover hover:opacity-80 transition-opacity">`
-                        : `<div class="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center text-2xl">📦</div>`
+                        : `<div class="w-16 h-16 rounded-xl bg-white/10 flex items-center justify-center text-white/40">${aryIcon('box', 'w-8 h-8')}</div>`
                       }
                     </button>
                     <div class="flex-1 min-w-0">
@@ -3904,7 +4023,7 @@ function renderProductPage() {
         <div class="glass rounded-2xl p-6">
           <div class="flex items-center justify-between mb-4">
             <h2 class="font-bold text-lg flex items-center gap-2">
-              <span>🎫</span><span>تیکت‌های پشتیبانی</span>
+              <span class="text-violet-300 inline-flex">${aryIcon('ticket','w-5 h-5')}</span><span>تیکت‌های پشتیبانی</span>
             </h2>
             <button 
               class="btn-primary px-4 py-2 rounded-xl text-sm"
@@ -4021,7 +4140,7 @@ function renderProductPage() {
 
           <!-- اطلاعات حساب -->
           <div class="glass rounded-2xl p-4 sm:p-6">
-            <h2 class="text-lg font-bold mb-5 flex items-center gap-2"><span>👤</span><span>مشخصات حساب</span></h2>
+            <h2 class="text-lg font-bold mb-5 flex items-center gap-2"><span class="inline-flex text-violet-300">${aryIcon('user', 'w-5 h-5')}</span><span>مشخصات حساب</span></h2>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm mb-6">
               <div class="glass rounded-xl p-3">
                 <div class="text-white/40 text-xs mb-1">نام</div>
@@ -4053,7 +4172,7 @@ function renderProductPage() {
 
           <!-- منطقه خطر -->
           <div class="rounded-2xl p-4 sm:p-6 border border-rose-500/20 bg-rose-500/5">
-            <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-rose-300"><span>⚠️</span><span>منطقه خطر</span></h2>
+            <h2 class="text-lg font-bold mb-2 flex items-center gap-2 text-rose-300"><span class="inline-flex">${aryIcon('alert', 'w-5 h-5')}</span><span>منطقه خطر</span></h2>
             <p class="text-white/50 text-sm mb-4 leading-relaxed">
               حذف حساب کاربری، تمام اطلاعات پروفایل، آدرس‌ها و علاقه‌مندی‌های شما را برای همیشه پاک می‌کند.
               این عملیات غیرقابل بازگشت است. سوابق سفارش‌ها و تیکت‌های پشتیبانی شما (بدون اطلاعات هویتی) برای الزامات مالی نگه‌داری می‌شود.
@@ -4121,7 +4240,7 @@ function renderProductPage() {
             <!-- Customer info -->
             <div class="glass rounded-2xl p-6">
               <h2 class="font-bold text-lg mb-5 flex items-center gap-2">
-                <span>👤</span> اطلاعات خریدار
+                <span class="inline-flex text-violet-300">${aryIcon('user', 'w-5 h-5')}</span> اطلاعات خریدار
               </h2>
               <div class="grid gap-4 grid-cols-1 lg:grid-cols-2">
                 <div>
@@ -4142,7 +4261,7 @@ function renderProductPage() {
             <!-- Address management -->
             <div class="glass rounded-2xl p-6">
               <h2 class="font-bold text-lg mb-5 flex items-center gap-2">
-                <span>📍</span> آدرس تحویل
+                <span class="inline-flex text-sky-300">${aryIcon('pin', 'w-4.5 h-4.5 w-5 h-5')}</span> آدرس تحویل
               </h2>
 
               ${user.addresses.length > 0 ? `
@@ -4181,14 +4300,14 @@ function renderProductPage() {
             <!-- Order summary -->
             <div class="glass rounded-2xl p-6">
               <h2 class="font-bold text-lg mb-5 flex items-center gap-2">
-                <span>🧾</span> خلاصه سفارش
+                <span class="inline-flex text-violet-300">${aryIcon('card', 'w-5 h-5')}</span> خلاصه سفارش
               </h2>
 
               <div class="space-y-3 mb-5">
                 ${state.cart.map(item => `
                   <div class="flex items-center justify-between text-sm py-2 border-b border-white/5">
                     <div class="flex items-center gap-3">
-                      <span class="text-xl">${item.image || '📦'}</span>
+                      ${item.image ? `<img src="${item.image}" alt="" class="w-8 h-8 rounded-lg object-cover" loading="lazy">` : `<span class="text-white/40 inline-flex">${aryIcon('box','w-6 h-6')}</span>`}
                       <span class="text-white/80">${item.title}</span>
                       <span class="text-white/40">× ${item.qty}</span>
                     </div>
@@ -4244,7 +4363,7 @@ function renderProductPage() {
     const arr = Array.isArray(state.user.addresses) ? state.user.addresses : (state.user.addresses = []);
     if (arr.length >= 10) { toast('حداکثر ۱۰ آدرس مجاز است', 'warning'); return; }
     arr.push(addr);
-    toast('✅ آدرس جدید ذخیره شد');
+    toast('آدرس جدید ذخیره شد');
     render();
   };
 
@@ -4282,6 +4401,12 @@ function renderProductPage() {
     }
     if (!finalAddress) {
       toast('آدرس تحویل را انتخاب یا وارد کنید', 'warning');
+      document.getElementById('co-address')?.focus();
+      return;
+    }
+    if (String(finalAddress).trim().length < 10) {
+      toast('آدرس کامل نیست — شهر، خیابان، پلاک و واحد را بنویسید (حداقل ۱۰ کاراکتر)', 'warning');
+      document.getElementById('co-address')?.focus();
       return;
     }
 
@@ -4289,7 +4414,7 @@ function renderProductPage() {
       type: 'payment',
       title: 'تایید پرداخت',
       message: `پرداخت مبلغ ${utils.formatPrice(amount)} انجام شود؟`,
-      icon: '💳',
+      icon: aryIcon('card', 'w-14 h-14 text-violet-300'),
       confirmText: 'پرداخت',
       confirmClass: 'btn-success',
       onConfirm: async () => {
@@ -4304,12 +4429,12 @@ function renderProductPage() {
             created_at: new Date().toISOString()
           });
           state.cart = [];
-          toast('✅ سفارش شما با موفقیت ثبت شد');
+          toast('سفارش شما با موفقیت ثبت شد');
           goTo('orders');
           setTimeout(() => utils.scrollTop(), 0);
           render();
         } catch (err) {
-          toast('❌ خطا در ثبت سفارش', 'error');
+          toast('خطا در ثبت سفارش', 'error');
         }
       }
     };
@@ -4333,12 +4458,12 @@ function renderCartPage() {
 
   return `
     ${renderHeader()}
-    <main class="max-w-4xl mx-auto px-4 lg:px-8 py-8 lg:py-12">
+    <main class="max-w-4xl mx-auto px-4 lg:px-8 py-8 lg:py-12 overflow-x-hidden">
       <h1 class="text-2xl lg:text-4xl font-black mb-8">سبد خرید</h1>
       
       ${state.cart.length === 0 ? `
         <div class="glass rounded-3xl p-16 text-center animate-fade">
-          <div class="text-8xl mb-6 animate-float">🛒</div>
+          <div class="mb-6 animate-float text-white/25 flex justify-center">${aryIcon('cart','w-24 h-24')}</div>
           <h2 class="text-2xl font-bold mb-3">سبد خرید شما خالی است</h2>
           <p class="text-white/60 mb-8">محصولات مورد علاقه خود را به سبد اضافه کنید</p>
           <div class="flex items-center justify-center gap-3">
@@ -4361,11 +4486,13 @@ function renderCartPage() {
 
               return `
                 <div class="glass rounded-2xl p-5 flex gap-4 animate-fade" style="animation-delay: ${i * 0.08}s">
-                  <div class="w-20 h-20 lg:w-24 lg:h-24 bg-white/5 rounded-xl flex items-center justify-center text-4xl lg:text-5xl flex-shrink-0 overflow-hidden">
-                    ${item.image || '📦'}
+                  <div class="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 bg-white/5 rounded-xl flex items-center justify-center text-white/40 flex-shrink-0 overflow-hidden">
+                    ${item.image
+                      ? `<img src="${item.image}" alt="" class="w-full h-full object-cover" loading="lazy">`
+                      : aryIcon('box','w-8 h-8')}
                   </div>
                   <div class="flex-1 min-w-0">
-                    <h3 class="font-bold text-sm lg:text-base truncate mb-1">${item.title}</h3>
+                    <h3 class="font-bold text-sm lg:text-base line-clamp-2 break-words mb-1">${aryEsc(item.title)}</h3>
                     <div class="flex items-center gap-2 mb-3">
                       <span class="text-emerald-400 font-bold">${utils.formatPrice(item.price)}</span>
                       ${item.original_price && item.original_price > item.price ? `
@@ -4385,7 +4512,7 @@ function renderCartPage() {
                     ${product?.stock ? `<div class="mt-2 text-[11px] text-white/40">موجودی: ${product.stock} عدد</div>` : ''}
                   </div>
                   <div class="flex flex-col items-end justify-between">
-                    <button onclick="removeFromCart('${item.id}')" class="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl transition-all">🗑️</button>
+                    <button onclick="removeFromCart('${aryEsc(String(item.id))}')" aria-label="حذف از سبد" class="p-2 text-rose-400 hover:bg-rose-500/20 rounded-xl transition-all">${aryIcon('trash','w-4 h-4')}</button>
                     <span class="text-white/60 text-sm font-medium">${utils.formatPrice(item.price * item.qty)}</span>
                   </div>
                 </div>
@@ -4433,7 +4560,7 @@ function renderCartPage() {
                 </div>
               `}
               ${total < FREE_SHIPPING_THRESHOLD ? `
-                <p class="text-center text-xs text-white/50 mt-4">🚚 ${utils.formatPrice(FREE_SHIPPING_THRESHOLD - total)} تا ارسال رایگان</p>
+                <p class="text-center text-xs text-white/50 mt-4 flex items-center justify-center gap-1.5"><span class="text-sky-300">${aryIcon('truck','w-4 h-4')}</span>${utils.formatPrice(FREE_SHIPPING_THRESHOLD - total)} تا ارسال رایگان</p>
               ` : ''}
             </div>
           </div>
@@ -4446,6 +4573,8 @@ function renderCartPage() {
 
 // PAYMENT HANDLER (aligned with CRUD Orders)
 async function startPayment(amount) {
+  // ثبت سفارش حتماً باید از صفحهٔ پرداخت بگذرد (اعتبارسنجی آدرس گیرنده + تایید)
+  // — قبلاً این دکمه مستقیم و با آدرس خالی سفارش می‌ساخت
   if (!state.user) {
     toast('ابتدا وارد حساب شوید', 'warning');
     goTo('login');
@@ -4456,49 +4585,10 @@ async function startPayment(amount) {
     toast('سبد خرید خالی است', 'warning');
     return;
   }
-
-  state.loading = true;
-  render();
-
-  try {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-
-    // Build normalized order using the unified schema
-    const now = new Date().toISOString();
-    const items = state.cart.map(c => ({
-      id: c.id,
-      title: c.title,
-      price: c.price,
-      qty: c.qty,
-      image: c.image || ''
-    }));
-
-    const subtotal = getCartTotal();
-    const shipping = amount - subtotal;
-
-    createOrder({
-      user_name: state.user.name || 'کاربر',
-      user_phone: state.user.phone,
-      address: (state.user.addresses && state.user.addresses[0]) || '',
-      items,
-      total: amount,
-      status: 'processing',
-      created_at: now
-    });
-
-    // Clear cart and notify
-    state.cart = [];
-    toast(`✅ پرداخت ${utils.formatPrice(amount)} با موفقیت انجام شد`);
-    utils.pushNotification('سفارش شما ثبت شد و در حال پردازش است.', 'success');
-
-    goTo('orders');
-    setTimeout(() => utils.scrollTop(), 0);
-  } catch (err) {
-    toast('❌ خطا در پرداخت', 'error');
-  } finally {
-    state.loading = false;
-    render();
-  }
+  const hasAddr = (state.user.addresses || []).some(a => typeof a === 'string' ? a.trim().length >= 10 : a && (a.full || '').trim().length >= 10);
+  goTo('checkout');
+  setTimeout(() => utils.scrollTop(), 0);
+  if (!hasAddr) toast('برای تکمیل خرید، آدرس تحویل را وارد کنید', 'info', 6000);
 }
 
 // ═══════════════════════════════════════════════════════════════

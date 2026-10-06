@@ -140,5 +140,27 @@ is_ok($r && is_array($im) && count($im) === 2 && is_array($vd) && $vd[0] === 'as
 is_ok(is_file(arya_demo_catalog_path()), 'demo-catalog.json present in repo');
 @unlink($dbFile2);
 
+// ── مهاجرت ستون‌ها: addColumnSql + createSchema→migrateSchema ──
+echo "— Migration: addColumnSql + migrateSchema —\n";
+contains($E::addColumnSql('mysql', 'orders', 'cancel_reason', 'str', 500), 'ADD COLUMN `cancel_reason` VARCHAR(500)', 'mysql ADD COLUMN');
+contains($E::addColumnSql('pgsql', 'orders', 'return_status', 'str', 20), 'ADD COLUMN "return_status" VARCHAR(20)', 'pg ADD COLUMN');
+contains($E::addColumnSql('sqlite', 'orders', 'return_reason', 'text'), 'ADD COLUMN "return_reason" TEXT', 'sqlite ADD COLUMN');
+contains($E::addColumnSql('sqlsrv', 'orders', 'return_at', 'str', 32), 'ADD [return_at] NVARCHAR(32)', 'sqlsrv ADD (no COLUMN kw)');
+is_ok(!str_contains($E::addColumnSql('sqlsrv', 'orders', 'zz', 'str', 10), 'COLUMN'), 'sqlsrv omits COLUMN keyword');
+
+$dbFile3 = tempnam(sys_get_temp_dir(), 'aryamig') . '.sqlite';
+$raw = new PDO('sqlite:' . $dbFile3);
+$raw->exec("CREATE TABLE \"orders\" (\"id\" TEXT PRIMARY KEY, \"user_phone\" TEXT, \"items\" TEXT, \"total\" NUMERIC(18,2) DEFAULT 0, \"status\" VARCHAR(20) DEFAULT 'pending', \"created_at\" TIMESTAMP)");
+$raw->exec("INSERT INTO \"orders\" (id, user_phone, total) VALUES ('old1', '09120000000', 100)");
+$raw = null;
+$eng3 = new AryaDbEngine(['driver' => 'sqlite', 'sqlite_path' => $dbFile3]);
+$eng3->createSchema();
+is_ok($eng3->hasColumn('orders', 'cancel_reason') && $eng3->hasColumn('orders', 'return_status') && $eng3->hasColumn('orders', 'return_at'), 'migrateSchema adds new orders columns');
+$old = $eng3->pdo()->query("SELECT * FROM \"orders\" WHERE id='old1'")->fetch(PDO::FETCH_ASSOC);
+is_ok($old !== false && (string)$old['total'] === '100', 'migration preserves existing rows');
+$eng3->createSchema();
+is_ok(true, 'migrate is idempotent (no crash on 2nd run)');
+@unlink($dbFile3);
+
 echo "\nPASS=$PASS FAIL=$FAIL\n";
 exit($FAIL === 0 ? 0 : 1);

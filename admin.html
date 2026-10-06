@@ -258,6 +258,7 @@
                   color:rgba(255,255,255,.4);background:none;border:none;cursor:pointer;font-size:1.2rem">👁</button>
             </div>
           </div>
+          ${!(window.AryaServer && window.AryaServer.isConfigured()) ? `<div style="background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.35);border-radius:10px;padding:.75rem 1rem;color:#7dd3fc;font-size:.8rem;text-align:center;line-height:1.8">پس‌زمینه PHP وصل نیست — <b>حالت دمو</b> فعال است:<br><span dir="ltr" style="user-select:all">demo@arya.local&nbsp;/&nbsp;Demo@12345</span></div>` : ''}
           ${err?`<div style="background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:.75rem 1rem;color:#fca5a5;font-size:.85rem">${err}</div>`:''}
           <button type="submit" class="btn-auth" style="margin-top:.5rem" ${AUTH.loading?'disabled':''}>${AUTH.loading?'در حال بررسی...':'ورود'}</button>
         </form>
@@ -360,8 +361,19 @@
     e.preventDefault();
     const identifier = e.target.identifier.value.trim();
     const password = e.target.password.value;
-
-    AUTH.loading = true; AUTH.error = ''; authRender();
+    // ── حالت دمو محلی (GitHub Pages / بدون بک‌اند PHP) — ورود با اعتبارنامه ثابت، بدون OTP ──
+    if (!(window.AryaServer && AryaServer.isConfigured())) {
+      AUTH.loading = false;
+      if (identifier.toLowerCase() === 'demo@arya.local' && password === 'Demo@12345') {
+        showToastAuth('✅ ورود به حالت دمو — داده‌ها فقط در همین مرورگر ذخیره می‌شوند', 'success');
+        setTimeout(() => startAdminPanel({ name: 'مدیر دمو', email: identifier, role: 'superadmin', local_demo: true }), 300);
+      } else {
+        AUTH.error = 'در حالت دمو (بدون سرور) فقط حساب نمایشی demo@arya.local / Demo@12345 مجاز است.';
+        authRender();
+      }
+      return;
+    }
+        AUTH.loading = true; AUTH.error = ''; authRender();
 
     try {
       const json = await adminApi('admin_login_step1', { identifier, password });
@@ -529,7 +541,7 @@
     AUTH.step = 'login';
     AUTH.error = '';
     authRender();
-
+    // بدون بک‌اند: بررسی سشن بی‌معنی است — کارت دمو همین‌جا نمایش داده می‌شود    if (!(window.AryaServer && AryaServer.isConfigured())) return;
     try {
       const json = await adminApi('admin_session');
 

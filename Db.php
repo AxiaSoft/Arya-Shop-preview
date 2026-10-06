@@ -265,6 +265,7 @@ if ($action === 'status') {
         'demo_mode'   => ary_demo_mode(),
         'api_version' => ARYA_VERSION,
         'drivers'     => array_keys(AryaDbEngine::SUPPORTED),
+        'return_window_days' => (int) (defined('ARYA_RETURN_WINDOW_DAYS') ? ARYA_RETURN_WINDOW_DAYS : 7),
     ];
     if (isConfigured() && loadConfig()) {
         $out['db'] = ['driver' => defined('DB_DRIVER') ? DB_DRIVER : 'mysql',
@@ -1118,6 +1119,55 @@ createSchema($eng);
 $Q     = fn(string $t) => AryaDbEngine::quoteIdent($eng->driver, $t);
 $isAdmin = currentAdminId() !== null;
 
+// ═══════════════════════════════════════════════════════════════
+// پیگیری سفارش توسط مشتری: لغو (تا پیش از ارسال) و درخواست مرجوعی (طبق قوانین)
+// ARYA_RETURN_WINDOW_DAYS در config.php قابل تنظیم است (پیش‌فرض ۷ روز)
+// ═══════════════════════════════════════════════════════════════
+if ($action === 'order_cancel' || $action === 'order_return') {
+    write_guard();
+    $returnWindow = max(1, (int) (defined('ARYA_RETURN_WINDOW_DAYS') ? ARYA_RETURN_WINDOW_DAYS : 7));
+    $rid   = (string) ($rawBody['id'] ?? '');
+    $phone = preg_replace('/\D/', '', (string) ($rawBody['phone'] ?? ''));
+    if (!ary_safe_id($rid)) fail('شناسه سفارش نامعتبر است.');
+    if (!preg_match('/^09\d{9}$/', $phone)) fail('شماره موبایل سفارش نامعتبر است.');
+
+    $Q = fn(string $t) => AryaDbEngine::quoteIdent($eng->driver, $t);
+    $st = $eng->pdo()->prepare('SELECT * FROM ' . $Q('orders') . ' WHERE ' . $Q('id') . ' = ?');
+    $st->execute([$rid]);
+    $order = $st->fetch();
+    if (!$order || preg_replace('/\D/', '', (string) $order['user_phone']) !== $phone) {
+        fail('سفارشی با این مشخصات پیدا نشد.', 404); // افشای وجود/عدم وجود سفارش نمی‌شود
+    }
+
+    $status = strtolower((string) ($order['status'] ?? ''));
+
+    if ($action === 'order_cancel') {
+        if (!in_array($status, ['pending', 'processing'], true)) {
+            fail($status === 'canceled'
+                ? 'این سفارش از قبل لغو شده است.'
+                : 'این سفارش وارد فرایند ارسال شده و قابل لغو نیست؛ پس از تحویل می‌توانید درخواست مرجوعی بدهید.', 409);
+        }
+        $reason = mb_substr(ary_clean_text((string) ($rawBody['reason'] ?? ''), 480), 0, 500);
+        $up = $eng->pdo()->prepare('UPDATE ' . $Q('orders') . ' SET ' . $Q('status') . ' = ?, ' . $Q('cancel_reason') . ' = ? WHERE ' . $Q('id') . ' = ?');
+        $up->execute(['canceled', $reason !== '' ? $reason : 'لغو توسط مشتری', $rid]);
+        ok(['id' => $rid, 'status' => 'canceled'], 'سفارش لغو شد؛ عودت مبلغ تا ۷۲ ساعت کاری انجام می‌شود.');
+    }
+
+    // order_return — قوانین: فقط «تحویل شده»، داخل مهلت، بدون درخواست باز/در‌جریان
+    if ($status !== 'delivered') fail('درخواست مرجوعی فقط برای سفارش‌های «تحویل شده» امکان‌پذیر است.', 409);
+    $rs = strtolower((string) ($order['return_status'] ?? ''));
+    if (in_array($rs, ['requested', 'approved'], true)) fail('برای این سفارش پیش‌تر درخواست مرجوعی ثبت شده است؛ منتظر پاسخ کارشناس باشید.', 409);
+    $createdAt = strtotime((string) ($order['created_at'] ?? 'now')) ?: time();
+    if (time() - $createdAt > $returnWindow * 86400) {
+        fail('مهلت ' . $returnWindow . ' روزه‌ی مرجوعی سپری شده است. قوانین: کالای نو با بسته‌بندی سالم، ظرف ' . $returnWindow . ' روز پس از تحویل.', 409);
+    }
+    $reason = mb_substr(ary_clean_text((string) ($rawBody['reason'] ?? ''), 1980), 0, 2000);
+    if (mb_strlen($reason) < 10) fail('دلیل مرجوعی را کامل بنویسید (حداقل ۱۰ کاراکتر)؛ مثلاً «قطعه خراب رسید» یا «مدل اشتباه ارسال شده».', 400);
+    $up = $eng->pdo()->prepare('UPDATE ' . $Q('orders') . ' SET ' . $Q('return_status') . ' = ?, ' . $Q('return_reason') . ' = ?, ' . $Q('return_at') . ' = ? WHERE ' . $Q('id') . ' = ?');
+    $up->execute(['requested', $reason, date('Y-m-d H:i:s'), $rid]);
+    ok(['id' => $rid, 'return_status' => 'requested'], 'درخواست مرجوعی ثبت شد؛ حداکثر تا ۴۸ ساعت پاسخ داده می‌شود.');
+}
+
 switch ($action) {
 
     case 'getAll': {
@@ -1194,6 +1244,20 @@ switch ($action) {
             if ($table === 'orders') {
                 if (!empty($toInsert['status']) && !in_array($toInsert['status'], ['pending', 'processing'], true)) {
                     $toInsert['status'] = 'pending';
+                }
+                // آدرس تحویل در ثبت سفارش جدید الزامی است — ثبت سفارش بی‌آدرس مسدود
+                $Qc = fn(string $t) => AryaDbEngine::quoteIdent($eng->driver, $t);
+                $exRow = null;
+                if (!empty($toInsert['id'])) {
+                    $stChk = $eng->pdo()->prepare('SELECT ' . $Qc('id') . ' FROM ' . $Qc($table) . ' WHERE ' . $Qc('id') . ' = ?');
+                    $stChk->execute([(string) $toInsert['id']]);
+                    $exRow = $stChk->fetchColumn();
+                }
+                if ($exRow === false || $exRow === null) {
+                    if (mb_strlen(trim((string) ($toInsert['address'] ?? ''))) < 10) {
+                        fail('آدرس تحویل الزامی است — شهر، خیابان، پلاک و واحد را کامل بنویسید.', 400);
+                    }
+                    if (empty($toInsert['user_phone'])) fail('شماره تماس سفارش الزامی است.', 400);
                 }
                 // ثبت سفارش فقط با قیمت مجاز: total از مجموع آیتم‌ها (سمت سرور) محاسبه نشدنی است
                 // چون قیمت در رکورد نیست؛ ولی status/votes محافظت می‌شوند.

@@ -359,9 +359,18 @@ function renderAdminOrders() {
                       <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>⚙️ پردازش</option>
                       <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>🚚 ارسال شده</option>
                       <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>✅ تحویل</option>
+                    <option value="canceled" ${order.status === 'canceled' ? 'selected' : ''}>✖ لغو</option>
                     </select>
-                  </div>
-                </div>
+                                        ${order.return_status && order.return_status !== 'none' ? `
+                                        <div class="mt-2 rounded-xl border p-2.5 " + (order.return_status === 'requested' ? 'border-sky-500/30 bg-sky-500/10' : (order.return_status === 'approved' || order.return_status === 'completed' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-rose-500/30 bg-rose-500/10')) + "">
+                                          <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="text-[11px] font-bold " + (order.return_status === 'requested' ? 'text-sky-300' : 'text-white/70') + "">مرجوعی: ${order.return_status === 'requested' ? 'در انتظار بررسی' : (order.return_status === 'approved' ? 'تایید شده' : (order.return_status === 'completed' ? 'عودت شد' : 'رد شده'))}</p>
+                                            ${order.return_status === 'requested' ? `<span class="flex gap-2"><button type="button" class="btn-success text-[11px] px-2.5 py-1 rounded-lg" onclick="aryAdminReturnDecision('${order.id}', 'approved')">تایید مرجوعی</button> <button type="button" class="btn-danger text-[11px] px-2.5 py-1 rounded-lg" onclick="aryAdminReturnDecision('${order.id}', 'rejected')">رد مرجوعی</button></span>` : ''}
+                                          </div>
+                                          ${order.return_reason ? `<p class="text-[10px] text-white/60 mt-1.5 leading-5">دلیل مشتری: ${escapeHtml(String(order.return_reason).slice(0, 300))}</p>` : ''}
+                                        </div>` : ''}
+                                      </div>
+                                    </div>
                 
                 <div class="grid md:grid-cols-3 gap-4">
                   <div class="glass rounded-xl p-4">
@@ -697,6 +706,22 @@ function renderAdminPanel() {
 }
 
 /* ========== Helper wrapper to align legacy select to new API ========== */
+
+window.aryAdminReturnDecision = function (orderId, decision) {
+  // تایید/رد درخواست مرجوعی — در حالت سرور مستقیم از Db.php؛ در حالت محلی updateOrder (IDB)
+  if (window.AryaServer && AryaServer.isConfigured()) {
+    AryaServer.crud.upsert('orders', { id: String(orderId), return_status: decision }).then(function (r) {
+      if (r && r.ok) {
+        var o = (state.orders || []).find(function (x) { return String(x.id) === String(orderId); });
+        if (o) o.return_status = decision;
+        if (typeof render === 'function') render();
+        toast(decision === 'approved' ? 'مرجوعی تایید شد' : 'مرجوعی رد شد');
+      } else { toast((r && r.msg) || 'ثبت نظر ناموفق بود', 'error'); }
+    });
+    return;
+  }
+  updateOrder(orderId, { return_status: decision });
+};
 
 function updateOrderStatus(order, nextStatus) {
   if (!order || !order.id) return;

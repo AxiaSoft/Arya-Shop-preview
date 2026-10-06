@@ -11,6 +11,14 @@
 - **Supabase (از نسخه ۲):** موتور انتخابی `supabase` در ویزارد — دایالکت همان PostgreSQL است؛ میزبان/پورت/کاربر از Project ref خودکار ساخته می‌شود (Direct `db.<ref>.supabase.co:5432` یا Session Pooler `aws-0-<region>.pooler.supabase.com:6543` با کاربر `postgres.<ref>`) و TLS با `sslmode=require` اجباری است (امکان `verify-full` + `sslrootcert`). نیازی به pdo_pgsql خارج از افزونه‌های معمول نیست؛ نکته: برای مرحله نصب، Direct توصیه می‌شود (روی Transaction Pooler فرمان‌های session محدودند).
 - **پنل هاستینگ:** ویزارد نصب می‌تواند دیتابیس + کاربر را به‌صورت خودکار روی **cPanel/WHM**، **DirectAdmin** یا **Plesk** بسازد (یا دستی پر کنید). حالت «بدون پنل» روی هر سرور PHP کار می‌کند.
 - **احراز هویت واقعی:** bcrypt سمت سرور، ورود کاربر ۲ مرحله‌ای (رمز + OTP)، ورود مدیر ۳ مرحله‌ای (+2FA)، بازیابی رمز با OTP، CSRF، Rate-Limit و هاردنینگ نشست.
+- **پیگیری سفارش (مشتری):** لغو سفارش تا پیش از ارسال (pending/processing) با دلیل، و **درخواست مرجوعی پس از تحویل طبق قوانین** — مهلت پیش‌فرض ۷ روز از ثبت، دلیل حداقل ۱۰ کاراکتر، و نهایتاً یک درخواست بازِ فعال. رد/قبول توسط مدیر در کارت همان سفارش در پنل انجام می‌شود. اعتبار مالکیت با شماره موبایل حساب/سفارش بررسی می‌شود.
+- **تنظیم مهلت مرجوعی:** `define('ARYA_RETURN_WINDOW_DAYS', 10);` در `config.php` (پیش‌فرض ۷). endpoint `status` همین عدد را با کلید `return_window_days` به فرانت‌اند می‌دهد تا متن قوانین و اعتبارسنجی همیشه هم‌خط باشند.
+- **نشانی اجباری:** ثبت سفارش جدید بدون نشانی پستی معتبر (حداقل ۱۰ کاراکتر) ممکن نیست — فرانت‌اند قبل از ورود به پرداخت راهنمایی می‌کند و بک‌اند هم برای سفارش‌های مهمان enforce می‌کند.
+- **آیکون‌های حرفه‌ای (SVG):** سراسر ویترین و کارت‌های پنل از آیکون‌های inline SVG استفاده می‌کنند (رجیستری `ARYA_ICONS` در `components.js` + `aryIcon()/aryCatIcon()`). آیکون دسته‌بندی‌ها در `demo-catalog.json` به‌صورت *نام* ذخیره می‌شود (`smartphone/headphones/watch/gamepad/shirt`) و رندر SVG انجام می‌گیرد؛ متن آزاد هم سازگار است.
+- **اسلایدر صفحه اصلی:** آرایه `aryHeroSlides` در `configuration.js` (تصویر/تیتر/متن/دکمه/لینک) — تصاویر نمونه در `assets/img/home/` هست؛ با خالی‌کردن آرایه، طرح گرادیانی قدیمی برمی‌گردد. بنر «دعوت به اقدام» پایین صفحه هم تصویر پس‌زمینه دارد.
+- **پیشانه مجوزها (Inamad و…):** به هر مورد از `trustBadges` یک `url` بدهید (مثلاً `https://enamad.ir/<شناسه-اعتماد>`) تا با کلیک، صفحه تأیید اصالت در *تب جدید* باز شود؛ بدون `url` مثل قبل فقط تصویر است.
+- **پنل مدیریت در حالت دمو:** روی GitHub Pages (بدون PHP) با حساب نمایشی `demo@arya.local / Demo@12345` کاملاً قابل تست است — داده‌ها فقط در همان مرورگر. **هیچ لینک ورود به پنل در سایت اصلی وجود ندارد**؛ ورود تنها با باز‌کردن مستقیم `admin.html`.
+- **کد OTP دمو داخل کارت ورود:** دیگر نوتیفیکیشن (toast) نمایش داده نمی‌شود؛ فقط در حالت دمو یک چیپ کوچک داخل همان فرم با دکمه «استفاده از کد» ظاهر می‌شود. در پروداکشن (سرور واقعی که OTP به SMS/ایمیل ارسال می‌شود) این کد هیچ‌جای رابط کاربری درز نمی‌کند.
 - **بدون سرور هم کار می‌کند:** اگر `config.php` نباشد، فروشگاه با دمای محلی (IndexedDB) و برچسب «آزمایشی» ادامه می‌دهد — مناسب طراحی و دمو.
 
 ## راه‌اندازی سریع
@@ -53,6 +61,7 @@ location ~ \.php$ {
 | مدیر | `admin_login_step1/2/3` `admin_session` `admin_logout` `admin_change_password` `admin_list` `admin_create` `admin_update` `admin_delete` `system_status` `admin_review_moderate` |
 | کاربر | `user_register` `user_login_step1/2` `user_reset_step1/2` `user_session` `user_logout` `user_update` `user_change_password` `user_delete` |
 | محتوا | `review_create` `review_vote` `ticket_create` `ticket_reply` |
+| پیگیری سفارش | `order_cancel` (مالک + pending/processing) `order_return` (مالک + تحویل‌شده + مهلت/سیاست مرجوعی) |
 | CRUD با سیاست | `getAll` `getById` `upsert` `delete` `import` (جدول‌های مجاز؛ نوشتن فقط با CSRF/توکن؛ `users` از این مسیر قفل) |
 
 حالت برنامه‌های بیرونی: هدر `Authorization: Bearer <API_SECRET>` (نیازمند توکن؛ بدون آن فقط same-origin).
@@ -65,10 +74,10 @@ location ~ \.php$ {
 ## تست‌ها
 
 ```bash
-php tests/engine_dialect.php                                # ۳۹ تست یونیت SQL
+php tests/engine_dialect.php                                # ۶۱ تست یونیت SQL + مهاجرت ستون‌ها
 php -S 127.0.0.1:8211 -t . &                                 # برای E2E
 rm -f config.php storage/arya_store.sqlite
-BASE_URL=http://127.0.0.1:8211 bash tests/e2e_backend.sh     # ۵۳ تست سرتاسری
+BASE_URL=http://127.0.0.1:8211 bash tests/e2e_backend.sh     # ۶۷ تست سرتاسری (شامل لغو/مرجوعی)
 PHP_BIN=php bash tests/panels_e2e.sh                         # ۱۶ تست پنل (سرور جعلی)
 ```
 

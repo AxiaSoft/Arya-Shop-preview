@@ -1,11 +1,11 @@
 {
   "_note": "کاتالوگ نمونهٔ آریا شاپ — منبع واحد برای: سید سمت سرور (includes/demo_catalog.php)، اسکریپت CLI (scripts/seed_demo.php) و حالت دمو روی GitHub Pages (assets/js/Arya_db.js). قیمت‌ها تومان. مسیرها نسبتی‌اند تا روی هر میزبانی کار کنند.",
   "categories": [
-    { "id": "cat_mobile", "title": "موبایل و تبلت", "icon": "📱", "active": 1 },
-    { "id": "cat_audio", "title": "صوتی و تصویری", "icon": "🎧", "active": 1 },
-    { "id": "cat_wearable", "title": "پوشیدنی هوشمند", "icon": "⌚", "active": 1 },
-    { "id": "cat_gaming", "title": "گیمینگ", "icon": "🎮", "active": 1 },
-    { "id": "cat_fashion", "title": "مد و پوشاک", "icon": "👟", "active": 1 }
+    { "id": "cat_mobile", "title": "موبایل و تبلت", "icon": "smartphone", "active": 1 },
+    { "id": "cat_audio", "title": "صوتی و تصویری", "icon": "headphones", "active": 1 },
+    { "id": "cat_wearable", "title": "پوشیدنی هوشمند", "icon": "watch", "active": 1 },
+    { "id": "cat_gaming", "title": "گیمینگ", "icon": "gamepad", "active": 1 },
+    { "id": "cat_fashion", "title": "مد و پوشاک", "icon": "shirt", "active": 1 }
   ],
   "products": [
     {

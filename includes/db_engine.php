@@ -232,6 +232,8 @@ final class AryaDbEngine
                     ['id','str',64,'pk'], ['user_name','str',255], ['user_phone','str',20],
                     ['address','text'], ['delivery_slot','str',100], ['items','long'],
                     ['total','num18'], ['status','str',50], ['created_at','ts'],
+                    ['cancel_reason','str',500], ['return_status','str',20],
+                    ['return_reason','text'], ['return_at','str',32],
                 ],
                 'indexes' => ['idx_orders_user_phone' => ['user_phone'], 'idx_orders_status' => ['status']],
             ],
@@ -553,6 +555,40 @@ final class AryaDbEngine
                 }
             }
         }
+        $this->migrateSchema();
+    }
+
+    /** مهاجرت سبک: افزودن ستون‌های تازهٔ نسخه‌های بعدی به جدول‌های موجود (idempotent) */
+    public function migrateSchema(): array
+    {
+        $added = [];
+        $db = $this->pdo();
+        foreach (self::schema() as $table => $def) {
+            if (!$this->tableExists($table)) continue;
+            $existing = $this->columnsOf($table);
+            foreach ($def['cols'] as $col) {
+                [$name, $kind, $len, $flag] = array_pad($col, 4, null);
+                if ($flag === 'pk' || in_array($name, $existing, true)) continue;
+                try {
+                    $db->exec(self::addColumnSql($this->driver, $table, $name, (string) $kind, (int) $len));
+                    $added[$table][] = $name;
+                    unset($this->cache['cols'][$table]);
+                } catch (Throwable $e) {
+                    // افزودن ستون ناموفق (مثلاً نبود مجوز) — کشل‌ساز نیست؛ در لاگ ثبت می‌شود
+                    if (function_exists('ary_log')) ary_log('migrate', $table . '.' . $name . ': ' . $e->getMessage());
+                }
+            }
+        }
+        return $added;
+    }
+
+    public static function addColumnSql(string $driver, string $table, string $name, string $kind, int $len = 0): string
+    {
+        $driver = self::dialectOf($driver);
+        $q = fn(string $i) => self::quoteIdent($driver, preg_replace('/[^A-Za-z0-9_]/', '', $i));
+        $def = $q($name) . ' ' . self::colType($driver, $kind, $len);
+        if ($driver === 'sqlsrv') return 'ALTER TABLE ' . $q($table) . ' ADD ' . $def;
+        return 'ALTER TABLE ' . $q($table) . ' ADD COLUMN ' . $def;
     }
 
     /** درج مدیر پیش‌فرض فقط هنگام نصب (نه هر درخواست) */

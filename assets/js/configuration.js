@@ -20,6 +20,15 @@ const socialLinks = {
   whatsapp: "https://wa.me/YOUR_NUMBER"
 };
 
+// اسلایدر صفحهٔ اصلی: img = مسیر تصویر (نسبی)، link = 'shop' یا آدرس دلخواه
+window.aryHeroSlides = window.aryHeroSlides || [
+  { img: 'assets/img/home/hero-slide-1.jpg', link: 'shop' },
+  { img: 'assets/img/home/hero-slide-2.jpg', link: 'shop' }
+];
+
+// پلاک‌های فوتر: برای هر مجوز، لینک تأیید عمومی را در «url» بگذارید
+// نمونه اینماد   : https://enamad.ir/<شناسه‌ی‌اعتماد>   (از پنل اینماد کپی کنید)
+// نمونه ساماندهی: https://www.samandehi.ir/Users/ShowUser/<شناسه>.aspx
 const trustBadges = [
   //{ img: "assets/img/badges/enamad.png", alt: "نماد اعتماد الکترونیکی" },
   //{ img: "assets/img/badges/samandehi.png", alt: "نماد ساماندهی" },
