@@ -383,6 +383,320 @@ function setupHomeHeroSlider() {
 }
 window.setupHomeHeroSlider = setupHomeHeroSlider;
 
+// ── سوییچ تب پروفایل بدون پرش اسکرول ──
+function switchProfileTab(id) {
+  if (state.profileTab === id) return;
+  const y = window.scrollY || 0;
+  state.profileTab = id;
+  if (window.AppState) AppState.set({ profileTab: id });
+  else if (typeof render === 'function') render();
+  setTimeout(() => window.scrollTo(0, y), 40);
+  setTimeout(() => window.scrollTo(0, y), 140);
+}
+window.switchProfileTab = switchProfileTab;
+
+// ── اسکرول افقی با موس: چرخ‌دنده بدون کلیک + کشیدن با کلیک چپ (روی همهٔ .ary-hscroll) ──
+(function aryHscrollEnhancer() {
+  let drag = null;
+  const isRtl = el => (getComputedStyle(el).direction || '') === 'rtl';
+  document.addEventListener('wheel', function (e) {
+    const el = e.target && e.target.closest ? e.target.closest('.ary-hscroll') : null;
+    if (!el || el.scrollWidth <= el.clientWidth + 4) return;
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return;
+    e.preventDefault();
+    el.scrollLeft += (isRtl(el) ? -1 : 1) * e.deltaY;
+  }, { passive: false });
+  document.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return;
+    const el = e.target && e.target.closest ? e.target.closest('.ary-hscroll') : null;
+    if (!el || el.scrollWidth <= el.clientWidth + 4) return;
+    drag = { el, x0: e.clientX, l0: el.scrollLeft, rtl: isRtl(el), moved: false };
+    el.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', function (e) {
+    if (!drag) return;
+    const dx = e.clientX - drag.x0;
+    if (!drag.moved && Math.abs(dx) > 5) drag.moved = true;
+    if (drag.moved) {
+      e.preventDefault();
+      drag.el.scrollLeft = drag.rtl ? drag.l0 + dx : drag.l0 - dx;
+    }
+  });
+  window.addEventListener('mouseup', function () {
+    if (!drag) return;
+    const moved = drag.moved, el = drag.el;
+    drag = null;
+    el.classList.remove('dragging');
+    if (moved) { // کلیکِ بعد از درگ (انتخاب محصول) خنثی شود
+      const h = function (ev) { document.removeEventListener('click', h, true); ev.stopPropagation(); ev.preventDefault(); };
+      document.addEventListener('click', h, true);
+      setTimeout(() => document.removeEventListener('click', h, true), 250);
+    }
+  });
+})();
+
+// ── دایرهٔ شناور پشتیبانی — گفتگوی اختصاصی و امن کاربر با ادمین (بر بستر تیکت) ──
+window.AryaSupportChat = (function () {
+  let root = null, isOpen = false, pollTimer = null, lastCount = -1;
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const u = () => (typeof state !== 'undefined' && (state.user || state.currentUser)) || null;
+  function msgsOf(t) {
+    if (Array.isArray(t.messages)) return t.messages;
+    try { const p = JSON.parse(t.messages || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; }
+  }
+  function myTickets() {
+    const me = u(); if (!me) return [];
+    const ph = String(me.phone || '');
+    return (state.tickets || []).filter(t => ph && String(t.user_phone || '') === ph); // فقط تیکت‌های خودِ کاربر
+  }
+  async function pull() {
+    const me = u(); if (!me || !me.phone) return;
+    try {
+      if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+        const r = await AryaServer.crud.getAll('tickets', { user_phone: String(me.phone) });
+        if (r && r.ok && Array.isArray(r.data)) {
+          state.tickets = r.data.map(x => {
+            if (typeof x.messages === 'string') { try { x.messages = JSON.parse(x.messages); } catch (e) { x.messages = []; } }
+            return x;
+          });
+          if (isOpen) paint();
+          updateBadge();
+        }
+      }
+    } catch (e) {}
+  }
+  function thread() {
+    const ts = myTickets().slice().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+    const msgs = [];
+    ts.slice(0, 3).forEach(t => {
+      msgs.push({ sys: true, text: 'تیکت «' + (t.subject || 'پشتیبانی') + '» — وضعیت: ' + (t.status === 'open' ? 'باز' : (t.status === 'answered' ? 'پاسخ داده شده' : t.status)) });
+      msgsOf(t).forEach(m => msgs.push(m));
+    });
+    msgs.sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
+    return { tickets: ts, msgs };
+  }
+  function paint() {
+    if (!root) return;
+    const body = root.querySelector('#ary-chat-body');
+    if (!body) return;
+    const { tickets, msgs } = thread();
+    body.innerHTML = msgs.length ? msgs.map(m => m.sys
+      ? `<div class="text-center text-[10px] text-white/35 py-1">${esc(m.text)}</div>`
+      : `<div class="flex ${m.from === 'user' ? 'justify-end' : 'justify-start'}">
+           <div class="${m.from === 'user' ? 'ary-chat-bubble-user text-white' : 'ary-chat-bubble-sup text-white/85'} max-w-[85%] px-3 py-2 text-[12px] leading-6">
+             <p class="whitespace-pre-line break-words">${esc(m.text)}</p>
+             <span class="block text-[9px] opacity-55 mt-0.5">${m.at ? new Date(m.at).toLocaleString('fa-IR', { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' }) : ''}</span>
+           </div>
+         </div>`).join('')
+      : `<div class="h-full flex flex-col items-center justify-center text-center gap-2 text-white/45 px-6">
+           <svg class="w-10 h-10 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+           <p class="text-xs leading-6">گفتگویی شروع نشده.<br>اولین پیام‌تان یک تیکت پشتیبانی می‌سازد و ادمین همین‌جا پاسخ می‌دهد.</p>
+         </div>`;
+    body.scrollTop = body.scrollHeight;
+    const st = root.querySelector('#ary-chat-status');
+    if (st) st.textContent = tickets.some(t => t.status === 'open') ? 'کارشناس پشتیبانی — آنلاین، پاسخ‌گویی تا ۴۸ ساعت' : 'تیکت‌های شما: ' + tickets.length;
+  }
+  function send(text) {
+    const me = u();
+    if (!me) { toast('برای گفتگو ابتدا وارد حساب شوید', 'warning'); close(); goTo('login'); return; }
+    const clean = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
+    if (clean.length < 3) { toast('پیام کوتاه‌تر از ۳ کاراکتر ارسال نمی‌شود', 'warning'); return; }
+    const openT = myTickets().find(t => t.status === 'open');
+    if (openT && typeof window.replyTicket === 'function') window.replyTicket(String(openT.id), clean);
+    else if (typeof window.createTicketUser === 'function') window.createTicketUser({ subject: 'گفتگوی پشتیبانی آنلاین', message: clean, priority: 'normal' });
+    const inp = root.querySelector('#ary-chat-input'); if (inp) { inp.value = ''; inp.focus(); }
+    setTimeout(() => { pull(); paint(); }, 350);
+  }
+  function open() {
+    const me = u();
+    if (!me) { toast('گفتگوی پشتیبانی مخصوص کاربران ثبت‌نام‌شده است', 'info'); goTo('login'); return; }
+    if (!root) {
+      root = document.createElement('div');
+      root.id = 'ary-chat-panel';
+      root.className = 'fixed z-[81] inset-x-3 bottom-3 sm:inset-x-auto sm:left-5 sm:bottom-24 w-auto sm:w-96';
+      root.innerHTML = `
+        <div class="glass-strong rounded-3xl overflow-hidden border border-white/12 shadow-2xl" style="max-height:min(72vh,34rem)">
+          <div class="flex items-center justify-between gap-2 px-4 py-3 bg-gradient-to-l from-violet-600/80 to-indigo-600/70">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <span class="relative w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+                <span class="absolute -bottom-0.5 -left-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-[#1a0f33]"></span>
+              </span>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-white truncate">چت پشتیبانی آریا</p>
+                <p id="ary-chat-status" class="text-[10px] text-white/65 truncate">اتصال امن — مخصوص حساب شما</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+              <button type="button" id="ary-chat-new" title="ثبت تیکت جدید" class="w-8 h-8 rounded-full flex items-center justify-center text-white/75 hover:bg-white/15 transition-colors">
+                <svg class="w-4.5 h-4.5 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5h4a2 2 0 0 1 2 2v3"/><path d="M13.5 17.5 17.5 13.5a2.12 2.12 0 0 0-3-3L4 21l4-1Z"/><path d="M10 4H4a2 2 0 0 0-2 2v0"/></svg>
+              </button>
+              <button type="button" id="ary-chat-close" class="w-8 h-8 rounded-full flex items-center justify-center text-white/75 hover:bg-white/15 transition-colors" aria-label="بستن">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+          </div>
+          <div id="ary-chat-body" class="p-3 space-y-2 overflow-y-auto bg-black/25" style="min-height:14rem;max-height:min(42vh,22rem)"></div>
+          <form id="ary-chat-form" class="flex items-end gap-2 p-3 border-t border-white/10 bg-black/30">
+            <textarea id="ary-chat-input" rows="1" maxlength="1200" placeholder="پیام خود را بنویسید… (Enter ارسال)" class="input-style flex-1 text-[12px] resize-none py-2.5" style="min-height:2.6rem;max-height:6rem"></textarea>
+            <button type="submit" class="btn-primary w-10 h-10 rounded-xl flex items-center justify-center shrink-0" aria-label="ارسال">
+              <svg class="w-4.5 h-4.5 w-5 h-5 rotate-180 ltr:rotate-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="transform:scaleX(-1)"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+            </button>
+          </form>
+          <p class="text-center text-[9px] text-white/30 pb-2">پیام‌ها از مسیر امن تیکت و فقط برای حساب شما ثبت و نمایش داده می‌شوند.</p>
+        </div>`;
+      document.body.appendChild(root);
+      root.querySelector('#ary-chat-close').onclick = close;
+      root.querySelector('#ary-chat-form').onsubmit = e => { e.preventDefault(); send(e.target.querySelector('#ary-chat-input').value); };
+      const inpEl = root.querySelector('#ary-chat-input');
+      inpEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e.target.value); } });
+      root.querySelector('#ary-chat-new').onclick = () => { if (typeof window.openUserTicketModal === 'function') { close(); window.openUserTicketModal(); } };
+    }
+    root.style.display = '';
+    isOpen = true;
+    paint(); pull();
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = setInterval(() => { if (isOpen) pull(); }, 30000); // دریافت پاسخ‌های تازه
+  }
+  function close() {
+    isOpen = false;
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (root) root.style.display = 'none';
+  }
+  function updateBadge() {
+    const fab = document.getElementById('arya-support-fab');
+    if (!fab) return;
+    let badge = fab.querySelector('.ary-fab-badge');
+    const n = u() ? myTickets().filter(t => t.status === 'answered').length : 0;
+    if (n > 0) {
+      if (!badge) { badge = document.createElement('span'); badge.className = 'ary-fab-badge'; const b = fab.querySelector('.ary-fab-btn'); if (b) b.appendChild(badge); }
+      badge.textContent = n > 9 ? '۹+' : String(n);
+    } else if (badge) badge.remove();
+  }
+  return { open, close, toggle: () => (isOpen ? close() : open()), updateBadge };
+})();
+
+// ساخت دکمهٔ شناور (خارج از ریشهٔ render تا با هر رندر از بین نرود)
+(function mountSupportFab() {
+  function build() {
+    if (document.getElementById('arya-support-fab')) return;
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.id = 'arya-support-fab';
+    b.setAttribute('aria-label', 'چت پشتیبانی');
+    b.innerHTML = `<span class="ary-fab-tip">چت با پشتیبانی</span>
+      <span class="ary-fab-btn">
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+      </span>`;
+    b.onclick = () => window.AryaSupportChat.toggle();
+    document.body.appendChild(b);
+    window.AryaSupportChat.updateBadge();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build);
+  else build();
+  document.addEventListener('ary:rendered', () => window.AryaSupportChat.updateBadge());
+})();
+
+// ── پخش‌کنندهٔ ویدیو: مستقل از render — بدون پخش تکراری، سوییچ درست، پیش‌نمایش فریم اول ──
+window.AryaVideoPlayer = (function () {
+  let root = null, list = [], idx = 0, isOpen = false;
+  const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  function info(v) {
+    if (typeof v === 'string') return { url: v, name: '' };
+    if (v && typeof v === 'object') return { url: String(v.url || v.src || v.link || ''), name: String(v.name || v.title || '') };
+    return { url: '', name: '' };
+  }
+  function ensure() {
+    if (root) return;
+    root = document.createElement('div');
+    root.id = 'avp-root';
+    root.className = 'fixed inset-0 z-[210] hidden items-center justify-center p-3 sm:p-6';
+    root.style.background = 'rgba(0,0,0,.96)';
+    root.innerHTML = '<div class="relative w-full max-w-5xl" id="avp-box"></div>';
+    document.body.appendChild(root);
+    root.addEventListener('mousedown', e => { if (e.target === root) API.close(); });
+    document.addEventListener('keydown', e => {
+      if (!isOpen) return;
+      if (e.key === 'Escape') API.close();
+      else if (e.key === 'ArrowLeft') API.step(1);
+      else if (e.key === 'ArrowRight') API.step(-1);
+    });
+  }
+  function paint() {
+    const cur = info(list[idx]);
+    const many = list.length > 1;
+    root.querySelector('#avp-box').innerHTML = `
+      <div class="flex items-center justify-between gap-3 mb-3 text-white px-1">
+        <span class="text-sm text-white/75 truncate min-w-0">${esc(cur.name || ('ویدیو ' + (idx + 1)))}</span>
+        <div class="flex items-center gap-3 shrink-0">
+          ${many ? `<span class="text-xs bg-white/15 px-2.5 py-1 rounded-full tabular-nums">${idx + 1} / ${list.length}</span>` : ''}
+          <button type="button" aria-label="بستن" id="avp-close" class="text-white/70 hover:text-white w-9 h-9 flex items-center justify-center rounded-full hover:bg-white/10 transition-colors">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="relative bg-black rounded-2xl overflow-hidden shadow-2xl" style="aspect-ratio:16/9; max-height:74vh">
+        <video id="avp-video" controls playsinline preload="metadata" class="w-full h-full object-contain" src="${esc(cur.url)}"></video>
+        ${many ? `
+        <button type="button" id="avp-prev" aria-label="ویدیو قبلی" class="absolute right-3 top-1/2 -translate-y-1/2 bg-black/55 hover:bg-black/85 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18 6-6-6-6"/></svg>
+        </button>
+        <button type="button" id="avp-next" aria-label="ویدیو بعدی" class="absolute left-3 top-1/2 -translate-y-1/2 bg-black/55 hover:bg-black/85 text-white rounded-full w-10 h-10 flex items-center justify-center transition-colors">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18-6-6 6-6"/></svg>
+        </button>` : ''}
+      </div>
+      ${many ? `
+      <div id="avp-thumbs" class="ary-hscroll flex gap-2 overflow-x-auto mt-3 px-1 py-1">
+        ${list.map((v, i) => {
+          const it = info(v);
+          return `
+          <button type="button" data-i="${i}" class="avp-thumb shrink-0 w-28 sm:w-32 rounded-xl overflow-hidden border-2 transition-all ${i === idx ? 'border-violet-400 ring-2 ring-violet-400/30' : 'border-white/10 hover:border-white/40'}">
+            <span class="relative block aspect-video bg-white/5">
+              <video muted playsinline preload="metadata" src="${esc(it.url)}#t=0.9" tabindex="-1" class="absolute inset-0 w-full h-full object-cover pointer-events-none"></video>
+              <span class="absolute inset-0 flex items-center justify-center text-white/40 pointer-events-none">
+                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+              </span>
+              ${it.name ? '' : `<span class="absolute bottom-1 left-1 text-[9px] bg-black/60 rounded px-1">${i + 1}</span>`}
+            </span>
+            <span class="block text-[10px] text-white/70 truncate px-1.5 py-1">${esc(it.name || ('ویدیو ' + (i + 1)))}</span>
+          </button>`;
+        }).join('')}
+      </div>` : ''}
+    `;
+    const box = root.querySelector('#avp-box');
+    const v = box.querySelector('#avp-video');
+    if (v) v.play().catch(() => {}); // تنها همین یک‌بار، بدون autoplayِ HTML
+    box.querySelector('#avp-close').onclick = API.close;
+    if (many) {
+      box.querySelector('#avp-prev').onclick = () => API.step(-1);
+      box.querySelector('#avp-next').onclick = () => API.step(1);
+      box.querySelectorAll('.avp-thumb').forEach(b => { b.onclick = () => API.jump(Number(b.dataset.i)); });
+    }
+  }
+  const API = {
+    open(i, videos) {
+      const arr = (Array.isArray(videos) && videos.length) ? videos : (state.productVideos || []);
+      if (!arr.length) { if (window.toast) toast('ویدیویی برای پخش یافت نشد', 'warning'); return; }
+      list = arr; idx = Math.max(0, Math.min(arr.length - 1, Number(i) || 0));
+      ensure(); paint();
+      isOpen = true;
+      root.classList.remove('hidden'); root.style.display = 'flex';
+      document.documentElement.style.overflow = 'hidden';
+    },
+    close() {
+      if (!isOpen) return;
+      isOpen = false;
+      const v = root.querySelector('#avp-video');
+      if (v) { try { v.pause(); v.removeAttribute('src'); v.load(); } catch (e) {} }
+      root.style.display = 'none'; root.classList.add('hidden');
+      document.documentElement.style.overflow = '';
+    },
+    step(d) { if (list.length > 1) { idx = (idx + d + list.length) % list.length; paint(); } },
+    jump(i) { if (i !== idx && i >= 0 && i < list.length) { idx = i; paint(); } }
+  };
+  return API;
+})();
+
 // ── اسکرول افقی بنر شگفت‌انگیزها (سازگار با RTL) ──
 window.aryDealsScroll = function (dir) {
   const el = document.getElementById('home-deals-slider');
@@ -2309,159 +2623,17 @@ function videoSrcInfo(v) {
 }
 
 function openVideoPlayer(videoIndex, videos) {
-  const list = (Array.isArray(videos) && videos.length)
-    ? videos
-    : (Array.isArray(state.productVideos) ? state.productVideos : []);
-  const idx = Number.isInteger(videoIndex) ? videoIndex : 0;
-  if (!list.length || !list[idx]) {
-    if (window.toast) toast('ویدیویی برای پخش یافت نشد', 'warning');
-    return;
-  }
-  state.videoPlayer = { index: idx, videos: list, currentVideo: list[idx] };
-  openGlobalModal();
-  preserveScrollAndRender();
+  window.AryaVideoPlayer.open(videoIndex, videos);
 }
 window.openVideoPlayer = openVideoPlayer;
 
-function closeVideoPlayer() {
-  const videoElement = document.querySelector('video');
-  if (videoElement) {
-    videoElement.pause();
-    videoElement.currentTime = 0;
-  }
-  state.videoPlayer = null;
-  closeGlobalModal();
-  preserveScrollAndRender();
-}
+function closeVideoPlayer() { window.AryaVideoPlayer.close(); }
+window.closeVideoPlayer = closeVideoPlayer;
 
-function changeVideo(delta) {
-  if (!state.videoPlayer || !state.videoPlayer.videos) return;
-  
-  const videos = state.videoPlayer.videos;
-  const currentIndex = state.videoPlayer.index;
-  let newIndex = currentIndex + delta;
-  
-  if (newIndex < 0) newIndex = videos.length - 1;
-  if (newIndex >= videos.length) newIndex = 0;
-  
-  state.videoPlayer.index = newIndex;
-  state.videoPlayer.currentVideo = videos[newIndex];
-  
-  const videoElement = document.querySelector('video');
-  if (videoElement) {
-    const info = videoSrcInfo(videos[newIndex]);
-    videoElement.src = info.url;
-    videoElement.load();
-    videoElement.play().catch(() => {});
-  }
-  
-  const counter = document.querySelector('.video-counter');
-  if (counter) {
-    counter.textContent = `${newIndex + 1} / ${videos.length}`;
-  }
-}
+function changeVideo(delta) { window.AryaVideoPlayer.step(delta); }
+window.changeVideo = changeVideo;
 
-function renderVideoPlayerModal() {
-  if (!state.videoPlayer) return '';
-  
-  const videos = state.videoPlayer.videos || [];
-  const currentIndex = state.videoPlayer.index || 0;
-  const currentVideo = videos[currentIndex];
-  
-  if (!currentVideo) return '';
-  
-  const srcInfo = videoSrcInfo(currentVideo);
-  const videoUrl = srcInfo.url;
-  if (!videoUrl) return '';
-  
-  const videoTitle = typeof currentVideo === 'object' && currentVideo.name 
-    ? currentVideo.name 
-    : `ویدیو ${currentIndex + 1}`;
-
-  return `
-    <div 
-      class="fixed inset-0 z-[210] flex items-center justify-center p-4 modal-overlay bg-black/95"
-      onclick="if(event.target===this) closeVideoPlayer()"
-    >
-      <div class="relative w-full max-w-5xl max-h-[90vh] flex flex-col animate-scale">
-        
-        <div class="flex items-center justify-between mb-3 text-white px-2">
-          <span class="text-sm text-white/70 truncate max-w-[200px] md:max-w-md">
-            ${aryEsc(videoTitle)}
-          </span>
-          <div class="flex items-center gap-3">
-            <span class="text-xs bg-white/20 px-2 py-1 rounded-full video-counter">
-              ${currentIndex + 1} / ${videos.length}
-            </span>
-            <button 
-              type="button" 
-              class="text-white/80 hover:text-white text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-white/10" 
-              onclick="closeVideoPlayer()"
-              aria-label="بستن"
-            >
-              ✕
-            </button>
-          </div>
-        </div>
-
-        <div class="relative bg-black/60 rounded-2xl overflow-hidden" style="height: 70vh;">
-          <video
-            controls
-            playsinline
-            preload="metadata"
-            class="w-full h-full object-contain"
-            autoplay
-            src="${aryEsc(videoUrl)}"
-          >
-            مرورگر شما از پخش ویدیو پشتیبانی نمی‌کند.
-          </video>
-
-          ${videos.length > 1 ? `
-            <button 
-              type="button"
-              class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl"
-              onclick="changeVideo(-1)"
-              aria-label="ویدیو قبلی"
-            >
-              ←
-            </button>
-            <button 
-              type="button"
-              class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/60 hover:bg-black/80 text-white rounded-full w-10 h-10 flex items-center justify-center text-xl"
-              onclick="changeVideo(1)"
-              aria-label="ویدیو بعدی"
-            >
-              →
-            </button>
-          ` : ''}
-        </div>
-
-        ${videos.length > 1 ? `
-          <div class="flex gap-2 overflow-x-auto mt-4 px-2 py-2 justify-center">
-            ${videos.map((video, i) => {
-              const isActive = i === currentIndex;
-              const thumbTitle = typeof video === 'object' && video.name 
-                ? video.name.substring(0, 15) + (video.name.length > 15 ? '...' : '')
-                : `ویدیو ${i + 1}`;
-              
-              return `
-                <button
-                  type="button"
-                  class="flex-shrink-0 px-3 py-2 rounded-xl glass transition-all ${
-                    isActive ? 'bg-violet-500/20 border border-violet-400' : 'hover:bg-white/10'
-                  }"
-                  onclick="state.videoPlayer.index = ${i}; state.videoPlayer.currentVideo = state.videoPlayer.videos[${i}]; render()"
-                >
-                  <span class="text-xs whitespace-nowrap inline-flex items-center gap-1">${aryIcon('video', 'w-3.5 h-3.5')}${thumbTitle}</span>
-                </button>
-              `;
-            }).join('')}
-          </div>
-        ` : ''}
-      </div>
-    </div>
-  `;
-}
+function renderVideoPlayerModal() { return ''; /* پلیر مستقل: AryaVideoPlayer در body */ }
 
 // ========== بخش ویدیو محصول در صفحه (بی‌رنگ) ==========
 function renderProductVideos(product) {
@@ -2496,13 +2668,14 @@ function renderProductVideos(product) {
             ? video.name 
             : `ویدیو ${index + 1}`;
           
+          const vInfo = videoSrcInfo(video);
           return `
             <div 
               class="glass rounded-xl overflow-hidden cursor-pointer group hover:shadow-lg hover:shadow-white/10 transition-all border border-white/10 hover:border-white/30"
               onclick="openVideoPlayer(${index})"
             >
               <div class="relative aspect-video bg-white/5 flex items-center justify-center">
-                <div class="flex justify-center text-white/20">${aryIcon('video', 'w-10 h-10')}</div>
+                <video muted playsinline preload="metadata" src="${aryEsc(vInfo.url)}#t=0.9" tabindex="-1" class="absolute inset-0 w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity pointer-events-none"></video>
                 
                 <!-- آیکون پخش -->
                 <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -3797,7 +3970,7 @@ function renderProductPage() {
             {id:'settings', label:'تنظیمات', icon:'lock'},
           ].map(tab => `
             <button type="button"
-              onclick="state.profileTab='${tab.id}'; render()"
+              onclick="switchProfileTab('${tab.id}')""
               class="flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center gap-2 whitespace-nowrap
                 ${state.profileTab===tab.id ? 'bg-violet-500 text-white shadow-lg shadow-violet-500/30' : 'glass text-white/60 hover:bg-white/10'}">
               <span class="inline-flex ${state.profileTab === tab.id ? '' : 'opacity-70'}">${aryCatIcon({ icon: tab.icon }, 'w-4 h-4')}</span><span>${tab.label}</span>

@@ -1007,3 +1007,21 @@ form select option {
 .ary-hscroll{scrollbar-width:none;-ms-overflow-style:none}
 .ary-hscroll::-webkit-scrollbar{display:none}
 .ary-hscroll > *{scroll-snap-align:start}
+
+/* ── دایرهٔ شناور پشتیبانی ── */
+#arya-support-fab{position:fixed;left:1.25rem;bottom:1.25rem;z-index:80;display:flex;align-items:center;gap:.6rem;cursor:pointer;outline:none}
+#arya-support-fab .ary-fab-btn{width:3.4rem;height:3.4rem;border-radius:9999px;display:flex;align-items:center;justify-content:center;color:#fff;background:linear-gradient(135deg,#7c3aed,#a855f7 55%,#6366f1);box-shadow:0 10px 32px rgba(124,58,237,.45);transition:transform .2s ease,box-shadow .2s ease;position:relative}
+#arya-support-fab:hover .ary-fab-btn,#arya-support-fab:focus-visible .ary-fab-btn{transform:translateY(-2px) scale(1.06);box-shadow:0 14px 38px rgba(124,58,237,.6)}
+#arya-support-fab .ary-fab-btn::after{content:"";position:absolute;inset:0;border-radius:9999px;animation:aryFabPing 2.6s cubic-bezier(0,0,.2,1) infinite;pointer-events:none}
+@keyframes aryFabPing{70%,100%{transform:scale(1.45);opacity:0}}
+@media (prefers-reduced-motion:reduce){#arya-support-fab .ary-fab-btn::after{animation:none}}
+.ary-fab-badge{position:absolute;top:-3px;right:-3px;min-width:1.2rem;height:1.2rem;border-radius:9999px;background:#f43f5e;color:#fff;font-size:.65rem;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 .32rem;border:2px solid #14092e}
+#arya-support-fab .ary-fab-tip{background:rgba(20,9,46,.92);border:1px solid rgba(255,255,255,.12);color:#fff;font-size:.75rem;font-weight:700;padding:.45rem .8rem;border-radius:.8rem;opacity:0;transform:translateX(-6px);transition:opacity .2s,transform .2s;pointer-events:none;white-space:nowrap}
+#arya-support-fab:hover .ary-fab-tip,#arya-support-fab:focus-visible .ary-fab-tip{opacity:1;transform:translateX(0)}
+.ary-chat-bubble-user{background:linear-gradient(135deg,rgba(124,58,237,.85),rgba(99,102,241,.85));border-radius:1rem 1rem .3rem 1rem}
+.ary-chat-bubble-sup{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09);border-radius:1rem 1rem 1rem .3rem}
+
+/* ── اسکرول افقی با درگ ── */
+.ary-hscroll{cursor:grab;-webkit-tap-highlight-color:transparent}
+.ary-hscroll.dragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
+.ary-hscroll.dragging img,.ary-hscroll.dragging video{pointer-events:none}

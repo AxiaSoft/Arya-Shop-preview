@@ -45,39 +45,50 @@ function renderAdminDashboard() {
 
       <!-- Stats -->
       <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        ${dashboardStatCard("💰", "کل فروش", utils.formatPriceShort(totalSales), "from-emerald-500 to-green-600")}
-        ${dashboardStatCard("📅", "سفارشات امروز", todayOrders.length, "from-blue-500 to-cyan-600")}
-        ${dashboardStatCard("⏳", "در انتظار", pendingOrders, "from-amber-500 to-orange-600")}
-        ${dashboardStatCard("📦", "محصولات", products.length, "from-violet-500 to-purple-600")}
+        ${dashboardStatCard("coins", "کل فروش", utils.formatPriceShort(totalSales), "from-emerald-500 to-green-600", todayOrders.length + ' سفارش امروز')}
+        ${dashboardStatCard("trending", "سفارشات امروز", todayOrders.length, "from-blue-500 to-cyan-600", 'میانگین ' + utils.formatPriceShort(todayOrders.length ? Math.round(totalSales / Math.max(orders.length,1)) : 0) + ' تومان')}
+        ${dashboardStatCard("hourglass", "در انتظار پردازش", pendingOrders, "from-amber-500 to-orange-600", 'نیازمند بررسی')}
+        ${dashboardStatCard("box", "محصولات فعال", products.length, "from-violet-500 to-purple-600", users.length + ' کاربر ثبت‌نامی')}
       </div>
 
       <!-- Essential Charts -->
-      ${renderSalesChart(orders)}
-      ${renderOrdersChart(orders)}
+      <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6 mb-6">
+        ${renderSalesChart(orders)}
+        ${renderOrdersChart(orders)}
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 lg:gap-6 mb-6">
       ${renderMonthlyRevenueChart(orders)}
+      ${renderStatusDonut(orders)}
 
       <!-- Best Selling Products -->
-      <div class="glass rounded-2xl p-6 mb-8">
-        <h2 class="font-bold text-lg mb-4">پرفروش‌ترین محصولات</h2>
+      <div class="glass rounded-2xl p-4 sm:p-6 h-full">
+        <h2 class="font-bold text-lg mb-4 flex items-center gap-2">${typeof aryIcon === 'function' ? aryIcon('star', 'w-4 h-4 text-amber-400') : ''}پرفروش‌ترین محصولات</h2>
 
         ${
           bestProducts.length === 0
             ? `<p class="text-white/60 text-sm">هنوز فروشی ثبت نشده است.</p>`
             : `
-              <div class="space-y-3">
+              <div class="space-y-2.5">
                 ${bestProducts
-                  .map(
-                    p => `
-                  <div class="glass rounded-xl p-4 flex items-center justify-between">
-                    <span class="text-sm font-medium">${escapeHtml(p.title)}</span>
-                    <span class="text-emerald-400 font-bold">${p.qty} عدد</span>
+                  .map((p, bi) => {
+                    const maxQ = bestProducts[0].qty || 1;
+                    const pct = Math.max(6, Math.round((p.qty / maxQ) * 100));
+                    return `
+                  <div class="rounded-xl p-3 sm:p-4 bg-white/[.04] border border-white/5">
+                    <div class="flex items-center justify-between gap-3 min-w-0">
+                      <span class="text-sm font-medium truncate flex items-center gap-2 min-w-0"><span class="text-white/30 font-mono text-xs shrink-0">${bi + 1}</span><span class="truncate">${escapeHtml(p.title)}</span></span>
+                      <span class="text-emerald-400 font-bold shrink-0 text-sm">${p.qty} عدد</span>
+                    </div>
+                    <div class="h-1.5 mt-2 rounded-full bg-white/5 overflow-hidden"><div class="h-full rounded-full bg-gradient-to-l from-emerald-400 to-teal-400" style="width:${pct}%"></div></div>
                   </div>
-                `
-                  )
+                `;
+                  })
                   .join("")}
               </div>
             `
         }
+      </div>
       </div>
 
       <!-- Recent Orders -->
@@ -126,16 +137,19 @@ function renderAdminDashboard() {
 }
 
 /* Helper: stat card */
-function dashboardStatCard(icon, label, value, gradient) {
+function dashboardStatCard(icon, label, value, gradient, hint) {
+  const svg = (typeof aryIcon === 'function') ? aryIcon(icon, 'w-6 h-6 text-white') : '';
   return `
-    <div class="glass rounded-2xl p-5">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 bg-gradient-to-br ${gradient} rounded-xl flex items-center justify-center text-2xl shadow-lg">
-          ${icon}
+    <div class="glass rounded-2xl p-4 sm:p-5 relative overflow-hidden group transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/20">
+      <div class="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-l ${gradient} opacity-80"></div>
+      <div class="flex items-center gap-3 sm:gap-4 min-w-0">
+        <div class="w-11 h-11 sm:w-14 sm:h-14 bg-gradient-to-br ${gradient} rounded-2xl flex items-center justify-center shadow-lg shrink-0 transition-transform group-hover:scale-105">
+          ${svg || `<span class="text-2xl">${icon}</span>`}
         </div>
-        <div>
-          <p class="text-white/60 text-xs">${label}</p>
-          <p class="text-xl font-black">${value}</p>
+        <div class="min-w-0">
+          <p class="text-white/55 text-[11px] sm:text-xs">${label}</p>
+          <p class="text-lg sm:text-xl xl:text-2xl font-black leading-8 truncate">${value}</p>
+          ${hint ? `<p class="text-[10px] text-white/40 truncate">${hint}</p>` : ''}
         </div>
       </div>
     </div>
@@ -143,153 +157,177 @@ function dashboardStatCard(icon, label, value, gradient) {
 }
 
 /* ============================================================
-   SALES CHART (30 DAYS)
+   ADMIN CHARTS — SVG حرفه‌ای (area/bar/donut) با گرید، لیبل و tooltip
    ============================================================ */
+function _arySeries30(orders, numeric) {
+  const days = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  const map = {};
+  days.forEach(d => (map[d] = 0));
+  orders.forEach(o => {
+    const k = (o.created_at || '').slice(0, 10);
+    if (map[k] !== undefined) map[k] += numeric ? (Number(o.total) || 0) : 1;
+  });
+  return { days, values: days.map(d => map[d]) };
+}
+
+function _aryAreaChart(days, values, gradId, c1, c2, fmt) {
+  const max = Math.max(...values, 1);
+  const W = 300, H = 110, pad = 6;
+  const x = i => pad + (i / Math.max(days.length - 1, 1)) * (W - pad * 2);
+  const y = v => H - pad - (v / max) * (H - pad * 2);
+  const line = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
+  const area = `${line} L${x(values.length - 1).toFixed(1)} ${H - pad} L${x(0).toFixed(1)} ${H - pad} Z`;
+  const dates = days;
+  const pts = values.map((v, i) => (v > 0 && (i % 2 === 0 || i === values.length - 1))
+    ? `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2" fill="#fff" opacity=".9"><title>${days[i] || ''} — ${fmt(v)}</title></circle>` : '').join('');
+  const gridY = [0.25, 0.5, 0.75].map(f => `<line x1="${pad}" x2="${W - pad}" y1="${(H - pad - f * (H - pad * 2)).toFixed(1)}" y2="${(H - pad - f * (H - pad * 2)).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>`).join('');
+  return `
+    <svg viewBox="0 0 ${W} ${H}" class="w-full h-32 sm:h-36 lg:h-40" preserveAspectRatio="none" dir="ltr" aria-hidden="true">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="${c1}" stop-opacity=".45"/>
+          <stop offset="100%" stop-color="${c2}" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="${gradId}s" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%" stop-color="${c2}"/>
+          <stop offset="100%" stop-color="${c1}"/>
+        </linearGradient>
+      </defs>
+      ${gridY}
+      <path d="${area}" fill="url(#${gradId})"/>
+      <path d="${line}" fill="none" stroke="url(#${gradId}s)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      ${pts}
+    </svg>
+    <div class="flex justify-between text-[9px] text-white/30 mt-1 tabular-nums" dir="ltr">
+      <span>${dates[0] ? dates[0].slice(5) : ''}</span>
+      <span>${dates[Math.floor(dates.length / 2)] ? dates[Math.floor(dates.length / 2)].slice(5) : ''}</span>
+      <span>${dates[dates.length - 1] ? dates[dates.length - 1].slice(5) : ''}</span>
+    </div>`;
+}
+
+function _aryBarsChart(days, values, gradId, c1, c2, fmt) {
+  const max = Math.max(...values, 1);
+  const W = 300, H = 110, pad = 6, n = values.length;
+  const bw = (W - pad * 2) / n * .62;
+  const step = (W - pad * 2) / n;
+  const bars = values.map((v, i) => {
+    const h = Math.max(v > 0 ? 2 : 0.8, (v / max) * (H - pad * 2 - 10));
+    return `<rect x="${(pad + i * step + (step - bw) / 2).toFixed(1)}" y="${(H - pad - 10 - h + 10).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.2" fill="url(#${gradId})" ${v > 0 ? '' : 'opacity=".25"'}><title>${escapeHtml(days[i])} — ${fmt(v)}</title></rect>`;
+  }).join('');
+  return `
+    <svg viewBox="0 0 ${W} ${H}" class="w-full h-32 sm:h-36 lg:h-40" preserveAspectRatio="none" dir="ltr" aria-hidden="true">
+      <defs>
+        <linearGradient id="${gradId}" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stop-color="${c1}"/>
+          <stop offset="100%" stop-color="${c2}"/>
+        </linearGradient>
+      </defs>
+      <line x1="${pad}" x2="${W - pad}" y1="${H - pad - 10}" y2="${H - pad - 10}" stroke="rgba(255,255,255,.1)" stroke-width=".6"/>
+      ${bars}
+    </svg>`;
+}
+
 function renderSalesChart(orders) {
-  const days = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    days.push(key);
-  }
-
-  const salesMap = {};
-  days.forEach(d => (salesMap[d] = 0));
-
-  orders.forEach(o => {
-    const date = (o.created_at || "").slice(0, 10);
-    if (salesMap[date] !== undefined) {
-      salesMap[date] += o.total || 0;
-    }
-  });
-
-  const values = Object.values(salesMap);
-  const maxValue = Math.max(...values, 1);
-
-  const points = values
-    .map((v, i) => `${(i / 29) * 100},${100 - (v / maxValue) * 100}`)
-    .join(" ");
-
+  const { days, values } = _arySeries30(orders, true);
+  const total = values.reduce((a, b) => a + b, 0);
+  const best = Math.max(...values, 0);
   return `
-    <div class="glass rounded-2xl p-6 mb-8">
-      <h2 class="font-bold text-lg mb-4">نمودار فروش (۳۰ روز اخیر)</h2>
-
-      <svg viewBox="0 0 100 100" class="w-full h-40 lg:h-56">
-        <polyline points="${points}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
-        <polyline points="${points}" fill="none" stroke="url(#gradSales)" stroke-width="3"/>
-
-        <defs>
-          <linearGradient id="gradSales" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#4ade80"/>
-            <stop offset="100%" stop-color="#22c55e"/>
-          </linearGradient>
-        </defs>
-      </svg>
-
-      <p class="text-xs text-white/50 mt-2">فروش روزانه</p>
+    <div class="glass rounded-2xl p-4 sm:p-6 h-full flex flex-col">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 class="font-bold text-sm sm:text-lg flex items-center gap-2">${typeof aryIcon === 'function' ? aryIcon('trending', 'w-4 h-4 text-emerald-400') : ''}فروش ۳۰ روز اخیر</h2>
+        <div class="flex items-center gap-2 text-[10px] sm:text-xs">
+          <span class="px-2 py-1 rounded-lg bg-emerald-500/10 text-emerald-300">جمع: ${utils.formatPriceShort(total)}</span>
+          <span class="px-2 py-1 rounded-lg bg-white/5 text-white/50">اوج روزانه: ${utils.formatPriceShort(best)}</span>
+        </div>
+      </div>
+      ${_aryAreaChart(days, values, 'gArySales', '#4ade80', '#22c55e', v => utils.formatPrice(v))}
+      <p class="text-[10px] text-white/40 mt-2">راهنما: محور افقی روزِ ماه، عمودی مبلغ — روی نقاط نگه دارید</p>
     </div>
   `;
 }
 
-/* ============================================================
-   ORDERS COUNT CHART (30 DAYS)
-   ============================================================ */
 function renderOrdersChart(orders) {
-  const days = [];
-  for (let i = 29; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
-    days.push(key);
-  }
-
-  const ordersMap = {};
-  days.forEach(d => (ordersMap[d] = 0));
-
-  orders.forEach(o => {
-    const date = (o.created_at || "").slice(0, 10);
-    if (ordersMap[date] !== undefined) {
-      ordersMap[date] += 1;
-    }
-  });
-
-  const values = Object.values(ordersMap);
-  const maxValue = Math.max(...values, 1);
-
-  const points = values
-    .map((v, i) => `${(i / 29) * 100},${100 - (v / maxValue) * 100}`)
-    .join(" ");
-
+  const { days, values } = _arySeries30(orders, false);
+  const total = values.reduce((a, b) => a + b, 0);
   return `
-    <div class="glass rounded-2xl p-6 mb-8">
-      <h2 class="font-bold text-lg mb-4">تعداد سفارشات (۳۰ روز اخیر)</h2>
-
-      <svg viewBox="0 0 100 100" class="w-full h-40 lg:h-56">
-        <polyline points="${points}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
-        <polyline points="${points}" fill="none" stroke="url(#gradOrders)" stroke-width="3"/>
-
-        <defs>
-          <linearGradient id="gradOrders" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#60a5fa"/>
-            <stop offset="100%" stop-color="#3b82f6"/>
-          </linearGradient>
-        </defs>
-      </svg>
-
-      <p class="text-xs text-white/50 mt-2">سفارشات روزانه</p>
+    <div class="glass rounded-2xl p-4 sm:p-6 h-full flex flex-col">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 class="font-bold text-sm sm:text-lg flex items-center gap-2">${typeof aryIcon === 'function' ? aryIcon('box', 'w-4 h-4 text-sky-400') : ''}سفارش‌های ۳۰ روز اخیر</h2>
+        <span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-300 text-[10px] sm:text-xs">مجموع: ${total}</span>
+      </div>
+      ${_aryBarsChart(days, values, 'gAryOrders', '#38bdf8', '#0ea5e9', v => v + ' سفارش')}
+      <p class="text-[10px] text-white/40 mt-2">تعداد سفارش هر روز</p>
     </div>
   `;
 }
 
-/* ============================================================
-   MONTHLY REVENUE CHART (12 MONTHS)
-   ============================================================ */
 function renderMonthlyRevenueChart(orders) {
-  const months = [];
-  const now = new Date();
-
+  const months = [], now = new Date();
   for (let i = 11; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-    months.push(key);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
-
-  const revenueMap = {};
-  months.forEach(m => (revenueMap[m] = 0));
-
-  orders.forEach(o => {
-    const date = o.created_at || "";
-    const monthKey = date.slice(0, 7);
-    if (revenueMap[monthKey] !== undefined) {
-      revenueMap[monthKey] += o.total || 0;
-    }
-  });
-
-  const values = Object.values(revenueMap);
-  const maxValue = Math.max(...values, 1);
-
-  const points = values
-    .map((v, i) => `${(i / 11) * 100},${100 - (v / maxValue) * 100}`)
-    .join(" ");
-
+  const map = {};
+  months.forEach(m => (map[m] = 0));
+  orders.forEach(o => { const k = (o.created_at || '').slice(0, 7); if (map[k] !== undefined) map[k] += Number(o.total) || 0; });
+  const values = months.map(m => map[m]);
   return `
-    <div class="glass rounded-2xl p-6 mb-8">
-      <h2 class="font-bold text-lg mb-4">درآمد ماهانه (۱۲ ماه اخیر)</h2>
+    <div class="glass rounded-2xl p-4 sm:p-6 h-full flex flex-col">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h2 class="font-bold text-sm sm:text-lg flex items-center gap-2">${typeof aryIcon === 'function' ? aryIcon('coins', 'w-4 h-4 text-pink-400') : ''}درآمد ۱۲ ماه اخیر</h2>
+        <span class="px-2 py-1 rounded-lg bg-pink-500/10 text-pink-300 text-[10px] sm:text-xs">میانگین ماهانه: ${utils.formatPriceShort(values.reduce((a, b) => a + b, 0) / 12)}</span>
+      </div>
+      ${_aryBarsChart(months, values, 'gAryMonthly', '#f472b6', '#ec4899', v => utils.formatPrice(v))}
+      <p class="text-[10px] text-white/40 mt-2">ستون‌ها از چپ: ۱۲ ماه گذشته ← ماه جاری</p>
+    </div>
+  `;
+}
 
-      <svg viewBox="0 0 100 100" class="w-full h-48 lg:h-64">
-        <polyline points="${points}" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="3"/>
-        <polyline points="${points}" fill="none" stroke="url(#gradMonthly)" stroke-width="3"/>
-
-        <defs>
-          <linearGradient id="gradMonthly" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stop-color="#f472b6"/>
-            <stop offset="100%" stop-color="#ec4899"/>
-          </linearGradient>
-        </defs>
-      </svg>
-
-      <p class="text-xs text-white/50 mt-2">درآمد ماهانه</p>
+function renderStatusDonut(orders) {
+  const defs = [
+    ['pending',    'در انتظار',   '#f59e0b'],
+    ['processing', 'پردازش',      '#38bdf8'],
+    ['shipped',    'ارسال‌شده',    '#818cf8'],
+    ['delivered',  'تحویل‌شده',    '#34d399'],
+    ['canceled',   'لغوشده',       '#fb7185'],
+  ];
+  const counts = defs.map(([k]) => [k, orders.filter(o => (o.status || 'pending') === k).length]);
+  const total = counts.reduce((a, [, v]) => a + v, 0) || 1;
+  let acc = 0;
+  const segs = counts.map(([k, v], i) => {
+    if (!v) return '';
+    const frac = v / total;
+    const dash = `${(frac * 87.96).toFixed(2)} ${(87.96 * (1 - frac)).toFixed(2)}`;
+    const off = -acc * 87.96;
+    acc += frac;
+    return `<circle r="14" cx="16" cy="16" fill="none" stroke="${defs[i][2]}" stroke-width="3.4" stroke-dasharray="${dash}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 16 16)"><title>${defs[i][1]}: ${v}</title></circle>`;
+  }).join('');
+  const legend = counts.map(([k, v], i) => `
+    <div class="flex items-center justify-between gap-2 text-xs">
+      <span class="flex items-center gap-2 text-white/70"><span class="block w-2.5 h-2.5 rounded-full shrink-0" style="background:${defs[i][2]}"></span>${defs[i][1]}</span>
+      <span class="font-bold tabular-nums">${v}<span class="text-white/40 font-normal mr-1">(${Math.round((v / total) * 100)}٪)</span></span>
+    </div>`).join('');
+  return `
+    <div class="glass rounded-2xl p-4 sm:p-6 h-full flex flex-col">
+      <h2 class="font-bold text-sm sm:text-lg mb-4">توزیع وضعیت سفارش‌ها</h2>
+      <div class="flex items-center gap-4 sm:gap-6 min-w-0">
+        <div class="relative shrink-0 w-28 h-28 sm:w-32 sm:h-32">
+          <svg viewBox="0 0 32 32" class="w-full h-full" style="transform:scaleX(-1)" aria-hidden="true">
+            <circle r="14" cx="16" cy="16" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="3.4"/>
+            ${segs}
+          </svg>
+          <div class="absolute inset-0 flex flex-col items-center justify-center">
+            <span class="text-xl font-black tabular-nums">${counts.reduce((a, [, v]) => a + v, 0)}</span>
+            <span class="text-[9px] text-white/50">کل سفارش</span>
+          </div>
+        </div>
+        <div class="flex-1 space-y-2 min-w-0">${legend}</div>
+      </div>
     </div>
   `;
 }
@@ -355,11 +393,11 @@ function renderAdminOrders() {
                       onchange="updateOrderStatus(state.orders.find(o => o.id === '${order.id}'), this.value)"
                       class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-violet-500"
                     >
-                      <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>⏳ در انتظار</option>
-                      <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>⚙️ پردازش</option>
-                      <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>🚚 ارسال شده</option>
-                      <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>✅ تحویل</option>
-                    <option value="canceled" ${order.status === 'canceled' ? 'selected' : ''}>✖ لغو</option>
+                      <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>در انتظار</option>
+                      <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>در حال پردازش</option>
+                      <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>ارسال شده</option>
+                      <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تحویل</option>
+                    <option value="canceled" ${order.status === 'canceled' ? 'selected' : ''}>لغو</option>
                     </select>
                                         ${order.return_status && order.return_status !== 'none' ? `
                                         <div class="mt-2 rounded-xl border p-2.5 " + (order.return_status === 'requested' ? 'border-sky-500/30 bg-sky-500/10' : (order.return_status === 'approved' || order.return_status === 'completed' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-rose-500/30 bg-rose-500/10')) + "">
@@ -618,22 +656,22 @@ function renderAdminPanel() {
             .join('')}
         </nav>
         <div class="p-4 border-t border-white/5 space-y-2">
-          <button onclick="window.open('index.html', '_blank')" class="w-full btn-ghost py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium" type="button">🏠 مشاهده سایت (تب جدید)</button>
-          <button onclick="showDbExportPanel()" class="w-full bg-emerald-500/10 text-emerald-400 py-3 rounded-xl hover:bg-emerald-500/20 flex items-center justify-center gap-2 text-sm font-medium transition-all" type="button">🗄️ دیتابیس</button>
-          <button onclick="adminLogout()" class="w-full bg-rose-500/10 text-rose-400 py-3 rounded-xl hover:bg-rose-500/20 flex items-center justify-center gap-2 text-sm font-medium transition-all" type="button">🚪 خروج</button>
+          <button onclick="window.open('index.html', '_blank')" class="w-full btn-ghost py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium" type="button">${typeof aryIcon === 'function' ? aryIcon('home', 'w-4 h-4') : ''} مشاهده سایت (تب جدید)</button>
+          <button onclick="showDbExportPanel()" class="w-full bg-emerald-500/10 text-emerald-400 py-3 rounded-xl hover:bg-emerald-500/20 flex items-center justify-center gap-2 text-sm font-medium transition-all" type="button">${typeof aryIcon === 'function' ? aryIcon('database', 'w-4 h-4') : ''} دیتابیس</button>
+          <button onclick="adminLogout()" class="w-full bg-rose-500/10 text-rose-400 py-3 rounded-xl hover:bg-rose-500/20 flex items-center justify-center gap-2 text-sm font-medium transition-all" type="button">${typeof aryIcon === 'function' ? aryIcon('logout', 'w-4 h-4') : ''} خروج</button>
         </div>
       </aside>
 
       <!-- Mobile Header -->
       <header class="lg:hidden glass-dark border-b border-white/5 p-4">
         <div class="flex items-center justify-between">
-          <div class="flex items-center gap-3">
-            <span class="text-2xl">⚙️</span>
-            <h1 class="font-bold">پنل مدیریت</h1>
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-9 h-9 rounded-xl bg-violet-500/20 text-violet-300 flex items-center justify-center shrink-0">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-5 h-5') : '⚙️'}</span>
+            <h1 class="font-bold truncate">پنل مدیریت</h1>
           </div>
           <div class="flex gap-2">
-            <button onclick="window.open('index.html', '_blank')" class="p-2 glass rounded-xl text-sm" type="button" title="مشاهده سایت در تب جدید">🏠</button>
-            <button onclick="adminLogout()" class="p-2 glass rounded-xl text-rose-400 text-sm" type="button" title="خروج از پنل">🚪</button>
+            <button onclick="window.open('index.html', '_blank')" class="p-2 glass rounded-xl text-sm" type="button" title="مشاهده سایت در تب جدید">${typeof aryIcon === 'function' ? aryIcon('home', 'w-4 h-4') : '🏠'}</button>
+            <button onclick="adminLogout()" class="p-2 glass rounded-xl text-rose-400 text-sm" type="button" title="خروج از پنل">${typeof aryIcon === 'function' ? aryIcon('logout', 'w-4 h-4') : '🚪'}</button>
           </div>
         </div>
       </header>
@@ -2672,18 +2710,18 @@ function renderAdminProductsEditor() {
             const hasDiscount = original > price && price > 0;
             const discountPercent = hasDiscount ? Math.round(((original - price) / original) * 100) : 0;
             return `
-              <div class="glass rounded-2xl p-5 flex items-center gap-4 animate-fade" style="animation-delay:${i * 0.05}s">
-                <div class="w-16 h-16 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
+              <div class="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 animate-fade min-w-0" style="animation-delay:${i * 0.05}s">
+                <div class="w-full sm:w-16 h-24 sm:h-16 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
                   ${ hasImage ? `<img src="${imgSrc}" alt="${escapeHtml(product.title)}" class="w-full h-full object-cover">` : `<span class="text-3xl">📦</span>` }
                 </div>
 
                 <div class="flex-1 min-w-0">
-                  <h3 class="font-bold truncate">${escapeHtml(product.title)}</h3>
-                  <p class="text-white/60 text-sm">${state.categories.find(c => c.id === product.category)?.title || 'بدون دسته'}</p>
-                  ${product.slug ? `<p class="text-white/40 text-xs mt-1">/${product.slug}</p>` : ''}
+                  <h3 class="font-bold leading-6 break-words">${escapeHtml(String(product.title || 'بدون نام'))}</h3>
+                  <p class="text-white/60 text-sm truncate">${escapeHtml(state.categories.find(c => c.id === product.category)?.title || 'بدون دسته')}</p>
+                  ${product.slug ? `<p class="text-white/40 text-xs mt-1 break-all line-clamp-1">/${escapeHtml(String(product.slug))}</p>` : ''}
                 </div>
 
-                <div class="text-left hidden sm:block">
+                <div class="text-left sm:text-right shrink-0">
                   ${ hasDiscount ? `
                       <div class="flex items-center gap-2">
                         <span class="text-emerald-400 font-bold">${utils.formatPrice(price)}</span>
@@ -2691,10 +2729,10 @@ function renderAdminProductsEditor() {
                       </div>
                       <div class="mt-1"><span class="badge badge-discount text-[10px]">${discountPercent}% تخفیف</span></div>
                     ` : `<p class="text-emerald-400 font-bold">${utils.formatPrice(price)}</p>` }
-                  <p class="text-xs text-white/60 mt-1">موجودی: ${product.stock || 0}</p>
+                  <p class="text-xs text-white/60 mt-1">موجودی: ${Number(product.stock) || 0}${(Number(product.stock) || 0) < 5 ? '<span class="text-amber-400 mr-1.5"> (رو به اتمام)</span>' : ''}</p>
                 </div>
 
-                <div class="flex gap-2">
+                <div class="flex gap-2 shrink-0 flex-wrap sm:flex-nowrap">
                   <button onclick="
                     state.editProduct = state.products.find(p => p.id === '${product.id}');
                     state.productDraft = { 
@@ -2717,8 +2755,8 @@ function renderAdminProductsEditor() {
         </div>
       ` : `
         <div class="glass rounded-3xl p-16 text-center">
-          <div class="mb-6 animate-float flex items-center justify-center">
-            <span class="text-7xl">📦</span>
+          <div class="mb-6 animate-float flex items-center justify-center text-white/25">
+            ${typeof aryIcon === 'function' ? aryIcon('box', 'w-20 h-20') : '<span class="text-7xl">📦</span>'}
           </div>
           <h3 class="text-2xl font-bold mb-4">محصولی ثبت نشده است</h3>
           <p class="text-white/60 mb-6">اولین محصول خود را اضافه کنید</p>
@@ -4095,3 +4133,31 @@ window.submitNewAdminUser = submitNewAdminUser;
 window.openEditAdminUserModal = openEditAdminUserModal;
 window.saveEditedAdminUser = saveEditedAdminUser;
 window.deleteAdminUserConfirm = deleteAdminUserConfirm;
+// ═══════════════════════════════════════════════════════════════
+// امنیت: قفل خودکار پنل در حالت بی‌کاری (Idle Lock)
+// ═══════════════════════════════════════════════════════════════
+(function aryAdminIdleLock() {
+  const LIMIT = 15 * 60 * 1000;      // ۱۵ دقیقه بی‌کاری → خروج
+  const WARN = LIMIT - 60 * 1000;    // ۱ دقیقه مانده → هشدار
+  let last = Date.now(), warned = false;
+  ['mousemove', 'keydown', 'click', 'scroll', 'touchstart', 'pointerdown'].forEach(ev => {
+    window.addEventListener(ev, function bump() {
+      last = Date.now(); warned = false;
+    }, { passive: true });
+  });
+  // بازگشت تب فعال — تایمرهای مرورگرهای بک‌گراند محدودند، پس فعال‌سازی دوباره لازم است
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) last = Date.now(); });
+  setInterval(function () {
+    if (!(window.state && state.isAdmin)) return;
+    const idle = Date.now() - last;
+    if (idle >= LIMIT) {
+      last = Date.now(); // جلوگیری از اجرای دوباره پیش از رفتن صفحه
+      if (typeof window.adminLogout === 'function') { try { window.adminLogout(); return; } catch (e) {} }
+      try { if (window.AryaServer) AryaServer.call('admin_logout', { method: 'POST' }).catch(() => {}); } catch (e) {}
+      location.reload();
+    } else if (idle >= WARN && !warned) {
+      warned = true;
+      if (window.toast) toast('در صورت ادامه بی‌کاری، تا ۱ دقیقه دیگر به‌دلیل امنیت از پنل خارج می‌شوید', 'warning');
+    }
+  }, 15 * 1000);
+})();
