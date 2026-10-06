@@ -342,105 +342,231 @@ function renderAdminOrders() {
   if (state.orderFilter.status) {
     filteredOrders = filteredOrders.filter(o => o.status === state.orderFilter.status);
   }
+  const returnsRequestedCount = (state.orders || []).filter(o => o.return_status === 'requested').length;
+  const _ordIcon = (n, c) => (typeof aryIcon === 'function' ? aryIcon(n, c) : '');
   
   return `
     <div class="animate-fade">
       <h1 class="text-2xl lg:text-3xl font-black mb-8">سفارشات (${filteredOrders.length})</h1>
       
       <!-- Filter -->
-      <div class="glass rounded-2xl p-5 mb-6">
+      <div class="glass rounded-2xl p-4 lg:p-5 mb-6 space-y-3">
         <div class="flex flex-wrap gap-2">
-          <button 
-            onclick="state.orderFilter.status = ''; render()"
-            class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${!state.orderFilter.status ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10'}"
-          >
-            همه
-          </button>
+          <button
+            onclick="state.orderFilter.status = ''; state.orderFilter.view = ''; render()"
+            class="px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all ${!state.orderFilter.status && !state.orderFilter.view ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10'}"
+          >همه</button>
           ${[
-            { value: 'pending', label: '⏳ در انتظار', color: 'bg-amber-500' },
-            { value: 'processing', label: '⚙️ پردازش', color: 'bg-blue-500' },
-            { value: 'shipped', label: '🚚 ارسال شده', color: 'bg-cyan-500' },
-            { value: 'delivered', label: '✅ تحویل', color: 'bg-emerald-500' }
+            { value: 'pending', label: 'در انتظار', color: 'bg-amber-500' },
+            { value: 'processing', label: 'پردازش', color: 'bg-blue-500' },
+            { value: 'shipped', label: 'ارسال شده', color: 'bg-cyan-500' },
+            { value: 'delivered', label: 'تحویل', color: 'bg-emerald-500' },
+            { value: 'canceled', label: 'لغوشده', color: 'bg-rose-600' }
           ].map(opt => `
-            <button 
-              onclick="state.orderFilter.status = '${opt.value}'; render()"
-              class="px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${state.orderFilter.status === opt.value ? opt.color + ' text-white' : 'glass hover:bg-white/10'}"
-            >
-              ${opt.label}
-            </button>
+            <button
+              onclick="state.orderFilter.status = '${opt.value}'; state.orderFilter.view = ''; render()"
+              class="px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all ${state.orderFilter.status === opt.value && !state.orderFilter.view ? opt.color + ' text-white' : 'glass hover:bg-white/10'}"
+            >${opt.label}</button>
           `).join('')}
+          <button
+            onclick="state.orderFilter.view = state.orderFilter.view === 'returns' ? '' : 'returns'; state.orderFilter.status = ''; render()"
+            class="px-3.5 lg:px-4 py-2 rounded-xl text-xs lg:text-sm font-medium transition-all inline-flex items-center gap-2 ${state.orderFilter.view === 'returns' ? 'bg-sky-500 text-white' : 'glass hover:bg-white/10 text-sky-200'}"
+          >مرجوعی‌ها
+            ${returnsRequestedCount > 0 ? `<span class="bg-white/25 text-white text-[10px] font-bold rounded-full px-1.5 leading-4">${returnsRequestedCount}</span>` : ''}
+          </button>
+        </div>
+        <div class="relative">
+          <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/35 inline-flex">${typeof aryIcon === 'function' ? aryIcon('search', 'w-4 h-4') : ''}</span>
+          <input id="admin-orders-search" type="search" placeholder="جستجو: شماره سفارش، موبایل یا نام مشتری…"
+            class="input-style w-full pr-10 text-sm" value="${escapeHtml(state.orderFilter.q || '')}"
+            oninput="state.orderFilter.q = this.value; updateAdminOrdersList()" autocomplete="off">
         </div>
       </div>
-      
-      ${filteredOrders.length > 0 ? `
-        <div class="space-y-4">
-          ${filteredOrders.map((order, i) => {
-            const items = JSON.parse(order.items || '[]');
-            const statusInfo = utils.getStatusInfo(order.status);
-            
-            return `
-              <div class="glass rounded-2xl p-6 animate-fade" style="animation-delay: ${i * 0.05}s">
-                <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
-                  <div>
+
+      <div id="admin-orders-list">
+      ${renderAdminOrdersList(filteredOrders)}
+      </div>
+      `;
+}
+
+function renderAdminOrdersList(filteredOrders) {
+  const q = String((state.orderFilter && state.orderFilter.q) || '').trim().toLowerCase();
+  const returnsRequestedCount = (state.orders || []).filter(o => o.return_status === 'requested').length;
+  let list = Array.isArray(filteredOrders) ? filteredOrders.slice() : [];
+  if (state.orderFilter && state.orderFilter.view === 'returns') {
+    list = list.filter(o => o.return_status && o.return_status !== 'none');
+  }
+  if (q) {
+    const digits = q.replace(/\D/g, '');
+    const isPhone = digits.length >= 4 && /^0?9?\d+$/.test(digits);
+    list = list.filter(o =>
+      String(o.id || '').toLowerCase().includes(q) ||
+      (isPhone && String(o.user_phone || '').replace(/\D/g, '').includes(digits)) ||
+      String(o.user_name || '').toLowerCase().includes(q) ||
+      String(o.return_reason || '').toLowerCase().includes(q));
+  }
+
+  if (state.orderFilter && state.orderFilter.view === 'returns') {
+    const groups = [['requested', 'در انتظار بررسی من', 'text-sky-300 bg-sky-500/10'], ['approved', 'تأییدشده', 'text-emerald-300 bg-emerald-500/10'], ['rejected', 'ردشده', 'text-rose-300 bg-rose-500/10'], ['completed', 'عودت‌شده', 'text-white/70 bg-white/10']];
+    const sum = groups.map(([k, label, cls]) => {
+      const n = (state.orders || []).filter(o => o.return_status === k).length;
+      return `<span class="px-2.5 py-1 rounded-lg text-[11px] ${cls}">${label}: <b>${n}</b></span>`;
+    }).join('');
+    list = [...list].sort((a, b) => ((a.return_status === 'requested') ? 0 : 1) - ((b.return_status === 'requested') ? 0 : 1) || String(b.return_at || '').localeCompare(String(a.return_at || '')));
+    return `
+      <div class="glass rounded-2xl p-4 mb-4 flex flex-wrap items-center gap-2">
+        <span class="text-xs text-white/60 font-bold">خلاصه مرجوعی‌ها:</span>
+        ${sum}
+      </div>
+      ${list.length === 0 ? `<div class="glass rounded-2xl p-12 text-center text-sm text-white/50">موردی برای نمایش نیست.</div>` : ''}
+      ${list.map((order, i) => renderAdminOrderCard(order, i)).join('')}
+    `;
+  }
+  if (list.length === 0) {
+    return `<div class="glass rounded-2xl p-12 text-center text-sm text-white/50">سفارشی با این فیلترها یافت نشد.</div>`;
+  }
+  return `<div class="space-y-4">${list.map((order, i) => renderAdminOrderCard(order, i)).join('')}</div>`;
+}
+
+function updateAdminOrdersList() {
+  const wrap = document.getElementById('admin-orders-list');
+  if (!wrap) return;
+  let fo = Array.isArray(state.orders) ? [...state.orders] : [];
+  if (state.orderFilter && state.orderFilter.status) fo = fo.filter(o => (o.status || 'pending') === state.orderFilter.status);
+  wrap.innerHTML = renderAdminOrdersList(fo);
+}
+window.updateAdminOrdersList = updateAdminOrdersList;
+
+function renderAdminOrderCard(order, i) {
+  const items = JSON.parse(order.items || '[]');
+  const canceled = (order.status || 'pending') === 'canceled';
+  const delivered = (order.status || 'pending') === 'delivered';
+  const ret = order.return_status && order.return_status !== 'none';
+  const ai = (n, c) => (typeof aryIcon === 'function' ? aryIcon(n, c) : '');
+  return `
+              <div class="glass rounded-2xl p-5 lg:p-6 animate-fade ${canceled ? 'border border-rose-500/40 bg-rose-500/[0.05]' : ''}" style="animation-delay: ${i * 0.05}s">
+                <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+                  <div>
                     <span class="font-mono font-bold">#${(order.id || '').slice(-8)}</span>
-                    <p class="text-xs text-white/60 mt-1">${utils.formatDateTime(order.created_at)}</p>
-                  </div>
-                  
-                  <div>
-                    <label for="status-${order.id}" class="sr-only">وضعیت سفارش</label>
-                    <select 
-                      id="status-${order.id}"
-                      onchange="updateOrderStatus(state.orders.find(o => o.id === '${order.id}'), this.value)"
-                      class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-violet-500"
-                    >
-                      <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>در انتظار</option>
-                      <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>در حال پردازش</option>
-                      <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>ارسال شده</option>
-                      <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تحویل</option>
-                    <option value="canceled" ${order.status === 'canceled' ? 'selected' : ''}>لغو</option>
-                    </select>
-                                        ${order.return_status && order.return_status !== 'none' ? `
-                                        <div class="mt-2 rounded-xl border p-2.5 " + (order.return_status === 'requested' ? 'border-sky-500/30 bg-sky-500/10' : (order.return_status === 'approved' || order.return_status === 'completed' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-rose-500/30 bg-rose-500/10')) + "">
-                                          <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <p class="text-[11px] font-bold " + (order.return_status === 'requested' ? 'text-sky-300' : 'text-white/70') + "">مرجوعی: ${order.return_status === 'requested' ? 'در انتظار بررسی' : (order.return_status === 'approved' ? 'تایید شده' : (order.return_status === 'completed' ? 'عودت شد' : 'رد شده'))}</p>
-                                            ${order.return_status === 'requested' ? `<span class="flex gap-2"><button type="button" class="btn-success text-[11px] px-2.5 py-1 rounded-lg" onclick="aryAdminReturnDecision('${order.id}', 'approved')">تایید مرجوعی</button> <button type="button" class="btn-danger text-[11px] px-2.5 py-1 rounded-lg" onclick="aryAdminReturnDecision('${order.id}', 'rejected')">رد مرجوعی</button></span>` : ''}
-                                          </div>
-                                          ${order.return_reason ? `<p class="text-[10px] text-white/60 mt-1.5 leading-5">دلیل مشتری: ${escapeHtml(String(order.return_reason).slice(0, 300))}</p>` : ''}
-                                        </div>` : ''}
-                                      </div>
-                                    </div>
-                
-                <div class="grid md:grid-cols-3 gap-4">
-                  <div class="glass rounded-xl p-4">
-                    <p class="text-xs text-white/60 mb-2">مشتری</p>
-                    <p class="font-semibold">${order.user_name || 'بدون نام'}</p>
-                    <p class="text-sm font-mono text-white/70">${order.user_phone}</p>
-                  </div>
-                  
-                  <div class="glass rounded-xl p-4 hidden md:block">
-                    <p class="text-xs text-white/60 mb-2">آدرس</p>
-                    <p class="text-sm line-clamp-2">${order.address || '-'}</p>
-                  </div>
-                  
-                  <div class="glass rounded-xl p-4">
-                    <p class="text-xs text-white/60 mb-2">مبلغ کل</p>
-                    <p class="text-xl font-black text-emerald-400">${utils.formatPrice(order.total)}</p>
-                    <p class="text-xs text-white/60">${items.length} کالا</p>
-                  </div>
-                </div>
+                    ${canceled ? `<span class="mr-2 inline-flex items-center gap-1 align-middle text-[10px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 rounded-lg px-2 py-0.5">✕ لغوشده${order.cancel_reason ? ' توسط مشتری' : ''}</span>` : ''}
+                    ${ret ? `<span class="mr-2 inline-flex items-center gap-1 align-middle text-[10px] font-bold text-sky-300 bg-sky-500/15 border border-sky-500/30 rounded-lg px-2 py-0.5">↩ مرجوعی</span>` : ''}
+                    <p class="text-xs text-white/60 mt-1">${utils.formatDateTime(order.created_at)}</p>
+                  </div>
+                  
+                  <div>
+                    <label for="status-${order.id}" class="sr-only">وضعیت سفارش</label>
+                    <select 
+                      id="status-${order.id}"
+                      onchange="updateOrderStatus(state.orders.find(o => o.id === '${order.id}'), this.value)"
+                      class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-violet-500"
+                    >
+                      <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>در انتظار</option>
+                      <option value="processing" ${order.status === 'processing' ? 'selected' : ''}>در حال پردازش</option>
+                      <option value="shipped" ${order.status === 'shipped' ? 'selected' : ''}>ارسال شده</option>
+                      <option value="delivered" ${order.status === 'delivered' ? 'selected' : ''}>تحویل</option>
+                    <option value="canceled" ${order.status === 'canceled' ? 'selected' : ''}>لغو</option>
+                    </select>
+                                        ${order.return_status && order.return_status !== 'none' ? `
+                                        <div class="mt-2 rounded-xl border p-2.5 " + (order.return_status === 'requested' ? 'border-sky-500/30 bg-sky-500/10' : (order.return_status === 'approved' || order.return_status === 'completed' ? 'border-emerald-500/30 bg-emerald-500/10' : 'border-rose-500/30 bg-rose-500/10')) + "">
+                                          <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="text-[11px] font-bold " + (order.return_status === 'requested' ? 'text-sky-300' : 'text-white/70') + "">مرجوعی: ${order.return_status === 'requested' ? 'در انتظار بررسی' : (order.return_status === 'approved' ? 'تایید شده' : (order.return_status === 'completed' ? 'عودت شد' : 'رد شده'))}</p>
+                                            ${order.return_status === 'requested' ? `<span class="flex gap-2"><button type="button" class="btn-success text-[11px] px-2.5 py-1 rounded-lg" onclick="aryAdminReturnDecision('${order.id}', 'approved')">تایید مرجوعی</button> <button type="button" class="btn-danger text-[11px] px-2.5 py-1 rounded-lg" onclick="aryAdminReturnDecision('${order.id}', 'rejected')">رد مرجوعی</button></span>` : ''}
+                                          </div>
+                                          ${order.return_reason ? `<p class="text-[10px] text-white/60 mt-1.5 leading-5">دلیل مشتری: ${escapeHtml(String(order.return_reason).slice(0, 300))}</p>` : ''}
+                                        </div>` : ''}
+                                      </div>
+                                    </div>
+                
+                <div class="grid md:grid-cols-3 gap-4">
+                  <div class="glass rounded-xl p-4">
+                    <p class="text-xs text-white/60 mb-2">مشتری</p>
+                    <p class="font-semibold">${order.user_name || 'بدون نام'}</p>
+                    <p class="text-sm font-mono text-white/70">${order.user_phone}</p>
+                  </div>
+                  
+                  <div class="glass rounded-xl p-4 hidden md:block">
+                    <p class="text-xs text-white/60 mb-2">آدرس</p>
+                    <p class="text-sm line-clamp-2">${order.address || '-'}</p>
+                  </div>
+                  
+                  <div class="glass rounded-xl p-4">
+                    <p class="text-xs text-white/60 mb-2">مبلغ کل</p>
+                    <p class="text-xl font-black ${canceled ? 'text-rose-300 line-through decoration-rose-400/70 decoration-2' : 'text-emerald-400'}">${utils.formatPrice(order.total)}</p>
+                    <p class="text-xs text-white/60">${items.length} کالا</p>
+                  </div>
+                </div>
+              </div>
+                ${canceled && order.cancel_reason ? `<p class="mt-3 text-[11px] text-rose-300/85">دلیل لغو مشتری: ${escapeHtml(String(order.cancel_reason).slice(0,300))}</p>` : ''}
+                <div class="mt-4 pt-3.5 border-t border-white/5 flex flex-wrap items-center gap-2">
+                  ${delivered && !ret ? `<button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-sky-500/10 text-sky-300 hover:bg-sky-500/25 transition-all inline-flex items-center gap-1.5" onclick="aryAdminOpenReturn('${order.id}')">${ai('hourglass','w-3.5 h-3.5')}ثبت مرجوعی مشتری</button>` : ''}
+                  ${order.status === 'shipped' || order.tracking_code ? `<span class="text-[11px] text-white/50">کد رهگیری: <b dir="ltr" class="font-mono text-white/85">${escapeHtml(order.tracking_code || '-')}</b></span>` : ''}
+                  ${ret ? `<span class="text-[10px] text-white/45">وضعیت عودت: <b class="text-white/70">${order.return_status}</b>${order.refund_status && order.refund_status !== 'none' ? ` • بازگشت وجه: <b class="text-white/70">${order.refund_status}</b>` : ''}</span>` : ''}
+                  <span class="flex-1"></span>
+                  <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 text-white/70 hover:bg-white/10 transition-all" onclick="aryAdminCopyOrderCode('${order.id}')">کپی شناسه</button>
+                  <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/25 transition-all inline-flex items-center gap-1.5" onclick="adminDeleteOrder('${order.id}')">${ai('trash','w-3.5 h-3.5')}حذف سفارش</button>
+                </div>
               </div>
             `;
-          }).join('')}
-        </div>
-      ` : `
-        <div class="glass rounded-3xl p-16 text-center">
-          <div class="text-7xl mb-6">🛒</div>
-          <h3 class="text-2xl font-bold">سفارشی یافت ن  د</h3>
-        </div>
-      `}
-    </div>
-  `;
 }
+
+window.aryAdminCopyOrderCode = async function (id) {
+  try { await navigator.clipboard.writeText(String(id)); if (window.toast) toast('شناسه سفارش کپی شد', 'success'); }
+  catch (e) { if (window.toast) toast('کپی ممکن نبود', 'error'); }
+};
+
+window.adminDeleteOrder = function (id) {
+  const o = (state.orders || []).find(x => x.id === id);
+  if (!o) return;
+  state.confirmModal = {
+    icon: '🗑️',
+    title: 'حذف دائمی سفارش',
+    message: 'سفارش #' + String(o.id || '').slice(-8) + ' به نام ' + (o.user_name || 'بدون نام') + ' (' + utils.formatPrice(o.total) + ') برای همیشه حذف می‌شود. این کار قابل بازگشت نیست و در لاگ امنیتی سرور ثبت می‌شود. برای تأیید، عبارت «حذف» را وارد کنید.',
+    confirmText: 'حذف دائمی',
+    confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+    requirePhrase: 'حذف',
+    onConfirm: async function () {
+      const res = await adminApiCall('delete&table=orders', { id: o.id });
+      if (res && res.ok === false) { if (window.toast) toast('حذف ناموفق: ' + (res.msg || ''), 'error'); return; }
+      state.confirmModal = null;
+      state.orders = (state.orders || []).filter(x => x.id !== o.id);
+      if (window.toast) toast('سفارش حذف شد', 'success');
+      render();
+    }
+  };
+  render();
+};
+
+window.aryAdminOpenReturn = function (id) {
+  const o = (state.orders || []).find(x => x.id === id);
+  if (!o) return;
+  const cur = document.getElementById('ary-return-reason-modal');
+  if (cur) cur.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'ary-return-reason-modal';
+  wrap.className = 'fixed inset-0 z-[110] flex items-center justify-center p-4 modal-overlay';
+  wrap.innerHTML = `<div class="glass-strong rounded-3xl p-6 max-w-md w-full animate-scale text-right">
+    <h3 class="font-bold text-lg mb-2">ثبت مرجوعی برای #${String(o.id || '').slice(-8)}</h3>
+    <p class="text-xs text-white/60 mb-3">مرجوعی طبق سیاست فروشگاه بررسی می‌شود (۷ روز پس از تحویل، سلامت کالا و…).</p>
+    <textarea id="ary-return-reason" rows="3" class="input-style w-full text-sm" placeholder="شرح کارشناسی/دلیل مشتری…"></textarea>
+    <div class="flex gap-3 mt-4">
+      <button type="button" class="flex-1 btn-ghost py-2.5 rounded-xl" onclick="document.getElementById('ary-return-reason-modal').remove()">انصراف</button>
+      <button type="button" class="flex-1 btn-primary py-2.5 rounded-xl text-sm" onclick="aryAdminSubmitReturn('${o.id}')">ثبت درخواست مرجوعی</button>
+    </div></div>`;
+  document.body.appendChild(wrap);
+};
+
+window.aryAdminSubmitReturn = async function (id) {
+  const o = (state.orders || []).find(x => x.id === id) || {};
+  const ta = document.getElementById('ary-return-reason');
+  const reason = String((ta && ta.value) || '').trim();
+  const res = await adminApiCall('order_return', { id: id, phone: o.user_phone, admin: 1, reason: reason || 'درخواست ثبت‌شده توسط کارشناس' });
+  const m = document.getElementById('ary-return-reason-modal');
+  if (m) m.remove();
+  if (res && res.ok === false) { if (window.toast) toast('خطا: ' + (res.msg || ''), 'error'); return; }
+  if (o && o.id) { o.return_status = 'requested'; o.return_reason = reason || o.return_reason; o.return_at = new Date().toISOString(); }
+  if (window.toast) toast('مرجوعی ثبت شد؛ در انتظار تصمیم', 'success');
+  render();
+};
 
 // ═══════════════════════════════════════════════════════════════
 // ADMIN PANEL
@@ -451,6 +577,7 @@ function renderAdminOrders() {
 
 state.reviews = Array.isArray(state.reviews) ? state.reviews : [];
 state.adminReviewsSelectedProductId = state.adminReviewsSelectedProductId || null;
+state.adminReviewsFilter = state.adminReviewsFilter || { status: '', q: '' };
 
 state.supportFilter = state.supportFilter || { status: '', priority: '', view: 'all' };
 state.adminSupportSelectedTicketId = state.adminSupportSelectedTicketId || null;
@@ -461,7 +588,9 @@ state.supportQuickReplies = Array.isArray(state.supportQuickReplies)
       { id: 'qr2', label: 'اطلاع از پیگیری', text: 'درخواست شما ثبت شد و به زودی نتیجه را اطلاع می‌دهیم.' }
     ];
 
-state.orderFilter = state.orderFilter || { status: '' };
+state.orderFilter = state.orderFilter || { status: '', q: '', view: '' };
+state.productSearchQ = state.productSearchQ || '';
+state.productVideosOnly = !!state.productVideosOnly;
 state.adminTab = state.adminTab || 'dashboard';
 
 state.categoryModal = state.categoryModal || null;
@@ -605,16 +734,24 @@ function sheetDragEnd() {
 
 function renderAdminPanel() {
   const tabs = [
-    { id: 'dashboard', icon: '📊', label: 'داشبورد' },
-    { id: 'products', icon: '📦', label: 'محصولات' },
-    { id: 'orders', icon: '🛒', label: 'سفارشات' },
-    { id: 'categories', icon: '🗂️', label: 'دسته‌بندی‌ها' },
-    { id: 'reviews', icon: '📝', label: 'نظرات' },
-    { id: 'support', icon: '💬', label: 'پشتیبانی' },
-    { id: 'admins', icon: '🛡️', label: 'کاربران مدیر' }
+    { id: 'dashboard', icon: 'trending', label: 'داشبورد' },
+    { id: 'products', icon: 'box', label: 'محصولات' },
+    { id: 'orders', icon: 'cart', label: 'سفارشات' },
+    { id: 'categories', icon: 'grid', label: 'دسته‌بندی‌ها' },
+    { id: 'reviews', icon: 'star', label: 'نظرات' },
+    { id: 'support', icon: 'ticket', label: 'پشتیبانی' },
+    { id: 'admins', icon: 'shield', label: 'کاربران مدیر' }
   ];
 
   const pendingReviewsCount = (state.reviews || []).filter(r => r.status === 'pending').length;
+  const _ordersArr = Array.isArray(state.orders) ? state.orders : [];
+  const tabCounts = {
+    orders: _ordersArr.filter(o => (o.status || 'pending') === 'pending').length,
+    support: (state.tickets || []).filter(t => t.status !== 'closed').length,
+    reviews: pendingReviewsCount
+  };
+  const returnsRequestedCount = _ordersArr.filter(o => o.return_status === 'requested').length;
+  const icon = (n, cls) => (typeof aryIcon === 'function' ? aryIcon(n, cls) : '');
 
   return `
     <div class="flex flex-col lg:flex-row min-h-screen">
@@ -637,18 +774,18 @@ function renderAdminPanel() {
               onclick="state.adminTab='${tab.id}'; render()"
               class="sidebar-item w-full text-right px-5 py-4 flex items-center justify-between text-sm ${state.adminTab === tab.id ? 'active' : ''}" type="button"
             >
-              <div class="flex items-center gap-3">
-                <span class="relative text-xl">
-                  ${tab.icon}
-                  ${
-                    tab.id === 'reviews' && pendingReviewsCount > 0
-                      ? `<span class="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">
-                          ${pendingReviewsCount}
-                         </span>`
-                      : ''
-                  }
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="relative inline-flex text-xl">
+                  <span class="inline-flex ${state.adminTab === tab.id ? 'text-white' : 'text-white/55'}">${icon(tab.icon, 'w-5 h-5')}</span>
+                  ${(tabCounts[tab.id] || 0) > 0 || (tab.id === 'orders' && returnsRequestedCount > 0)
+                    ? `<span class="absolute -top-1.5 -right-2.5 bg-rose-500 text-white text-[9px] font-bold min-w-[1.05rem] h-[1.05rem] px-1 flex items-center justify-center rounded-full shadow-lg shadow-rose-500/30">
+                          ${tab.id === 'orders' && returnsRequestedCount > 0 ? returnsRequestedCount : tabCounts[tab.id]}
+                       </span>`
+                    : ''}
                 </span>
-                <span class="font-medium">${tab.label}</span>
+                <span class="font-medium truncate">${tab.label}</span>
+                ${tab.id === 'orders' && (tabCounts.orders || 0) > 0
+                  ? `<span class="text-[10px] text-white/40 shrink-0">${tabCounts.orders} در انتظار</span>` : ''}
               </div>
             </button>
           `
@@ -687,6 +824,10 @@ function renderAdminPanel() {
         ${state.adminTab === 'admins' ? (typeof renderAdminUsersManagement === 'function' ? renderAdminUsersManagement() : '') : ''}
       </main>
 
+      <!-- مودال‌های سراسری پنل (تأیید خطرناک + پیش‌نمایش ویدیو) -->
+      ${typeof renderConfirmModal === 'function' ? renderConfirmModal() : ''}
+      ${renderAdminVideoPreviewModal()}
+
       <!-- Mobile Bottom Sheet Trigger -->
       <button
         type="button"
@@ -722,15 +863,13 @@ function renderAdminPanel() {
                   class="admin-sheet-tab-btn ${state.adminTab === tab.id ? 'active' : ''}"
                   onclick="state.adminTab='${tab.id}'; sheetToggle(false); render()"
                 >
-                  <span>
-                    <span class="tab-icon">${tab.icon}</span>
-                    <span>${tab.label}</span>
+                  <span class="flex items-center gap-2 min-w-0">
+                    <span class="tab-icon inline-flex">${icon(tab.icon, 'w-4 h-4')}</span>
+                    <span class="truncate">${tab.label}</span>
                   </span>
-                  ${
-                    tab.id === 'reviews' && pendingReviewsCount > 0
-                      ? `<span class="admin-sheet-tab-badge">${pendingReviewsCount}</span>`
-                      : ''
-                  }
+                  ${(tabCounts[tab.id] || 0) > 0
+                    ? `<span class="admin-sheet-tab-badge">${tabCounts[tab.id]}</span>`
+                    : (tab.id === 'orders' && returnsRequestedCount > 0 ? `<span class="admin-sheet-tab-badge">${returnsRequestedCount}</span>` : '')}
                 </button>
               `)
               .join('')}
@@ -1052,6 +1191,54 @@ function setReviewStatus(id, status) {
   if (window.AryaDB) { try { AryaDB.upsert('reviews', { ...r }); } catch (e) {} }
 }
 
+window.aryAdminApproveAllPending = function (pid) {
+  let pend = (state.reviews || []).filter(r => (r.status || 'pending') === 'pending');
+  if (pid && pid !== '__all__') pend = pend.filter(r => String(getReviewProductId(r)) === String(pid));
+  if (!pend.length) { if (window.toast) toast('نظر درانتظاری برای تأیید نیست', 'warning'); return; }
+  state.confirmModal = {
+    icon: '✅',
+    title: 'تأیید گروهی نظرات',
+    message: pend.length + ' نظر در انتظار برای «' + (pid === '__all__' ? 'همه محصولات' : (getReviewProductTitle(pend[0]) || 'این محصول')) + '» تأیید و منتشر می‌شود.',
+    confirmText: 'تأیید همه',
+    onConfirm: function () {
+      state.confirmModal = null;
+      pend.forEach(r => setReviewStatus(r.id, 'approved'));
+      if (window.toast) toast(pend.length + ' نظر تأیید شد', 'success');
+      render();
+    }
+  };
+  render();
+};
+
+window.aryAdminDeleteReview = function (id) {
+  const r = (state.reviews || []).find(x => x.id === id);
+  if (!r) return;
+  state.confirmModal = {
+    icon: '🗑️',
+    title: 'حذف دائمی نظر',
+    message: 'نظر «' + String(r.text || r.comment || '').slice(0, 90) + '…» برای همیشه حذف می‌شود. برای تأیید، عبارت «حذف» را وارد کنید.',
+    confirmText: 'حذف دائمی',
+    confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+    requirePhrase: 'حذف',
+    onConfirm: async function () {
+      const res = await adminApiCall('delete&table=reviews', { id: String(id) });
+      if (res && res.ok === false) { if (window.toast) toast('حذف ناموفق: ' + (res.msg || ''), 'error'); return; }
+      state.confirmModal = null;
+      state.reviews = (state.reviews || []).filter(x => x.id !== id);
+      if (window.toast) toast('نظر حذف شد', 'success');
+      render();
+    }
+  };
+  render();
+};
+
+window.updateAdminReviewsAside = function () {
+  const prevLen = (state.adminReviewsFilter.q || '').length;
+  render();
+  const el = document.getElementById('admin-reviews-search');
+  if (el) { el.focus(); try { el.setSelectionRange(prevLen, prevLen); } catch (e) {} }
+};
+
 function reactToReview(id, reaction) {
   state.reviews = Array.isArray(state.reviews) ? state.reviews : [];
   const r = state.reviews.find(x => x.id === id);
@@ -1107,10 +1294,27 @@ function renderAdminReviews() {
   }
 
   const activeProductId = state.adminReviewsSelectedProductId;
-  const activeProduct = activeProductId ? byProduct[activeProductId] : null;
-  const activeReviews = activeProduct ? activeProduct.reviews : [];
+  const activeProduct = activeProductId === '__all__'
+    ? { id: '__all__', title: 'همه محصولات', reviews: state.reviews }
+    : (activeProductId ? byProduct[activeProductId] : null);
+
+  const _rf = state.adminReviewsFilter || {};
+  const _rq = String(_rf.q || '').trim().toLowerCase();
+  let activeReviews = activeProduct ? activeProduct.reviews.slice() : [];
+  if (_rq) activeReviews = activeReviews.filter(r => String(r.text || r.comment || '').toLowerCase().includes(_rq) || String(r.user_name || r.userName || '').toLowerCase().includes(_rq));
+  if (_rf.status) activeReviews = activeReviews.filter(r => (r.status || 'pending') === _rf.status);
+  const baseSet = activeProduct ? activeProduct.reviews : [];
+  const rCounts = {
+    all: baseSet.length,
+    pending: baseSet.filter(r => (r.status || 'pending') === 'pending').length,
+    approved: baseSet.filter(r => r.status === 'approved').length,
+    rejected: baseSet.filter(r => r.status === 'rejected').length
+  };
 
   const pendingCount = state.reviews.filter(r => r.status === 'pending').length;
+
+  let shownIds = Object.keys(byProduct);
+  if (_rq) shownIds = shownIds.filter(pid => String(byProduct[pid].title || '').toLowerCase().includes(_rq) || byProduct[pid].reviews.some(r => String(r.text || r.comment || '').toLowerCase().includes(_rq)));
 
   return `
     <div class="animate-fade">
@@ -1120,7 +1324,7 @@ function renderAdminReviews() {
         <aside class="lg:w-72 glass rounded-2xl p-4 h-max max-h-[70vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-bold flex items-center gap-2">
-              <span>📝</span>
+              ${typeof aryIcon === 'function' ? aryIcon('star', 'w-4 h-4') : '📝'}
               <span>محصولات با نظر</span>
             </h2>
             ${
@@ -1129,10 +1333,23 @@ function renderAdminReviews() {
                 : ''
             }
           </div>
+          <div class="relative mb-3">
+            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-white/35 inline-flex">${typeof aryIcon === 'function' ? aryIcon('search', 'w-3.5 h-3.5') : ''}</span>
+            <input id="admin-reviews-search" type="search" placeholder="جستجوی محصول یا متن نظر…" class="input-style w-full pr-9 text-xs"
+              value="${escapeHtml(_rq)}" oninput="state.adminReviewsFilter.q = this.value; updateAdminReviewsAside()" autocomplete="off">
+          </div>
           ${
-            productIds.length === 0
-              ? `<p class="text-xs text-white/60">هنوز نظری ثبت نشده است.</p>`
-              : productIds
+            shownIds.length > 0
+              ? `<button type="button" class="w-full text-right px-3 py-2 rounded-xl text-xs mb-1 flex items-center justify-between ${activeProductId === '__all__' ? 'bg-violet-500/20 text-violet-200' : 'glass hover:bg-white/10'}" onclick="state.adminReviewsSelectedProductId='__all__'; render()">
+                  <span>همه محصولات</span><span class="text-[10px] text-white/60">${state.reviews.length} نظر</span>
+                </button>`
+              : ''
+          }
+          <div id="admin-reviews-aside-list">
+          ${
+            shownIds.length === 0
+              ? `<p class="text-xs text-white/60">${productIds.length === 0 ? 'هنوز نظری ثبت نشده است.' : 'موردی با این جستجو نیست.'}</p>`
+              : shownIds
                   .map(pid => {
                     const p = byProduct[pid];
                     const pPending = p.reviews.filter(r => r.status === 'pending').length;
@@ -1156,6 +1373,7 @@ function renderAdminReviews() {
                   })
                   .join('')
           }
+          </div>
         </aside>
 
         <!-- Reviews list -->
@@ -1166,14 +1384,23 @@ function renderAdminReviews() {
                   محصولی برای نمایش نظرات انتخاب نشده است.
                 </div>`
               : `
-            <div class="flex items-center justify-between mb-4">
-              <div>
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+              <div class="min-w-0">
                 <h1 class="text-xl lg:text-2xl font-black mb-1">نظرات محصول</h1>
                 <p class="text-xs text-white/60 line-clamp-1">${activeProduct.title}</p>
               </div>
               <div class="text-xs text-white/60">
-                <span>کل نظرات: ${activeReviews.length}</span>
+                <span>نمایش: ${activeReviews.length} از ${rCounts.all}</span>
               </div>
+            </div>
+
+            <div class="glass rounded-2xl p-2.5 mb-4 flex flex-wrap items-center gap-2">
+              ${[['','همه',rCounts.all,'bg-violet-500'],['pending','در انتظار',rCounts.pending,'bg-amber-500'],['approved','تأییدشده',rCounts.approved,'bg-emerald-600'],['rejected','ردشده',rCounts.rejected,'bg-rose-600']]
+                .map(([v,label,n,col]) => `<button type="button" onclick="state.adminReviewsFilter.status='${v}'; render()"
+                  class="px-3 py-1.5 rounded-xl text-[11px] font-medium transition-all ${(_rf.status||'')===v ? col + ' text-white' : 'glass hover:bg-white/10 text-white/70'}">${label} <b class="opacity-80">${n}</b></button>`).join('')}
+              <span class="flex-1"></span>
+              ${rCounts.pending > 0 ? `<button type="button" onclick="aryAdminApproveAllPending('${activeProduct.id}')"
+                class="px-3 py-1.5 rounded-xl text-[11px] font-bold bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/25 transition-all inline-flex items-center gap-1.5">✓ تأیید همه درانتظار (${rCounts.pending})</button>` : ''}
             </div>
 
             ${
@@ -1232,20 +1459,20 @@ function renderAdminReviews() {
                                   : '⏳ در انتظار'
                               }
                             </span>
-                            <button
+                            ${r.status !== 'approved' ? `<button
                               type="button"
                               class="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-200 hover:bg-emerald-500/30"
                               onclick="setReviewStatus('${r.id}', 'approved')"
-                            >
-                              تایید
-                            </button>
-                            <button
+                            >تایید</button>` : ''}
+                            ${r.status !== 'rejected' ? `<button
                               type="button"
                               class="px-2 py-1 rounded-lg bg-rose-500/20 text-rose-200 hover:bg-rose-500/30"
                               onclick="setReviewStatus('${r.id}', 'rejected')"
-                            >
-                              رد
-                            </button>
+                            >رد</button>` : ''}
+                            <button type="button" title="حذف نظر" aria-label="حذف نظر"
+                              class="px-2 py-1 rounded-lg bg-white/5 text-white/55 hover:bg-rose-500/25 hover:text-rose-300 transition-all inline-flex items-center"
+                              onclick="aryAdminDeleteReview('${r.id}')"
+                            >${typeof aryIcon === 'function' ? aryIcon('trash', 'w-3.5 h-3.5') : '✕'}</button>
                           </div>
                         </div>
                       </div>
@@ -1509,6 +1736,26 @@ function deleteQuickReply(id) {
   render();
 }
 
+window.aryAdminQrInsert = function (qi) {
+  const list = Array.isArray(state.supportQuickReplies) ? state.supportQuickReplies : [];
+  const q = list[qi];
+  if (!q) return;
+  const ta = document.getElementById('admin-reply-textarea');
+  if (!ta) { if (window.toast) toast('ابتدا یک تیکت باز کنید', 'warning'); return; }
+  const cur = String(ta.value || '');
+  const ins = String(q.text || '');
+  ta.value = cur.trim() ? cur.replace(/\s+$/, '') + '\n' + ins : ins;
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+};
+
+window.aryAdminThreadScroll = function () {
+  requestAnimationFrame(() => {
+    const el = document.getElementById('admin-ticket-thread');
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+};
+
 function renderAdminSupportQuickReplies() {
   const list = Array.isArray(state.supportQuickReplies) ? state.supportQuickReplies : [];
 
@@ -1660,7 +1907,7 @@ function renderAdminSupportSafe() {
                         class="w-full text-right mb-2 px-3 py-2 rounded-xl text-xs ${
                           isActive ? 'bg-white/10' : 'glass hover:bg-white/10'
                         }"
-                        onclick="state.adminSupportSelectedTicketId='${t.id}'; render()"
+                        onclick="state.adminSupportSelectedTicketId='${t.id}' render(); setTimeout(aryAdminThreadScroll, 30);\"
                       >
                         <div class="flex items-center justify-between mb-1">
                           <span class="font-semibold line-clamp-1">${t.subject || 'بدون عنوان'}</span>
@@ -1720,7 +1967,7 @@ function renderAdminSupportSafe() {
               </div>
             </div>
 
-            <div class="flex-1 overflow-y-auto space-y-2 mb-3">
+            <div id="admin-ticket-thread" class="flex-1 overflow-y-auto space-y-2 mb-3" data-tid="${activeTicket.id}">
               ${
                 activeMessages.length === 0
                   ? `<div class="text-xs text-white/60 text-center py-4">پیامی ثبت نشده است.</div>`
@@ -1750,14 +1997,13 @@ function renderAdminSupportSafe() {
                 ${
                   (Array.isArray(state.supportQuickReplies) ? state.supportQuickReplies : [])
                     .map(
-                      q => `
+                      (q, qi) => `
                     <button
                       type="button"
-                      class="px-2 py-1 rounded-xl text-[11px] glass hover:bg-white/10"
-                      onclick="addTicketMessage(state.tickets.find(t => t.id === '${activeTicket.id}'), { from: 'admin', text: '${(q.text || '').replace(/'/g, "\\'")}' })"
-                    >
-                      ${q.label}
-                    </button>
+                      title="درج در متن پاسخ — «${escapeHtml(q.label || '')}»"
+                      class="px-2 py-1 rounded-xl text-[11px] glass hover:bg-white/10 inline-flex items-center gap-1.5"
+                      onclick="aryAdminQrInsert(${qi})"
+                    >${typeof aryIcon === 'function' ? aryIcon('hourglass', 'w-3 h-3').replace('w-3 h-3','w-3 h-3 opacity-60') : '⚡'} ${q.label}</button>
                   `
                     )
                     .join('')
@@ -1765,25 +2011,38 @@ function renderAdminSupportSafe() {
               </div>
 
               <form
-                class="flex items-center gap-2"
+                id="admin-reply-form"
+                class="flex flex-wrap items-center gap-2"
                 onsubmit="
                   event.preventDefault();
-                  const input = this.querySelector('textarea');
-                  const val = input.value;
-                  addTicketMessage(state.tickets.find(t => t.id === '${activeTicket.id}'), { from: 'admin', text: val }).then(ok => { if(ok) input.value=''; });
+                  const input = document.getElementById('admin-reply-textarea');
+                  const val = String(input && input.value || '').trim();
+                  if (!val) { if (window.toast) toast('متن پاسخ خالی است', 'warning'); return; }
+                  const closeAfter = !!document.getElementById('admin-reply-close') && document.getElementById('admin-reply-close').checked;
+                  addTicketMessage(state.tickets.find(t => t.id === '${activeTicket.id}'), { from: 'admin', text: val }).then(async ok => {
+                    if (ok) {
+                      if (input) input.value = '';
+                      if (closeAfter) await closeTicket(state.tickets.find(t => t.id === '${activeTicket.id}'));
+                    }
+                  });
                 "
               >
                 <textarea
-                  class="flex-1 input-style resize-none text-xs"
-                  rows="2"
-                  placeholder="پاسخ خود را بنویسید..."
+                  id="admin-reply-textarea"
+                  class="flex-1 input-style resize-none text-xs min-w-[200px]"
+                  rows="3"
+                  placeholder="پاسخ خود را بنویسید… (برای ارسال: Ctrl+Enter)"
+                  onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();document.getElementById('admin-reply-form').requestSubmit();}"
                 ></textarea>
-                <button
-                  type="submit"
-                  class="px-3 py-2 rounded-xl bg-violet-500 text-white text-xs font-semibold hover:bg-violet-600"
-                >
-                  ارسال
-                </button>
+                <div class="flex flex-col gap-1.5">
+                  <button
+                    type="submit"
+                    class="px-3.5 py-2 rounded-xl bg-violet-500 text-white text-xs font-semibold hover:bg-violet-600 inline-flex items-center gap-1.5"
+                  >ارسال</button>
+                  <label class="text-[10px] text-white/55 flex items-center gap-1 cursor-pointer select-none">
+                    <input id="admin-reply-close" type="checkbox" class="accent-emerald-500 w-3 h-3"> ارسال و بستن
+                  </label>
+                </div>
               </form>
             </div>
           `
@@ -2655,6 +2914,47 @@ function moveVideoItem(i, dir) {
 // ---------- Product filter ----------
 function setProductFilterCategory(val) { state.productFilterCategory = val; render(); }
 
+/* --- محصولات: جستجو + ویدیو --- */
+function adminProductVideos(p) {
+  if (!p) return [];
+  let v = p.videos;
+  if (typeof v === 'string') { v = v.trim(); if (!v) return []; try { v = JSON.parse(v); } catch (e) { v = [v]; } }
+  if (!Array.isArray(v)) return [];
+  return v.map(x => (typeof x === 'string' ? x : (x && (x.url || x.src || x.link)) || '')).filter(Boolean);
+}
+function adminProductsFiltered() {
+  const q = String(state.productSearchQ || '').trim().toLowerCase();
+  const vidsOnly = !!state.productVideosOnly;
+  return (state.products || []).filter(p => {
+    const cat = p.category || '';
+    if (state.productFilterCategory === 'all') { /* noop */ }
+    else if (state.productFilterCategory === 'uncategorized') { if (cat) return false; }
+    else if (String(cat) !== String(state.productFilterCategory)) return false;
+    if (vidsOnly && adminProductVideos(p).length === 0) return false;
+    if (q) {
+      const catTitle = ((state.categories || []).find(c => String(c.id) === String(cat)) || {}).title || '';
+      const hay = [String(p.title || ''), String(p.slug || ''), String(catTitle)].map(x => x.toLowerCase());
+      if (q === 'ویدیو' || q === 'video') { if (adminProductVideos(p).length === 0) return false; }
+      else if (!hay.some(h => h.includes(q))) return false;
+    }
+    return true;
+  });
+}
+function updateAdminProductsList() {
+  const w = document.getElementById('admin-products-list');
+  if (!w) return;
+  w.innerHTML = adminProductsListHtml(adminProductsFiltered());
+}
+window.updateAdminProductsList = updateAdminProductsList;
+window.aryAdminPlayProductVideos = function (pid, start) {
+  const p = (state.products || []).find(x => x.id === pid);
+  if (!p) return;
+  const list = adminProductVideos(p);
+  if (!list.length) { if (window.toast) toast('ویدیویی برای این محصول ثبت نشده است', 'warning'); return; }
+  if (window.AryaVideoPlayer) AryaVideoPlayer.open(Math.min(Number(start) || 0, list.length - 1), list);
+  else { state.adminVideoPreview = { index: 0, file: list[0] }; render(); }
+};
+
 // ---------- Admin list (with category filter) ----------
 function renderAdminProductsEditor() {
   initProductDraft(); if (state.editProduct) syncDraftFromEditing();
@@ -2663,12 +2963,7 @@ function renderAdminProductsEditor() {
     `<option value="uncategorized"${state.productFilterCategory === 'uncategorized' ? ' selected' : ''}>بدون دسته</option>`,
     ...state.categories.map(cat => `<option value="${cat.id}"${state.productFilterCategory === String(cat.id) ? ' selected' : ''}>${escapeHtml(cat.title)}</option>`)
   ].join('');
-  const filteredProducts = (state.products || []).filter(p => {
-    const cat = p.category || '';
-    if (state.productFilterCategory === 'all') return true;
-    if (state.productFilterCategory === 'uncategorized') return !cat;
-    return String(cat) === String(state.productFilterCategory);
-  });
+  const filteredProducts = adminProductsFiltered();
 
   return `
     <div class="animate-fade">
@@ -2700,7 +2995,29 @@ function renderAdminProductsEditor() {
         </div>
       </div>
 
-      ${filteredProducts.length > 0 ? `
+      <div class="glass rounded-2xl p-3 lg:p-4 mb-4 flex flex-wrap items-center gap-2">
+        <div class="relative flex-1 min-w-[220px]">
+          <span class="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/35 inline-flex">${typeof aryIcon === 'function' ? aryIcon('search', 'w-4 h-4') : ''}</span>
+          <input id="admin-products-search" type="search" placeholder="جستجوی محصول: نام، اسلاگ یا دسته…"
+            class="input-style w-full pr-10 text-sm" value="${escapeHtml(state.productSearchQ || '')}"
+            oninput="state.productSearchQ = this.value; updateAdminProductsList()" autocomplete="off">
+        </div>
+        <button type="button" onclick="state.productVideosOnly = !state.productVideosOnly; render()"
+          class="px-3.5 py-2 rounded-xl text-xs font-medium transition-all inline-flex items-center gap-1.5 ${state.productVideosOnly ? 'bg-violet-500 text-white' : 'glass hover:bg-white/10 text-white/70'}">
+          ${typeof aryIcon === 'function' ? aryIcon('play', 'w-3.5 h-3.5') : '▶'} فقط دارای ویدیو
+        </button>
+        <span class="text-[11px] text-white/45">${filteredProducts.length} نتیجه</span>
+      </div>
+
+      <div id="admin-products-list">
+      ${adminProductsListHtml(filteredProducts)}
+      </div>
+    </div>
+  `;
+}
+
+function adminProductsListHtml(filteredProducts) {
+  return filteredProducts.length > 0 ? `
         <div class="grid gap-4">
           ${filteredProducts.map((product, i) => {
             const imgSrc = product.image || product.main_image || '';
@@ -2719,6 +3036,7 @@ function renderAdminProductsEditor() {
                   <h3 class="font-bold leading-6 break-words">${escapeHtml(String(product.title || 'بدون نام'))}</h3>
                   <p class="text-white/60 text-sm truncate">${escapeHtml(state.categories.find(c => c.id === product.category)?.title || 'بدون دسته')}</p>
                   ${product.slug ? `<p class="text-white/40 text-xs mt-1 break-all line-clamp-1">/${escapeHtml(String(product.slug))}</p>` : ''}
+                  ${(() => { const vids = adminProductVideos(product); if (!vids.length) return ''; return `<button type="button" class="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-violet-500/10 text-violet-300 hover:bg-violet-500/25 border border-violet-500/20 transition-all" onclick="aryAdminPlayProductVideos('${product.id}', 0)">${typeof aryIcon === 'function' ? aryIcon('play', 'w-3 h-3') : '▶'} <bdi dir="rtl">${vids.length} ویدیوی محصول${vids[0] ? '' : ''}</bdi></button>`; })()}
                 </div>
 
                 <div class="text-left sm:text-right shrink-0">
@@ -2774,8 +3092,6 @@ function renderAdminProductsEditor() {
             render();
           " class="btn-primary px-8 py-4 rounded-xl font-bold" type="button">افزودن محصول</button>
         </div>
-      `}
-    </div>
   `;
 }
 
@@ -2881,9 +3197,14 @@ function renderProductModal() {
               <div class="flex flex-col gap-3">
                 ${ d.videos.length === 0 ? `<p class="text-white/40 text-sm">ویدیویی اضافه نشده.</p>` : d.videos.map((vid, i) => `
                   <div class="glass rounded-xl p-3 flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-3 min-w-0 flex-1">
-                      <div class="w-10 h-10 bg-black/10 rounded overflow-hidden flex items-center justify-center text-[10px] shrink-0">${escapeHtml((vid.name||'ویدیو').slice(0,10))}</div>
-                      <div class="text-xs truncate flex-1 min-w-0">${escapeHtml(vid.name||'ویدیو')}</div>
+                    <div class="flex items-center gap-3 min-w-0 flex-1 cursor-pointer group" onclick="openAdminVideoPreview(${i})" title="پیش‌نمایش و پخش">
+                      ${(() => { const u = typeof vid === 'string' ? vid : (vid && (vid.url || vid.src || vid.link)) || ''; return u
+                        ? `<div class="relative w-24 h-14 bg-black/40 rounded-lg overflow-hidden border border-white/10 shrink-0">
+                             <video src="${escapeHtml(u)}#t=0.9" muted playsinline preload="metadata" class="w-full h-full object-cover group-hover:opacity-90 transition"></video>
+                             <span class="absolute inset-0 flex items-center justify-center text-white/85"><span class="bg-black/55 rounded-full p-1.5 inline-flex">${typeof aryIcon === 'function' ? aryIcon('play', 'w-4 h-4') : '▶'}</span></span>
+                           </div>`
+                        : `<div class="w-24 h-14 bg-black/10 rounded-lg overflow-hidden flex items-center justify-center text-[10px] shrink-0 border border-white/10">${escapeHtml(String((vid && vid.name) || 'ویدیو ' + (i + 1)).slice(0, 10))}</div>`; })()}
+                      <div class="text-xs truncate flex-1 min-w-0 text-white/70">${typeof vid === 'string' ? (vid.startsWith('data:') ? `ویدیوی آپلودی ${(vid.length / 1024 / 1024).toFixed(1)} مگابایت` : String(vid).split('/').pop().slice(0, 40)) : escapeHtml(vid.name || 'ویدیو')}</div>
                     </div>
                     <div class="flex gap-2 flex-shrink-0">
                       <button class="btn-ghost text-[11px] px-3 py-1 rounded-lg" type="button" onclick="openAdminVideoPreview(${i})">مشاهده</button>

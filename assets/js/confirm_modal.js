@@ -12,6 +12,11 @@ function renderConfirmModal() {
         <div class="text-6xl mb-5">${modal.icon || '❓'}</div>
         <h2 class="text-xl font-bold mb-3">${modal.title}</h2>
         <p class="text-white/70 text-sm mb-8 leading-relaxed">${modal.message}</p>
+        ${modal.requirePhrase ? `
+        <div class="mb-5 text-right">
+          <label class="block text-xs text-white/60 mb-1.5">برای تایید، عبارت «<b dir="ltr" class="text-rose-300">${modal.requirePhrase}</b>» را وارد کنید:</label>
+          <input id="confirm-phrase-input" class="input-style w-full text-center" dir="auto" placeholder="${modal.requirePhrase}">
+        </div>` : ''}
         <div class="flex gap-4">
           <button 
             onclick="state.confirmModal = null; render()" 
@@ -20,7 +25,7 @@ function renderConfirmModal() {
             انصراف
           </button>
           <button 
-            onclick="state.confirmModal.onConfirm()" 
+            onclick="(function(){ if(window.__aryConfirmPhrase && !window.__aryConfirmPhrase()) return; state.confirmModal.onConfirm(); })()" 
             class="flex-1 ${modal.confirmClass || 'btn-primary'} py-3.5 rounded-xl font-semibold transition-all"
           >
             ${modal.confirmText || 'تایید'}
@@ -30,3 +35,17 @@ function renderConfirmModal() {
     </div>
   `;
 }
+
+// اگر مودال «عبارت تایید» بخواهد، قبل از onConfirm بررسی می‌شود
+window.__aryConfirmPhrase = function () {
+  const m = window.state && state.confirmModal;
+  if (!m || !m.requirePhrase) return true;
+  const el = document.getElementById('confirm-phrase-input');
+  const val = String((el && el.value) || '').trim();
+  if (val !== String(m.requirePhrase).trim()) {
+    if (window.toast) toast('عبارت تایید درست وارد نشده است', 'warning');
+    if (el) { el.focus(); el.classList.add('ring-2','ring-rose-500/60'); setTimeout(()=>el.classList.remove('ring-2','ring-rose-500/60'),900); }
+    return false;
+  }
+  return true;
+};

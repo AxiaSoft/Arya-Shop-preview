@@ -1025,3 +1025,5 @@ form select option {
 .ary-hscroll{cursor:grab;-webkit-tap-highlight-color:transparent}
 .ary-hscroll.dragging{cursor:grabbing;user-select:none;-webkit-user-select:none}
 .ary-hscroll.dragging img,.ary-hscroll.dragging video{pointer-events:none}
+/* هرسafety: شناور پشتیبانی هرگز در پنل ادمین ظاهر نشود */
+body:has(#admin-panel-screen) #arya-support-fab,body:has(#admin-panel-screen) #ary-chat-panel{display:none!important}

@@ -580,6 +580,7 @@ window.AryaSupportChat = (function () {
 (function mountSupportFab() {
   function build() {
     if (document.getElementById('arya-support-fab')) return;
+    if (document.getElementById('admin-panel-screen') || /admin\.html/i.test(location.pathname)) return; // در پنل ادمین نمایش داده نشود
     const b = document.createElement('button');
     b.type = 'button';
     b.id = 'arya-support-fab';

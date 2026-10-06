@@ -1153,16 +1153,20 @@ if ($action === 'order_cancel' || $action === 'order_return') {
         ok(['id' => $rid, 'status' => 'canceled'], 'سفارش لغو شد؛ عودت مبلغ تا ۷۲ ساعت کاری انجام می‌شود.');
     }
 
-    // order_return — قوانین: فقط «تحویل شده»، داخل مهلت، بدون درخواست باز/در‌جریان
-    if ($status !== 'delivered') fail('درخواست مرجوعی فقط برای سفارش‌های «تحویل شده» امکان‌پذیر است.', 409);
-    $rs = strtolower((string) ($order['return_status'] ?? ''));
-    if (in_array($rs, ['requested', 'approved'], true)) fail('برای این سفارش پیش‌تر درخواست مرجوعی ثبت شده است؛ منتظر پاسخ کارشناس باشید.', 409);
-    $createdAt = strtotime((string) ($order['created_at'] ?? 'now')) ?: time();
-    if (time() - $createdAt > $returnWindow * 86400) {
-        fail('مهلت ' . $returnWindow . ' روزه‌ی مرجوعی سپری شده است. قوانین: کالای نو با بسته‌بندی سالم، ظرف ' . $returnWindow . ' روز پس از تحویل.', 409);
+    // order_return — قوانین: فقط «تحویل شده»، داخل مهلت، بدون درخواست باز/در‌جریان (مدیر با فلگ admin می‌تواند دور بزند)
+    $isAdmRet = $isAdmin && !empty($rawBody['admin']);
+    if (!$isAdmRet) {
+        if ($status !== 'delivered') fail('درخواست مرجوعی فقط برای سفارش‌های «تحویل شده» امکان‌پذیر است.', 409);
+        $rs = strtolower((string) ($order['return_status'] ?? ''));
+        if (in_array($rs, ['requested', 'approved'], true)) fail('برای این سفارش پیش‌تر درخواست مرجوعی ثبت شده است؛ منتظر پاسخ کارشناس باشید.', 409);
+        $createdAt = strtotime((string) ($order['created_at'] ?? 'now')) ?: time();
+        if (time() - $createdAt > $returnWindow * 86400) {
+            fail('مهلت ' . $returnWindow . ' روزه‌ی مرجوعی سپری شده است. قوانین: کالای نو با بسته‌بندی سالم، ظرف ' . $returnWindow . ' روز پس از تحویل.', 409);
+        }
     }
     $reason = mb_substr(ary_clean_text((string) ($rawBody['reason'] ?? ''), 1980), 0, 2000);
-    if (mb_strlen($reason) < 10) fail('دلیل مرجوعی را کامل بنویسید (حداقل ۱۰ کاراکتر)؛ مثلاً «قطعه خراب رسید» یا «مدل اشتباه ارسال شده».', 400);
+    if (!$isAdmRet && mb_strlen($reason) < 10) fail('دلیل مرجوعی را کامل بنویسید (حداقل ۱۰ کاراکتر)؛ مثلاً «قطعه خراب رسید» یا «مدل اشتباه ارسال شده».', 400);
+    if ($isAdmRet) ary_log('admin', 'RETURN-OPEN order=' . $rid . ' admin=' . (string) (currentAdminId() ?? '') . ' reason=' . mb_substr($reason, 0, 200));
     $up = $eng->pdo()->prepare('UPDATE ' . $Q('orders') . ' SET ' . $Q('return_status') . ' = ?, ' . $Q('return_reason') . ' = ?, ' . $Q('return_at') . ' = ? WHERE ' . $Q('id') . ' = ?');
     $up->execute(['requested', $reason, date('Y-m-d H:i:s'), $rid]);
     ok(['id' => $rid, 'return_status' => 'requested'], 'درخواست مرجوعی ثبت شد؛ حداکثر تا ۴۸ ساعت پاسخ داده می‌شود.');
@@ -1282,9 +1286,23 @@ switch ($action) {
         if (!$isAdmin) fail('حذف فقط با حساب مدیر ممکن است.', 403);
         if (!str_starts_with(ary_get_header('Authorization'), 'Bearer ')) { if (!ary_csrf_valid()) fail('توکن CSRF معتبر لازم است.', 403); }
         if (!ary_safe_id($id)) fail('id نامعتبر است.');
+        // لاگ امنیتی: snapshot رکورد پیش از حذف
+        $snap = 'n/a'; $admId = '';
+        try {
+            $q = $eng->pdo()->prepare("SELECT * FROM {$Q($table)} WHERE id = ?");
+            $q->execute([$id]);
+            $row = $q->fetch();
+            if ($row) {
+                unset($row['password_hash'], $row['otp_hash'], $row['token_hash']);
+                $snap = mb_substr(json_encode($row, JSON_UNESCAPED_UNICODE), 0, 1500);
+            }
+            $admId = (string) (currentAdminId() ?? '');
+        } catch (Throwable $e) { /* لاگ نباید حذف را متوقف کند */ }
         $stmt = $eng->pdo()->prepare("DELETE FROM {$Q($table)} WHERE id = ?");
         $stmt->execute([$id]);
-        ok(['deleted' => $stmt->rowCount() > 0]);
+        $n = $stmt->rowCount();
+        ary_log('admin', ($n > 0 ? 'DELETE-OK' : 'DELETE-NONE') . ' table=' . $table . ' id=' . $id . ' admin=' . $admId . ' snapshot=' . $snap);
+        ok(['deleted' => $n > 0]);
     }
 
     case 'import': {
