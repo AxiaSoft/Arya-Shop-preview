@@ -4036,7 +4036,7 @@ function renderProductPage() {
     const wishlist = Array.isArray(state.wishlist) ? state.wishlist : [];
 
     // Init profile tab
-    if (!state.profileTab) state.profileTab = 'profile';
+    if (!state.profileTab || state.profileTab === 'settings') state.profileTab = 'profile'; // تب تنظیمات حذف شده — کش قدیمی
 
     return `
       ${typeof renderHeader === 'function' ? renderHeader() : ''}
