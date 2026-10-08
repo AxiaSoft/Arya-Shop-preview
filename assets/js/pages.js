@@ -81,12 +81,9 @@ function renderHomePage() {
   const discountedProducts = (state.products || [])
     .filter(p => p.original_price && p.original_price > p.price)
     .sort((a, b) => (utils.calculateDiscount(b.original_price, b.price) || 0) - (utils.calculateDiscount(a.original_price, a.price) || 0));
-  // اگر تخفیف‌دارها کمتر از ۱۰ تا بودند، با پرفروش‌ها پر می‌شود — سقف ۱۰ کارت
-  const _notDeals = (state.products || []).filter(p => !discountedProducts.includes(p))
-    .sort((a, b) => estimateSoldPercent(b) - estimateSoldPercent(a));
-  const dealsList = discountedProducts.slice(0, 10)
-    .concat(discountedProducts.length < 10 ? _notDeals.slice(0, 10 - discountedProducts.length) : []);
-  const hasMoreDeals = (state.products || []).length > dealsList.length;
+  // بنر شگفت‌انگیزها فقط و فقط محصولات تخفیف‌دار (بدون پرکردن با جدید/پرفروش/بدون تخفیف) — سقف ۱۰ کارت
+  const dealsList = discountedProducts.slice(0, 10);
+  const hasMoreDeals = discountedProducts.length > dealsList.length;
 
   const aboutBlocks = Array.isArray(state.aboutBlocks)
     ? state.aboutBlocks
@@ -232,8 +229,8 @@ function renderHomePage() {
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center text-white shadow-lg">${aryIcon('bolt','w-6 h-6')}</div>
                 <div>
-                  <h2 class="text-lg lg:text-2xl font-black leading-tight">${discountedProducts.length ? 'شگفت‌انگیزهای امروز' : 'پرفروش‌ترین‌های فروشگاه'}</h2>
-                  <p class="text-white/75 text-[11px] lg:text-sm">${discountedProducts.length ? 'فقط تا پایان امشب — تعداد محدود، از دست نده!' : 'محبوب‌ترین انتخاب مشتریان آریا'}</p>
+                  <h2 class="text-lg lg:text-2xl font-black leading-tight">شگفت‌انگیزهای امروز</h2>
+                  <p class="text-white/75 text-[11px] lg:text-sm">فقط تا پایان امشب — تعداد محدود، از دست نده!</p>
                 </div>
               </div>
               <div class="flex items-center gap-2 lg:gap-3">
