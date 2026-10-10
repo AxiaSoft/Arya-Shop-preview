@@ -75,6 +75,25 @@ function scrollDealsCarousel(dir) {
 }
 window.scrollDealsCarousel = scrollDealsCarousel;
 
+// ── پیکربندی فروشگاه (زمان ارسال / مبدأ) — با پیش‌فرض‌های امن اگر سرور چیزی نداشت ──
+const ARY_SHOP_DEFAULTS = {
+  base_cost: 30000, free_over: 500000,
+  origin: { lat: null, lng: null, label: 'مبدأ فروشگاه' },
+  shipping_options: [
+    { id: 'standard', label: 'ارسال عادی (پست پیشتاز)',   min_days: 3, max_days: 5, extra_cost: 0,     active: true, is_default: true },
+    { id: 'express',  label: 'ارسال فوری (پیک تیپاکس)',   min_days: 1, max_days: 2, extra_cost: 45000, active: true, is_default: false },
+    { id: 'economy',  label: 'ارسال اقتصادی (پست دولتی)', min_days: 5, max_days: 9, extra_cost: 0,     active: true, is_default: false },
+  ],
+};
+function aryShopCfg() {
+  const c = (window.state && state.shopConfig) || window.__aryShopCfg || null;
+  if (!c || !Array.isArray(c.shipping_options) || !c.shipping_options.length) return ARY_SHOP_DEFAULTS;
+  return c;
+}
+function aryShopSlots() { return (aryShopCfg().shipping_options || []).filter(o => o && o.active !== false); }
+function arySlotPromiseText(o) { return o ? (Number(o.min_days) + ' تا ' + Number(o.max_days) + ' روز کاری') : ''; }
+window.aryShopCfg = aryShopCfg; window.aryShopSlots = aryShopSlots;
+
 function renderHomePage() {
   const IMAGE_BASE = 'assets/img/photo/';
 
@@ -910,7 +929,12 @@ window.aryDealsScroll = function (dir) {
         state.pendingForgotPass = ''; state.forgotIdentifier = ''; resendCred = null;
         if (mode === 'forgot') {
           state.authTab = 'login'; state.authError = '';
-          toast('رمز عبور بازنشانی شد؛ اکنون وارد شوید.');
+          // سشن محلی هم پاک شود (سمت سرور همهٔ نشست‌ها باطل شده‌اند)
+          if (state.user || state.currentUser) {
+            state.user = null; state.currentUser = null;
+            if (window.AppState) AppState.set({ loggedIn: false, user: null, currentUser: null });
+          }
+          toast('رمز عبور بازنشانی شد؛ برای امنیت در همهٔ دستگاه‌ها خارج شدید — اکنون وارد شوید.', 'info', 6000);
           render(); return;
         }
         const u = r.data.user || {};
@@ -3427,12 +3451,14 @@ function renderProductPage() {
       if (typeof it === 'string') {
         return { title: autoTitle(idx), full: it.trim(), postal: '', plaque: '', unit: '' };
       }
+      const num = (v) => (v !== '' && v != null && isFinite(Number(v)) ? Number(Number(v).toFixed(6)) : '');
       return {
         title: (it.title || '').trim() || autoTitle(idx),
         full: (it.full || '').trim(),
         postal: String(it.postal || '').replace(/\D+/g, '').slice(0, 10),
         plaque: String(it.plaque || '').replace(/\D+/g, ''),
-        unit: String(it.unit || '').replace(/\D+/g, '')
+        unit: String(it.unit || '').replace(/\D+/g, ''),
+        lat: num(it.lat), lng: num(it.lng)
       };
     });
   }
@@ -3606,7 +3632,9 @@ function renderProductPage() {
     if (!/^\d{10}$/.test(postal)) return toast('کد پستی باید دقیقاً ۱۰ رقم باشد', 'warning');
     if (!full) return toast('آدرس کامل را وارد کنید', 'warning');
 
-    arr.push({ title, full, postal, plaque, unit });
+    const lat = parseFloat(document.getElementById('addr-lat')?.value);
+    const lng = parseFloat(document.getElementById('addr-lng')?.value);
+    arr.push({ title, full, postal, plaque, unit, lat: isFinite(lat) ? lat : '', lng: isFinite(lng) ? lng : '' });
     syncAddressesSoon();
 
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
@@ -3654,6 +3682,12 @@ function renderProductPage() {
           <div>
             <label class="block text-sm text-white/70 mb-1">آدرس کامل *</label>
             <textarea id="edit-full" class="input-style w-full resize-none" rows="3">${addr.full}</textarea>
+            <div class="flex flex-wrap items-center gap-2 mt-1.5">
+              <button type="button" class="btn-ghost px-3 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5"
+                onclick="aryAddrMapPick('edit')"><span>🗺️</span><span>انتخاب/ویرایش نقطه روی نقشه</span></button>
+              <span id="edit-geo-note" class="text-[11px] text-emerald-300/80"></span>
+            </div>
+            <input type="hidden" id="edit-lat" value="${addr.lat ?? ''}"><input type="hidden" id="edit-lng" value="${addr.lng ?? ''}">
           </div>
         </form>
       `,
@@ -3679,7 +3713,9 @@ function renderProductPage() {
     if (!/^\d{10}$/.test(postal)) return toast('کد پستی باید دقیقاً ۱۰ رقم باشد', 'warning');
     if (!full) return toast('آدرس کامل را وارد کنید', 'warning');
 
-    state.user.addresses[i] = { title, full, postal, plaque, unit };
+    const lat = parseFloat(document.getElementById('edit-lat')?.value);
+    const lng = parseFloat(document.getElementById('edit-lng')?.value);
+    state.user.addresses[i] = { title, full, postal, plaque, unit, lat: isFinite(lat) ? lat : '', lng: isFinite(lng) ? lng : '' };
     syncAddressesSoon();
 
     if (window.AppState) AppState.set({ user: state.user, tickets: state.tickets });
@@ -3688,6 +3724,35 @@ function renderProductPage() {
     toast('آدرس ویرایش شد');
     render();
   }
+
+  // انتخاب/ویرایش نقطهٔ آدرس روی نقشه — آدرس خودکار از OSM + ثبت مختصات
+  function aryAddrMapPick(prefix) {
+    if (!window.AryaMap) return toast('کتابخانهٔ نقشه در دسترس نیست؛ آدرس را دستی وارد کنید', 'warning');
+    const g = (name) => document.getElementById(prefix + '-' + name);
+    const curLat = parseFloat(g('lat')?.value), curLng = parseFloat(g('lng')?.value);
+    AryaMap.pick({
+      lat: isFinite(curLat) ? curLat : null,
+      lng: isFinite(curLng) ? curLng : null,
+      title: 'انتخاب مقصد تحویل روی نقشه',
+      onPick: (p) => {
+        if (!p) return;
+        if (g('lat')) g('lat').value = p.lat;
+        if (g('lng')) g('lng').value = p.lng;
+        const geo = p.g;
+        const fullEl = g('full'), postalEl = g('postal'), note = g('geo-note');
+        if (geo && geo.full && fullEl) fullEl.value = geo.full;
+        if (geo && geo.postal && postalEl && !String(postalEl.value || '').trim()) postalEl.value = geo.postal;
+        if (note) {
+          let t = geo && geo.full ? 'آدرس خودکار نوشته شد ✓' : 'فقط مختصات ثبت شد — آدرس را کامل کنید.';
+          const o = AryaMap.origin();
+          const km = o ? AryaMap.haversineKm(o, p) : null;
+          if (km != null) t += ' • فاصله تا مبدأ: ' + km.toLocaleString('fa-IR') + ' کیلومتر';
+          note.textContent = t;
+        }
+      },
+    });
+  }
+  window.aryAddrMapPick = aryAddrMapPick;
 
   function deleteAddress(i) {
     if (!state.user) return;
@@ -3886,25 +3951,61 @@ function renderProductPage() {
   window.requestOrderCancel = function (id) {
     const order = findTrackedOrder(id);
     if (!order) { toast('سفارش یافت نشد', 'error'); return; }
+    const reasons = [
+      'تغییر نظر و انصراف از خرید',
+      'پیدا کردن قیمت بهتر در جای دیگر',
+      'زمان پردازش/ارسال太长 بود',
+      'اطلاعات یا آدرس سفارش را اشتباه زدم',
+      'موقع پرداخت، درگاه خطا داد',
+      '__other',
+    ];
+    reasons[2] = 'زمان پردازش/ارسال خیلی طولانی بود';
     state.confirmModal = {
-      type: 'warning',
-      title: 'لغو سفارش',
-      message: 'آیا از لغو سفارش #' + String(order.id || '').slice(-8) + ' مطمئن هستید؟ اگر پرداخت آنلاین انجام شده، مبلغ تا ۷۲ ساعت کاری عودت می‌شود.',
-      confirmText: 'بله، لغو شود',
+      type: 'danger',
+      title: 'لغو سفارش — ثبت دلیل',
+      message: `
+        <div class="text-start space-y-2.5">
+          <p class="text-xs text-white/60 leading-6">برای بهبود خدمات و ثبت فرایند عودت وجه، دلیل لغو را مشخص کنید (اجباری):</p>
+          ${reasons.map((r, i) => `
+            <label class="flex items-center gap-2.5 text-[13px] cursor-pointer glass rounded-lg px-3 py-2 hover:bg-white/5">
+              <input type="radio" name="cx-reason" value="${r === '__other' ? '__other' : aryEsc(r)}" ${i === 4 ? 'data-other' : ''}>
+              <span>${r === '__other' ? 'مورد دیگر (خودم می‌نویسم)…' : aryEsc(r)}</span>
+            </label>`).join('')}
+          <textarea id="cx-reason-text" rows="2" class="input-style w-full text-sm resize-none" placeholder="توضیح دلخواه (حداقل ۵ کاراکتر)"></textarea>
+          <p class="text-[10px] text-white/40">اگر پرداخت آنلاین انجام شده، مبلغ تا ۷۲ ساعت کاری عودت می‌شود. دلیل لغو در پنل فروشگاه ثبت می‌شود.</p>
+        </div>`,
+      confirmText: 'ثبت دلیل و لغو سفارش',
       confirmClass: 'btn-danger bg-rose-600 hover:bg-rose-700 text-white',
+      validate: () => {
+        const sel = document.querySelector('input[name="cx-reason"]:checked');
+        const custom = String(document.getElementById('cx-reason-text')?.value || '').trim();
+        const chosen = sel ? String(sel.value) : '';
+        const reason = chosen === '__other' ? custom : (custom ? chosen + ' — ' + custom : chosen);
+        if (reason.replace(/\s+/g, '').length < 5) {
+          toast('دلیل لغو را انتخاب یا بنویسید (حداقل ۵ کاراکتر)', 'warning');
+          return false;
+        }
+        window.__cxReason = reason.slice(0, 300);
+        return true;
+      },
       onConfirm: async () => {
+        const reason = String(window.__cxReason || '').trim();
+        delete window.__cxReason;
         state.confirmModal = null;
         try {
           if (window.AryaServer && AryaServer.isConfigured()) {
-            const r = await AryaServer.call('order_cancel', { body: { id: String(order.id), phone: getOrderPhone(), reason: 'لغو از پنل کاربر — انصراف' } });
+            const r = await AryaServer.call('order_cancel', { body: { id: String(order.id), phone: getOrderPhone(), reason } });
             if (!r || !r.ok) { toast((r && r.msg) || 'لغو سفارش ناموفق بود', 'error'); render(); return; }
           } else {
             order.status = 'canceled';
-            order.cancel_reason = 'لغو از پنل کاربر';
+            order.cancel_reason = 'مشتری: ' + reason;
             try { if (window.AryaDB && AryaDB.upsert) await AryaDB.upsert('orders', order); } catch (e) {}
           }
-          toast('سفارش لغو شد؛ عودت وجه در صف پردازش است');
-        } finally { await afterOrderAction(); }
+          toast('سفارش با ثبت دلیل لغو شد؛ عودت وجه در صف پردازش است');
+        } finally {
+          try { if (window.AryaDB && AryaDB.loadToState) await AryaDB.loadToState(); } catch (e) {}
+          render();
+        }
       }
     };
     render();
@@ -4150,6 +4251,12 @@ function renderProductPage() {
             <div>
               <label class="block text-sm text-white/70 mb-1">آدرس کامل *</label>
               <textarea id="addr-full" class="input-style w-full resize-none" rows="3" placeholder="استان، شهر، خیابان، کوچه..."></textarea>
+              <div class="flex flex-wrap items-center gap-2 mt-2">
+                <button type="button" class="btn-ghost px-3.5 py-1.5 rounded-lg text-xs inline-flex items-center gap-1.5"
+                  onclick="aryAddrMapPick('addr')">${aryIcon('pin', 'w-3.5 h-3.5')}<span>انتخاب روی نقشه — نوشتن خودکار آدرس</span></button>
+                <span id="addr-geo-note" class="text-[11px] text-emerald-300/80"></span>
+              </div>
+              <input type="hidden" id="addr-lat"><input type="hidden" id="addr-lng">
             </div>
             <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
               <button type="submit" class="btn-primary px-4 py-3 rounded-xl w-full md:w-auto">افزودن آدرس</button>
@@ -4221,11 +4328,13 @@ function renderProductPage() {
                       const retLabels = { requested: 'مرجوعی: در حال بررسی', approved: 'مرجوعی: تایید شد — بسته را به آدرس انبار ارسال کنید', rejected: 'مرجوعی: رد شد', completed: 'مرجوع و عودت وجه شد' };
                       return `
                       <div class="glass rounded-xl p-4 space-y-2.5">
+                        ${st === 'canceled' && order.cancel_reason ? `<div class="text-[11px] text-rose-200/80 rounded-lg bg-rose-500/10 border border-rose-500/20 px-2.5 py-1.5">دلیل لغو ثبت‌شده شما: ${aryEsc(String(order.cancel_reason).replace(/^(مشتری|مدیر):\s*/, ''))}</div>` : ''}
                         <div class="flex items-center justify-between gap-2 flex-wrap">
                           <div class="font-mono text-xs text-white/70">#${aryEsc(String(order.id || '').slice(-8))}</div>
                           <div class="flex items-center gap-2 flex-wrap">
                             <span class="badge ${s.badge} inline-flex items-center gap-1">${s.icon} ${s.label}</span>
                             ${rs ? `<span class="badge ${rs === 'approved' || rs === 'completed' ? 'badge-delivered' : (rs === 'rejected' ? 'badge-canceled' : 'badge-processing')} inline-flex items-center gap-1">${aryIcon('return', 'w-3.5 h-3.5')}${retLabels[rs] || ('مرجوعی: ' + rs)}</span>` : ''}
+                            ${order.delivery_slot ? `<span class="text-[10px] text-sky-200/80 glass rounded-lg px-2 py-1 inline-flex items-center gap-1">🚚 ${aryEsc(String(order.delivery_slot))}</span>` : ''}
                           </div>
                         </div>
                         <div class="flex items-center justify-between gap-3 text-sm">
@@ -4462,7 +4571,10 @@ function renderProductPage() {
     user.addresses = Array.isArray(user.addresses) ? user.addresses : [];
 
     const total = getCartTotal();
-    const shipping = total >= 500000 ? 0 : 30000;
+    const _cfg = aryShopCfg();
+    const shipping = total >= Number(_cfg.free_over || 0) ? 0 : Number(_cfg.base_cost || 0);
+    const _slots = aryShopSlots();
+    const _defIdx = Math.max(0, _slots.findIndex(o => o.is_default));
     const finalTotal = total + shipping;
 
     return `
@@ -4505,14 +4617,20 @@ function renderProductPage() {
                 <div class="mb-5">
                   <div class="text-sm text-white/60 mb-2">انتخاب از آدرس‌های ذخیره‌شده:</div>
                   <div class="space-y-2">
-                    ${user.addresses.map((addr, i) => `
+                    ${user.addresses.map((addr, i) => {
+                      const a = typeof addr === 'string' ? { full: addr } : (addr || {});
+                      const txt = [a.title, a.full].filter(Boolean).join(' — ') || '—';
+                      const hasPt = isFinite(Number(a.lat)) && isFinite(Number(a.lng)) && a.lat !== '' && a.lat != null;
+                      return `
                       <label class="flex items-center gap-3 glass rounded-xl p-3 cursor-pointer hover:bg-white/5">
                         <input type="radio" name="savedAddress" value="${i}" ${i === 0 ? 'checked' : ''}>
-                        <span class="text-sm">${addr}</span>
+                        <span class="text-sm text-start">
+                          ${aryEsc(txt)}
+                          ${hasPt ? `<span class="block text-[10px] text-emerald-300/80 mt-0.5">🧭 روی نقشه انتخاب شده${window.AryaMap && AryaMap.origin() ? ' — فاصله تا مبدأ: ' + (AryaMap.haversineKm(AryaMap.origin(), { lat: Number(a.lat), lng: Number(a.lng) }) ?? '؟') + ' کیلومتر' : ''}</span>` : ''}
+                        </span>
                         <button type="button" class="ml-auto btn-ghost text-rose-400 px-2 py-1 rounded-lg"
-                          onclick="removeSavedAddress(${i})">حذف</button>
-                      </label>
-                    `).join('')}
+                          onclick="event.preventDefault(); removeSavedAddress(${i})">حذف</button>
+                      </label>`; }).join('')}
                   </div>
                 </div>
               ` : `
@@ -4524,6 +4642,11 @@ function renderProductPage() {
                   <label class="block text-sm text-white/70 mb-2">${user.addresses.length > 0 ? 'یا آدرس جدید' : 'آدرس کامل *'}</label>
                   <textarea id="co-address" name="address" ${user.addresses.length > 0 ? '' : 'required'} rows="3"
                     class="w-full input-style resize-none" placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد..."></textarea>
+                  <div class="flex flex-wrap items-center gap-2 mt-2">
+                    <button type="button" class="btn-ghost px-3.5 py-1.5 rounded-lg text-xs inline-flex items-center gap-1.5"
+                      onclick="aryCheckoutMapPick()">${aryIcon('pin', 'w-3.5 h-3.5')}<span>انتخاب مقصد روی نقشه — نوشتن خودکار آدرس</span></button>
+                    <span id="co-geo-note" class="text-[11px] text-emerald-300/80"></span>
+                  </div>
                 </div>
 
                 <div class="flex items-center gap-3">
@@ -4532,6 +4655,27 @@ function renderProductPage() {
                   <span class="text-xs text-white/50">حداکثر ۱۰ آدرس قابل ذخیره است</span>
                 </div>
               </div>
+            </div>
+
+            <!-- Shipping time -->
+            <div class="glass rounded-2xl p-6">
+              <h2 class="font-bold text-lg mb-5 flex items-center gap-2">
+                <span class="inline-flex text-emerald-300">${aryIcon('truck', 'w-5 h-5')}</span> زمان ارسال
+              </h2>
+              ${_slots.length ? `
+              <div class="grid gap-3 sm:grid-cols-${Math.min(3, _slots.length)}">
+                ${_slots.map((o, i) => `
+                  <label class="cursor-pointer rounded-xl border border-white/10 glass hover:bg-white/5 p-3 flex flex-col gap-1">
+                    <span class="flex items-center gap-2 text-sm font-bold">
+                      <input type="radio" name="slot" value="${aryEsc(o.id)}" ${i === _defIdx ? 'checked' : ''}
+                        onchange="aryCheckoutSlotChange(${total}, ${shipping})" class="accent-blue-500">
+                      <span>${aryEsc(o.label)}</span>
+                    </span>
+                    <span class="text-[11px] text-white/55">${arySlotPromiseText(o)}</span>
+                    <span class="text-[11px] ${Number(o.extra_cost) > 0 ? 'text-amber-300/90' : 'text-emerald-300/80'}">${Number(o.extra_cost) > 0 ? 'هزینه اضافه: ' + utils.formatPrice(Number(o.extra_cost)) : 'بدون هزینه اضافه'}</span>
+                  </label>`).join('')}
+              </div>` : `<p class="text-sm text-amber-300/85">مدیر فروشگاه هنوز گزینهٔ زمانی تعریف نکرده است؛ سفارش با زمان‌بندی پیش‌فرض پردازش می‌شود.</p>`}
+              <p class="text-[11px] text-white/40 mt-3">⏱ زمان تحویل، روزهای کاری پس از تأیید پرداخت است. بازهٔ «۳ تا ۵ روزه» یعنی احتمال تحویل در هر روز این بازه.</p>
             </div>
 
             <!-- Order summary -->
@@ -4560,11 +4704,11 @@ function renderProductPage() {
                 </div>
                 <div class="flex justify-between text-sm">
                   <span class="text-white/60">هزینه ارسال</span>
-                  <span class="${shipping === 0 ? 'text-emerald-400' : ''}">${shipping === 0 ? 'رایگان' : utils.formatPrice(shipping)}</span>
+                  <span id="co-ship-line" class="${shipping === 0 ? 'text-emerald-400' : ''}">${shipping === 0 ? 'رایگان' : utils.formatPrice(shipping)}${_slots[_defIdx] && Number(_slots[_defIdx].extra_cost) > 0 ? ' + ' + utils.formatPrice(Number(_slots[_defIdx].extra_cost)) : ''}</span>
                 </div>
                 <div class="flex justify-between items-center pt-3 border-t border-white/10">
                   <span class="font-bold">مبلغ قابل پرداخت:</span>
-                  <span class="text-2xl font-black text-emerald-400">${utils.formatPrice(finalTotal)}</span>
+                  <span id="co-final-line" class="text-2xl font-black text-emerald-400">${utils.formatPrice(finalTotal + (_slots[_defIdx] ? Number(_slots[_defIdx].extra_cost) || 0 : 0))}</span>
                 </div>
               </div>
             </div>
@@ -4604,6 +4748,34 @@ function renderProductPage() {
     render();
   };
 
+  window.aryCheckoutSlotChange = function (baseTotal, baseShip) {
+    const form = document.getElementById('checkout-form');
+    const sel = form && form.slot ? String(form.slot.value || '') : '';
+    const slot = (window.aryShopSlots ? aryShopSlots() : []).find(o => String(o.id) === sel) || null;
+    const extra = slot ? Number(slot.extra_cost) || 0 : 0;
+    const shipEl = document.getElementById('co-ship-line');
+    const finEl = document.getElementById('co-final-line');
+    if (shipEl) shipEl.textContent = (Number(baseShip) === 0 ? 'رایگان' : utils.formatPrice(Number(baseShip) || 0)) + (extra > 0 ? ' + ' + utils.formatPrice(extra) : '');
+    if (finEl) finEl.textContent = utils.formatPrice(Number(baseTotal) + Number(baseShip || 0) + extra);
+  };
+  window.aryCheckoutMapPick = function () {
+    if (!window.AryaMap) return toast('نقشه بارگذاری نشده است', 'warning');
+    AryaMap.pick({
+      title: 'انتخاب مقصد تحویل روی نقشه',
+      onPick: (p) => {
+        const ta = document.getElementById('co-address');
+        const note = document.getElementById('co-geo-note');
+        const g = p && p.g;
+        if (ta && g && g.full) ta.value = g.full + (g.postal ? ' — کد پستی: ' + g.postal : '');
+        if (note) note.textContent = g && g.full
+          ? ('آدرس خودکار نوشته شد ✓' + (g.postal ? ' (کد پستی پیدا شد)' : ''))
+          : 'فقط مختصات ثبت شد — آدرس را کامل بنویسید.';
+        window.__coPoint = { lat: p.lat, lng: p.lng };
+        if (ta) ta.focus();
+      },
+    });
+  };
+
   window.handleCheckoutSubmit = async function (amount) {
     if (!state.user) {
       toast('ابتدا وارد حساب شوید', 'warning');
@@ -4628,13 +4800,28 @@ function renderProductPage() {
 
     // Resolve final address: either selected saved or new textarea
     let finalAddress = '';
+    let chosenPoint = null;
     if (hasSavedIndex && String(savedIndexRaw).length) {
       const idx = Number(savedIndexRaw);
       const arr = Array.isArray(state.user.addresses) ? state.user.addresses : [];
       finalAddress = arr[idx] || '';
+      if (finalAddress && typeof finalAddress === 'object' && isFinite(Number(finalAddress.lat)) && finalAddress.lat !== '') {
+        chosenPoint = { lat: Number(finalAddress.lat), lng: Number(finalAddress.lng) };
+      }
     }
     if (!finalAddress) {
       finalAddress = addressText;
+      if (window.__coPoint) chosenPoint = window.__coPoint;
+    }
+    // آبجکت آدرس → رشتهٔ کامل برای سرور/ادمین
+    if (finalAddress && typeof finalAddress === 'object') {
+      const a = finalAddress;
+      const bits = [a.full];
+      if (a.plaque) bits.push('پلاک ' + a.plaque);
+      if (a.unit) bits.push('واحد ' + a.unit);
+      if (a.postal) bits.push('کدپستی ' + a.postal);
+      finalAddress = [a.title, bits.filter(Boolean).join('، ')].filter(Boolean).join(' — ');
+      if (chosenPoint) finalAddress += ` [${chosenPoint.lat},${chosenPoint.lng}]`;
     }
     if (!finalAddress) {
       toast('آدرس تحویل را انتخاب یا وارد کنید', 'warning');
@@ -4647,10 +4834,29 @@ function renderProductPage() {
       return;
     }
 
+    // گزینهٔ زمان ارسال (بخش ۳) + هزینهٔ اضافه
+    const _slots = (window.aryShopSlots ? aryShopSlots() : []);
+    const _selSlotId = form && form.slot ? String(form.slot.value || '') : '';
+    const slot = _slots.find(o => String(o.id) === _selSlotId) || _slots.find(o => o.is_default) || _slots[0] || null;
+    const slotExtra = slot ? Number(slot.extra_cost) || 0 : 0;
+    const payAmount = Number(amount) + slotExtra;
+    const deliverySlot = slot ? (slot.label + ' — ' + arySlotPromiseText(slot)) : '';
+    let etaNote = '';
+    if (slot && chosenPoint && window.AryaMap) {
+      try {
+        const o = AryaMap.origin();
+        const km = o ? AryaMap.haversineKm(o, chosenPoint) : null;
+        if (km != null) {
+          const extraDays = km > 350 ? 2 : (km > 150 ? 1 : 0);
+          etaNote = ` (بر اساس ${km.toLocaleString('fa-IR')} کیلومتر فاصله از مبدأ` + (extraDays ? ` — تا ${extraDays} روز ممکن است اضافه شود` : '') + `)`;
+        }
+      } catch (e) {}
+    }
+
     state.confirmModal = {
       type: 'payment',
       title: 'تایید پرداخت',
-      message: `پرداخت مبلغ ${utils.formatPrice(amount)} انجام شود؟`,
+      message: `پرداخت مبلغ ${utils.formatPrice(payAmount)} انجام شود؟${deliverySlot ? `<br><span class="text-white/55 text-xs">زمان ارسال: ${aryEsc(deliverySlot)}${etaNote ? ' —' + etaNote : ''}</span>` : ''}`,
       icon: aryIcon('card', 'w-14 h-14 text-blue-300'),
       confirmText: 'پرداخت',
       confirmClass: 'btn-success',
@@ -4658,13 +4864,15 @@ function renderProductPage() {
         state.confirmModal = null;
         try {
           await createOrder({
-            total: amount,
+            total: payAmount,
             user_phone: phone,
             user_name: name,
             address: finalAddress,
+            delivery_slot: deliverySlot,
             items: state.cart,
             created_at: new Date().toISOString()
           });
+          if (window.__coPoint) delete window.__coPoint;
           state.cart = [];
           if (window.AppState) AppState.set({ cart: [] });
           toast('سفارش شما با موفقیت ثبت شد');

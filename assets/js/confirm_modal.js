@@ -25,7 +25,7 @@ function renderConfirmModal() {
             انصراف
           </button>
           <button 
-            onclick="(function(){ if(window.__aryConfirmPhrase && !window.__aryConfirmPhrase()) return; state.confirmModal.onConfirm(); })()" 
+            onclick="(function(){ if(window.__aryConfirmPhrase && !window.__aryConfirmPhrase()) return; if(window.__aryConfirmValidate && !window.__aryConfirmValidate()) return; state.confirmModal.onConfirm(); })()" 
             class="flex-1 ${modal.confirmClass || 'btn-primary'} py-3.5 rounded-xl font-semibold transition-all"
           >
             ${modal.confirmText || 'تایید'}
@@ -35,6 +35,13 @@ function renderConfirmModal() {
     </div>
   `;
 }
+
+// اگر مودال اعتبارسنجی سفارشی بخواهد (validate: () => bool) — مثل فرم دلیل لغو
+window.__aryConfirmValidate = function () {
+  const m = window.state && state.confirmModal;
+  if (!m || typeof m.validate !== 'function') return true;
+  try { return !!m.validate(); } catch (e) { console.warn('[confirm] validate', e); return true; }
+};
 
 // اگر مودال «عبارت تایید» بخواهد، قبل از onConfirm بررسی می‌شود
 window.__aryConfirmPhrase = function () {

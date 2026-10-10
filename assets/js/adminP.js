@@ -455,7 +455,7 @@ function renderAdminOrderCard(order, i) {
                 <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
                   <div>
                     <span class="font-mono font-bold">#${(order.id || '').slice(-8)}</span>
-                    ${canceled ? `<span class="mr-2 inline-flex items-center gap-1 align-middle text-[10px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 rounded-lg px-2 py-0.5">✕ لغوشده${order.cancel_reason ? ' توسط مشتری' : ''}</span>` : ''}
+                    ${canceled ? `<span class="mr-2 inline-flex items-center gap-1 align-middle text-[10px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/30 rounded-lg px-2 py-0.5">✕ لغوشده</span>` : ''}
                     ${ret ? `<span class="mr-2 inline-flex items-center gap-1 align-middle text-[10px] font-bold text-sky-300 bg-sky-500/15 border border-sky-500/30 rounded-lg px-2 py-0.5">↩ مرجوعی</span>` : ''}
                     <p class="text-xs text-white/60 mt-1">${utils.formatDateTime(order.created_at)}</p>
                   </div>
@@ -503,7 +503,8 @@ function renderAdminOrderCard(order, i) {
                   </div>
                 </div>
               </div>
-                ${canceled && order.cancel_reason ? `<p class="mt-3 text-[11px] text-rose-300/85">دلیل لغو مشتری: ${escapeHtml(String(order.cancel_reason).slice(0,300))}</p>` : ''}
+                ${order.delivery_slot ? `<p class="mt-3 text-[11px] text-sky-200/80 inline-flex items-center gap-1.5">${ai('truck','w-3.5 h-3.5')}<span>زمان ارسال انتخابی مشتری:</span> <b class="font-normal">${escapeHtml(String(order.delivery_slot).slice(0,140))}</b></p>` : ''}
+                ${canceled && order.cancel_reason ? `<p class="mt-3 text-[11px] text-rose-300/85">دلیل لغو: ${escapeHtml(String(order.cancel_reason).slice(0,300))}</p>` : ''}
                 <!-- کالاهای سفارش -->
                 <div class="mt-4 rounded-2xl bg-black/25 border border-white/5 p-3.5">
                   <p class="text-[11px] font-bold text-white/55 mb-2 flex items-center gap-1.5">${typeof aryIcon === 'function' ? aryIcon('box', 'w-3.5 h-3.5') : ''} اقلام (${items.length})</p>
@@ -840,6 +841,7 @@ function renderAdminPanel() {
     { id: 'categories', icon: 'grid', label: 'دسته‌بندی‌ها' },
     { id: 'reviews', icon: 'star', label: 'نظرات' },
     { id: 'support', icon: 'ticket', label: 'پشتیبانی' },
+    { id: 'shop', icon: 'truck', label: 'ارسال و نقشه' },
     { id: 'admins', icon: 'shield', label: 'کاربران مدیر' }
   ];
 
@@ -921,6 +923,7 @@ function renderAdminPanel() {
         ${state.adminTab === 'categories' ? renderAdminCategoriesEditor() : ''}
         ${state.adminTab === 'reviews' ? renderAdminReviews() : ''}
         ${state.adminTab === 'support' ? renderAdminSupportSafe() : ''}
+        ${state.adminTab === 'shop' ? renderAdminShopSettings() : ''}
         ${state.adminTab === 'admins' ? (typeof renderAdminUsersManagement === 'function' ? renderAdminUsersManagement() : '') : ''}
       </main>
 
@@ -1002,8 +1005,234 @@ window.aryAdminReturnDecision = function (orderId, decision) {
 
 function updateOrderStatus(order, nextStatus) {
   if (!order || !order.id) return;
+  // لغو از پنل ادمین: مانند پنل کاربر، دلیل لازم است (در گزارش لغوها ثبت می‌شود)
+  if (String(nextStatus) === 'canceled' && String(order.status || '') !== 'canceled') {
+    state.confirmModal = {
+      type: 'danger',
+      title: 'لغو سفارش از پنل — ثبت دلیل',
+      message: `
+        <div class="text-start space-y-2.5">
+          <p class="text-xs text-white/60 leading-6">سفارش #${String(order.id).slice(-8)} (${order.user_name || 'بدون نام'}) لغو می‌شود. دلیل را بنویسید تا در کارت سفارش و گزارش لغوها ثبت شود:</p>
+          <textarea id="admin-cancel-reason" rows="2" class="input-style w-full text-sm resize-none" placeholder="مثلاً: موجودی انبار تمام شد / تماس با مشتری و انصراف…"></textarea>
+          <p class="text-[10px] text-white/40">اگر چیزی ننویسید، «لغو اداری» ثبت می‌شود.</p>
+        </div>`,
+      confirmText: 'ثبت دلیل و لغو',
+      confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+      onConfirm: () => {
+        const txt = String(document.getElementById('admin-cancel-reason')?.value || '').trim();
+        state.confirmModal = null;
+        updateOrder(order.id, { status: 'canceled', cancel_reason: 'مدیر: ' + (txt !== '' ? txt : 'لغو اداری') });
+      }
+    };
+    render();
+    return;
+  }
   updateOrder(order.id, { status: nextStatus });
 }
+
+/* ========== تنظیمات ارسال و نقشه (مبدأ فروشگاه + گزینه‌های زمان) ========== */
+const ARY_SHIP_FALLBACK = {
+  base_cost: 30000, free_over: 500000,
+  origin: { lat: '', lng: '', label: 'مبدأ فروشگاه' },
+  shipping_options: [
+    { id: 'standard', label: 'ارسال عادی (پست پیشتاز)', min_days: 3, max_days: 5, extra_cost: 0, active: true, is_default: true },
+    { id: 'express', label: 'ارسال فوری (پیک تیپاکس)', min_days: 1, max_days: 2, extra_cost: 45000, active: true, is_default: false },
+    { id: 'economy', label: 'ارسال اقتصادی (پست دولتی)', min_days: 5, max_days: 9, extra_cost: 0, active: true, is_default: false }
+  ]
+};
+function aryAdminShopCfg() {
+  if (!state.shopCfg && window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured() && !state.__shopCfgReq) {
+    state.__shopCfgReq = true;
+    AryaServer.call('shop_config').then(r => {
+      state.__shopCfgReq = false;
+      if (r && r.ok && r.data) { state.shopCfg = r.data; window.__aryShopCfg = r.data; render(); }
+    }).catch(() => { state.__shopCfgReq = false; });
+  }
+  const src = state.shopCfg || window.__aryShopCfg || ARY_SHIP_FALLBACK;
+  return {
+    base_cost: Number(src.base_cost) || 0,
+    free_over: Number(src.free_over) || 0,
+    origin: { lat: src.origin?.lat ?? '', lng: src.origin?.lng ?? '', label: src.origin?.label || 'مبدأ فروشگاه' },
+    shipping_options: (Array.isArray(src.shipping_options) && src.shipping_options.length ? src.shipping_options : ARY_SHIP_FALLBACK.shipping_options).map(o => ({
+      id: o.id, label: o.label, min_days: Number(o.min_days) || 0, max_days: Number(o.max_days) || 0,
+      extra_cost: Number(o.extra_cost) || 0, active: o.active !== false, is_default: !!o.is_default
+    }))
+  };
+}
+function renderAdminShopSettings() {
+  const ai = (n, c) => (typeof aryIcon === 'function' ? aryIcon(n, c) : '');
+  const cfg = aryAdminShopCfg();
+  state.shopCfg = cfg; // mirror برای رندرهای بعدی
+  const esc = (v) => escapeHtml(String(v ?? ''));
+  const rows = cfg.shipping_options.map((o, i) => `
+    <div class="glass rounded-xl p-3.5 grid grid-cols-2 lg:grid-cols-12 gap-2.5 items-end">
+      <div class="lg:col-span-3">
+        <label class="block text-[10px] text-white/50 mb-1">عنوان گزینه</label>
+        <input id="shop-o${i}-label" class="input-style w-full text-sm" value="${esc(o.label)}" placeholder="مثلاً ارسال عادی">
+      </div>
+      <div class="lg:col-span-1">
+        <label class="block text-[10px] text-white/50 mb-1">از (روز)</label>
+        <input id="shop-o${i}-min" type="number" min="0" max="45" class="input-style w-full text-sm" value="${o.min_days}">
+      </div>
+      <div class="lg:col-span-1">
+        <label class="block text-[10px] text-white/50 mb-1">تا (روز)</label>
+        <input id="shop-o${i}-max" type="number" min="0" max="60" class="input-style w-full text-sm" value="${o.max_days}">
+      </div>
+      <div class="lg:col-span-2">
+        <label class="block text-[10px] text-white/50 mb-1">هزینهٔ اضافه (تومان)</label>
+        <input id="shop-o${i}-extra" type="number" min="0" step="1000" class="input-style w-full text-sm" value="${o.extra_cost}">
+      </div>
+      <label class="lg:col-span-2 inline-flex items-center gap-2 text-xs cursor-pointer pb-2">
+        <input id="shop-o${i}-active" type="checkbox" ${o.active ? 'checked' : ''} class="accent-blue-500 w-4 h-4"><span>فعال</span>
+      </label>
+      <label class="lg:col-span-2 inline-flex items-center gap-2 text-xs cursor-pointer pb-2">
+        <input type="radio" name="shop-default" value="${i}" ${o.is_default ? 'checked' : ''} class="accent-blue-500"><span>پیش‌فرض</span>
+      </label>
+      <div class="lg:col-span-1 flex justify-end pb-1">
+        <button type="button" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/20 transition" onclick="aryAdminShopEdit('del', ${i})" title="حذف گزینه">حذف</button>
+      </div>
+      <input type="hidden" id="shop-o${i}-id" value="${esc(o.id)}">
+    </div>`).join('');
+  setTimeout('typeof aryAdminShopMountMap===\'function\'&&aryAdminShopMountMap()', 50);
+  return `
+    <div class="animate-fade max-w-4xl">
+      <div class="flex items-center justify-between gap-3 mb-5">
+        <h1 class="text-2xl font-black flex items-center gap-2.5"><span class="inline-flex text-blue-300">${ai('truck','w-6 h-6')}</span> زمان ارسال و مبدأ نقشه</h1>
+        <button type="button" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold inline-flex items-center gap-2" onclick="aryAdminShopSave()">${ai('check','w-4 h-4')} ذخیره تنظیمات</button>
+      </div>
+
+      <div class="glass rounded-2xl p-4 lg:p-6 mb-6">
+        <h2 class="font-bold mb-1.5">هزینه و مهلت رایگان‌سازی</h2>
+        <p class="text-[11px] text-white/45 mb-4">مبلغی که به‌صورت پیش‌فرض بابت ارسال حساب می‌شود؛ سفارش‌های بالای سقف «ارسال رایگان» هستند.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+          <div>
+            <label class="block text-xs text-white/55 mb-1">هزینه پایهٔ ارسال (تومان)</label>
+            <input id="shop-base-cost" type="number" min="0" step="1000" class="input-style w-full" value="${cfg.base_cost}">
+          </div>
+          <div>
+            <label class="block text-xs text-white/55 mb-1">سقف خرید رایگان (تومان — صفر = هیچ‌وقت رایگان نیست)</label>
+            <input id="shop-free-over" type="number" min="0" step="50000" class="input-style w-full" value="${cfg.free_over}">
+          </div>
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-4 lg:p-6 mb-6">
+        <div class="flex items-center justify-between gap-2 mb-1.5">
+          <h2 class="font-bold">گزینه‌های زمان ارسال (در صفحهٔ checkout به مشتری نشان داده می‌شود)</h2>
+          <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 hover:bg-blue-500/20 border border-blue-500/20 transition" onclick="aryAdminShopEdit('add')">+ افزودن گزینه</button>
+        </div>
+        <p class="text-[11px] text-white/45 mb-4">بازهٔ روزهای کاری «از — تا» پس از تأخیر پرداخت محاسبه می‌شود. دستِ‌کم یک گزینه باید فعال باشد.</p>
+        <div class="space-y-3">${rows}</div>
+      </div>
+
+      <div class="glass rounded-2xl p-4 lg:p-6">
+        <h2 class="font-bold mb-1.5">مبدأ ارسال روی نقشه</h2>
+        <p class="text-[11px] text-white/45 mb-4">انبار/محل ارسال را با یک کلیک روی نقشه مشخص کنید. مشتری هنگام انتخاب آدرس مقصد، فاصله تا همین مبدأ را می‌بیند و سیستم بر اساس آن برآورد زمان می‌دهد.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3 text-sm">
+          <div>
+            <label class="block text-xs text-white/55 mb-1">عرض جغرافیایی (lat)</label>
+            <input id="shop-origin-lat" dir="ltr" class="input-style w-full font-mono text-left" value="${cfg.origin.lat}" placeholder="35.699700">
+          </div>
+          <div>
+            <label class="block text-xs text-white/55 mb-1">طول جغرافیایی (lng)</label>
+            <input id="shop-origin-lng" dir="ltr" class="input-style w-full font-mono text-left" value="${cfg.origin.lng}" placeholder="51.337900">
+          </div>
+          <div>
+            <label class="block text-xs text-white/55 mb-1">برچسب مبدأ</label>
+            <input id="shop-origin-label" class="input-style w-full" value="${esc(cfg.origin.label)}" placeholder="انبار مرکزی تهران">
+          </div>
+        </div>
+        <div id="ary-origin-map" class="ary-map rounded-xl border border-white/10 mb-2"></div>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 transition" onclick="aryAdminShopLocate()">📍 استفاده از موقعیت فعلی من</button>
+          <span class="text-[10px] text-white/40 self-center">برای ثبت مبدأ، روی نقشه کلیک کنید.</span>
+        </div>
+      </div>
+    </div>`;
+}
+function aryAdminShopEdit(mode, i) {
+  const cfg = state.shopCfg || aryAdminShopCfg();
+  const opts = (cfg.shipping_options || []).slice();
+  if (mode === 'add') {
+    if (opts.length >= 8) { toast('حداکثر ۸ گزینه مجاز است', 'warning'); return; }
+    opts.push({ id: 'opt_' + Math.random().toString(36).slice(2, 7), label: 'گزینهٔ جدید', min_days: 2, max_days: 4, extra_cost: 0, active: true, is_default: !opts.some(o => o.is_default) });
+  } else if (mode === 'del') {
+    if (opts.length <= 1) { toast('حداقل یک گزینه باید بماند', 'warning'); return; }
+    opts.splice(i, 1);
+  }
+  state.shopCfg = { ...cfg, shipping_options: opts };
+  render();
+}
+function aryAdminShopMountMap() {
+  try {
+    if (state.adminTab !== 'shop') return;
+    const el = document.getElementById('ary-origin-map');
+    if (!el || el._aryMounted || !window.AryaMap) return;
+    el._aryMounted = 1;
+    const lat = parseFloat(document.getElementById('shop-origin-lat')?.value);
+    const lng = parseFloat(document.getElementById('shop-origin-lng')?.value);
+    AryaMap.mountInline(el, {
+      lat: isFinite(lat) ? lat : null, lng: isFinite(lng) ? lng : null,
+      onChange: (la, ln) => {
+        const a = document.getElementById('shop-origin-lat'), b = document.getElementById('shop-origin-lng');
+        if (a) a.value = la; if (b) b.value = ln;
+      }
+    }).then(inst => { el._aryInst = inst; }).catch(() => { el._aryMounted = 0; el.innerHTML = '<div class="p-4 text-xs text-white/50">نقشه بارگذاری نشد — مختصات را دستی وارد کنید.</div>'; });
+  } catch (e) {}
+}
+function aryAdminShopLocate() {
+  if (!navigator.geolocation) return toast('مرورگر شما موقعیت‌یابی ندارد', 'warning');
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const la = Number(pos.coords.latitude).toFixed(6), ln = Number(pos.coords.longitude).toFixed(6);
+    const a = document.getElementById('shop-origin-lat'), b = document.getElementById('shop-origin-lng');
+    if (a) a.value = la; if (b) b.value = ln;
+    const el = document.getElementById('ary-origin-map');
+    if (el && el._aryInst) el._aryInst.set(+la, +ln);
+    toast('موقعیت فعلی در مبدأ نوشته شد — روی «ذخیره تنظیمات» بزنید', 'info');
+  }, () => toast('دسترسی به موقعیت رد شد', 'warning'));
+}
+function aryAdminShopSave() {
+  const cfg = state.shopCfg || aryAdminShopCfg();
+  const n = (cfg.shipping_options || []).length;
+  const opts = [];
+  for (let i = 0; i < n; i++) {
+    const g = (f) => document.getElementById('shop-o' + i + '-' + f);
+    const label = String(g('label')?.value || '').trim();
+    if (label.length < 2) { toast('عنوان هر گزینه حداقل ۲ حرف باشد', 'warning'); return; }
+    const min = Number(g('min')?.value) || 0, max = Number(g('max')?.value) || 0;
+    if (max < min) { toast('در گزینهٔ «' + label + '» بازهٔ روزها معتبر نیست (کمینه بیشینه شد)', 'warning'); return; }
+    opts.push({
+      id: String(g('id')?.value || ('opt' + i)), label,
+      min_days: min, max_days: max,
+      extra_cost: Math.max(0, Number(g('extra')?.value) || 0),
+      active: !!g('active')?.checked,
+      is_default: document.querySelector('input[name="shop-default"]:checked')?.value === String(i)
+    });
+  }
+  const body = {
+    base_cost: Math.max(0, Number(document.getElementById('shop-base-cost')?.value) || 0),
+    free_over: Math.max(0, Number(document.getElementById('shop-free-over')?.value) || 0),
+    origin: {
+      lat: String(document.getElementById('shop-origin-lat')?.value || '').trim() || null,
+      lng: String(document.getElementById('shop-origin-lng')?.value || '').trim() || null,
+      label: String(document.getElementById('shop-origin-label')?.value || '').trim() || 'مبدأ فروشگاه'
+    },
+    shipping_options: opts
+  };
+  AryaServer.call('shop_config_save', { body }).then(r => {
+    if (!r || !r.ok) { toast((r && r.msg) || 'ذخیره ناموفق بود', 'error'); return; }
+    state.shopCfg = r.data; window.__aryShopCfg = r.data;
+    if (window.state) state.shopConfig = r.data;
+    toast('تنظیمات ارسال ذخیره شد ✓');
+    render();
+  }).catch(() => toast('ارتباط با سرور برقرار نشد', 'error'));
+}
+window.renderAdminShopSettings = renderAdminShopSettings;
+window.aryAdminShopEdit = aryAdminShopEdit;
+window.aryAdminShopMountMap = aryAdminShopMountMap;
+window.aryAdminShopLocate = aryAdminShopLocate;
+window.aryAdminShopSave = aryAdminShopSave;
+
 
 /* ========== Categories: modal-based CRUD + product assignment ========== */
 

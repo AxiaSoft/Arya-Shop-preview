@@ -233,6 +233,15 @@
         }
       } catch (e) { console.warn('[AryaDB] server load failed for', table, e); }
     }
+    // پیکربندی فروشگاه (زمان‌های ارسال + مبدأ نقشه) — یک‌بار در بوت
+    try {
+      const sc = await AryaServer.shopConfig();
+      if (sc && sc.ok && sc.data) {
+        window.__aryShopCfg = sc.data;
+        if (window.state) state.shopConfig = sc.data;
+        document.dispatchEvent(new CustomEvent('arya-shop-config'));
+      }
+    } catch (e) {}
   }
 
   // ── حالت دمو بدون سرور (GitHub Pages/فایل محلی): اگر IndexedDB خالی بود، کاتالوگ نمونه را بارگذاری کن ──

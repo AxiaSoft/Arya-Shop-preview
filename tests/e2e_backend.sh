@@ -152,6 +152,33 @@ for i in $(seq 1 12); do
 done
 t "throttle engaged" ok "{\"ok\": $( [ $N -gt 0 ] && echo true || echo false )}"
 
+echo "— 8) Shop config / cancel-reason / password hardening —"
+t "shop_config public defaults" ok "$(curl -s "$U?action=shop_config" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':isinstance(d.get('shipping_options'),list) and len(d['shipping_options'])>=3 and d.get('base_cost') is not None}))")"
+t "shop_config_save guest blocked" fail "$(curl -s -X POST "$U?action=shop_config_save" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"config":{"base_cost":1}}')"
+t "shop_config_save bad day-range rejected" fail "$(A 'shop_config_save' '{"config":{"shipping_options":[{"id":"bad1","label":"گزینه نامعتبر","min_days":9,"max_days":3,"active":true}]}}')"
+t "shop_config_save no-active rejected" fail "$(A 'shop_config_save' '{"config":{"shipping_options":[{"id":"off1","label":"خاموش","min_days":1,"max_days":2,"active":false}]}}')"
+t "shop_config_save ok" ok "$(A 'shop_config_save' '{"config":{"base_cost":25000,"free_over":400000,"origin":{"lat":35.7,"lng":51.4,"label":"انبار مرکزی"},"shipping_options":[{"id":"standard","label":"عادی","min_days":2,"max_days":4,"extra_cost":0,"active":true,"is_default":true},{"id":"eco","label":"اقتصادی","min_days":6,"max_days":10,"extra_cost":0,"active":true,"is_default":false}]}}')"
+t "shop_config persists saved values" ok "$(curl -s "$U?action=shop_config" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};o=d.get('origin') or {};so=d.get('shipping_options') or [];print(json.dumps({'ok':d.get('base_cost')==25000 and o.get('label')=='انبار مرکزی' and any(x.get('is_default') for x in so)}))")"
+t "admin can upsert order with delivery_slot" ok "$(A 'upsert&table=orders' '{"record":{"id":"ar_ordership","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":"[]","total":10000,"status":"pending","delivery_slot":"عادی — ۲ تا ۴ روز کاری"}}')"
+t "delivery_slot readable by owner" ok "$(curl -s "$U?action=getById&table=orders&id=ar_ordership&user_phone=09123456789" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('delivery_slot')=='عادی — ۲ تا ۴ روز کاری'}))")"
+t "cancel WITHOUT reason rejected (user path)" fail "$(curl -s -b $G -X POST "$U?action=order_cancel" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"id":"ar_ordership","phone":"09123456789"}')"
+t "cancel WITH reason ok (user path)" ok "$(curl -s -b $G -X POST "$U?action=order_cancel" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"id":"ar_ordership","phone":"09123456789","reason":"زمان ارسال برام مهم بود"}')"
+t "admin sees prefixed cancel reason" ok "$(curl -s "$U?action=getById&table=orders&id=ar_ordership&user_phone=09123456789" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':str(d.get('cancel_reason') or '').startswith('مشتری: ')}))")"
+# — تغییر رمز و ابطال سشن‌ها (کاربر مجزا تا تست‌های بالا نشکند) —
+KU9=$(mktemp)
+t "setup user for pwd test" ok "$(curl -s -X POST "$U?action=user_register" -H 'Content-Type: application/json' -d '{"name":"Pwd Test","email":"pwd9@t.test","phone":"09128887766","password":"First@12345"}')"
+R=$(curl -s -c $KU9 -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"09128887766","password":"First@12345"}')
+POTP=$(echo "$R" | pyj "['data']['otp_demo']")
+t "user login for pwd test" ok "$(curl -s -b $KU9 -c $KU9 -X POST "$U?action=user_login_step2" -H "Origin: $BASE" -H 'Content-Type: application/json' -d "{\"otp\":\"$POTP\"}")"
+KCSRF=$(curl -s -b $KU9 "$U?action=csrf" | pyj "['data']['csrf']")
+t "same-as-current password rejected" fail "$(curl -s -b $KU9 -X POST "$U?action=user_change_password" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d '{"current_password":"First@12345","new_password":"First@12345"}')"
+t "change password (old_password compat key)" ok "$(curl -s -b $KU9 -X POST "$U?action=user_change_password" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d '{"old_password":"First@12345","new_password":"Second@54321"}')"
+t "session invalidated after password change" ok "$(curl -s -b $KU9 "$U?action=user_session" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('loggedIn') is False}))")"
+t "old password no longer works" fail "$(curl -s -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"09128887766","password":"First@12345"}')"
+t "new password works" ok "$(curl -s -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"pwd9@t.test","password":"Second@54321"}')"
+t "reset2 accepts password alias key" ok "$(curl -s -X POST "$U?action=user_reset_step1" -H 'Content-Type: application/json' -d '{"identifier":"pwd9@t.test"}' | python3 -c "import json,sys;d=json.load(sys.stdin);print(json.dumps({'ok':bool(d.get('ok'))}))")"
+
+
 echo
 echo "PASS=$PASS FAIL=$FAIL"
 [ $FAIL -eq 0 ]

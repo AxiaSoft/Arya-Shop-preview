@@ -104,11 +104,14 @@ window.AryaServer = (function () {
     login2: (otp) => call('user_login_step2', { body: { otp } }),
     logout: () => call('user_logout'),
     reset1: (identifier) => call('user_reset_step1', { body: { identifier } }),
-    reset2: (otp, password) => call('user_reset_step2', { body: { otp, password } }),
+    reset2: (otp, password) => call('user_reset_step2', { body: { otp, new_password: password } }),
     update: (rec) => call('user_update', { body: rec }),
+    // تنظیمات فروشگاه (زمان ارسال + مبدأ نقشه)
+    shopConfig: () => call('shop_config'),
+    saveShopConfig: (config) => call('shop_config_save', { body: { config } }),
     requestContactChange: (rec) => call('user_contact_step1', { body: rec }),
     confirmContactChange: (rec) => call('user_contact_step2', { body: rec }),
-    changePassword: (oldPw, newPw) => call('user_change_password', { body: { old_password: oldPw, new_password: newPw } }),
+    changePassword: (oldPw, newPw) => call('user_change_password', { body: { current_password: oldPw, new_password: newPw } }),
     removeAccount: () => call('user_delete', { body: {} }),
     // محتوا
     createReview: (rec) => call('review_create', { body: rec }),

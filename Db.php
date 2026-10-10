@@ -154,7 +154,17 @@ function requireAdminSession(bool $csrf = true): string {
 }
 
 function currentAdminId(): ?string { return isset($_SESSION['admin_id']) ? (string) $_SESSION['admin_id'] : null; }
-function currentUserId(): ?string  { return isset($_SESSION['user_id'])  ? (string) $_SESSION['user_id']  : null; }
+function currentUserId(): ?string {
+    if (empty($_SESSION['user_id'])) return null;
+    $uid = (string) $_SESSION['user_id'];
+    // پس از هر تغییر/بازنشانی رمز، سشن‌های قدیمی (احتمالاً دزدیده‌شده) باطل می‌شوند
+    $ep = ary_pwd_epoch($uid);
+    if ($ep > 0 && ((int) ($_SESSION['auth_ts'] ?? 0)) < $ep) {
+        unset($_SESSION['user_id'], $_SESSION['auth_ts']);
+        return null;
+    }
+    return $uid;
+}
 
 // ── ساخت جداول (idempotent) ───────────────────────────────────
 function createSchema(AryaDbEngine $eng): void {
@@ -203,6 +213,97 @@ function ary_norm_ir_phone(string $v): string {
     elseif (strlen($p) === 13 && str_starts_with($p, '0098')) $p = '0' . substr($p, 4);
     elseif (strlen($p) === 10 && str_starts_with($p, '9')) $p = '0' . $p;
     return $p;
+}
+
+
+// ── کلید/مقدار روی جدول settings (برای پیکربندی فروشگاه و اپاک رمز عبور) ──
+function ary_setting_get(string $key): ?string {
+    try {
+        $eng = engine();
+        if (!$eng->tableExists('settings')) return null;
+        $q = AryaDbEngine::quoteIdent($eng->driver, 'settings');
+        $st = $eng->pdo()->prepare('SELECT ' . AryaDbEngine::quoteIdent($eng->driver, 'value') . " AS v FROM $q WHERE " . AryaDbEngine::quoteIdent($eng->driver, 'key') . ' = ? LIMIT 1');
+        $st->execute([$key]);
+        $v = $st->fetchColumn();
+        return $v === false ? null : (string) $v;
+    } catch (Throwable $e) { return null; }
+}
+function ary_setting_set(string $key, string $value): void {
+    $eng = engine();
+    $q = AryaDbEngine::quoteIdent($eng->driver, 'settings');
+    $kQ = AryaDbEngine::quoteIdent($eng->driver, 'key');
+    $vQ = AryaDbEngine::quoteIdent($eng->driver, 'value');
+    $up = $eng->pdo()->prepare("UPDATE $q SET $vQ = ? WHERE $kQ = ?");
+    $up->execute([$value, $key]);
+    if ($up->rowCount() === 0) {
+        $ins = $eng->pdo()->prepare("INSERT INTO $q ($kQ, $vQ) VALUES (?, ?)");
+        $ins->execute([$key, $value]);
+    }
+}
+// اپاک رمز: هر تغییر رمز، همهٔ سشن‌های زندهٔ آن کاربر را باطل می‌کند
+function ary_pwd_epoch(string $uid): int { return (int) (ary_setting_get('pwd_epoch:' . $uid) ?? '0'); }
+function ary_touch_pwd_epoch(string $uid): void { ary_setting_set('pwd_epoch:' . $uid, (string) time()); }
+
+// پیکربندی عمومی فروشگاه (زمان‌های ارسال + مبدأ نقشه) — مقدار پیش‌فرض اگر مدیر چیزی ثبت نکرده باشد
+function ary_shipping_defaults(): array {
+    return [
+        ['id' => 'standard', 'label' => 'ارسال عادی (پست پیشتاز)', 'min_days' => 3, 'max_days' => 5, 'extra_cost' => 0,    'active' => true,  'is_default' => true],
+        ['id' => 'express',  'label' => 'ارسال فوری (پیک تیپاکس)', 'min_days' => 1, 'max_days' => 2, 'extra_cost' => 45000, 'active' => true,  'is_default' => false],
+        ['id' => 'economy',  'label' => 'ارسال اقتصادی (پست دولتی)', 'min_days' => 5, 'max_days' => 9, 'extra_cost' => 0,   'active' => true,  'is_default' => false],
+    ];
+}
+function ary_shop_config(): array {
+    $cfg = ['base_cost' => 30000, 'free_over' => 500000,
+            'origin' => ['lat' => null, 'lng' => null, 'label' => 'مبدأ فروشگاه'],
+            'shipping_options' => ary_shipping_defaults()];
+    $raw = ary_setting_get('shop_config');
+    if ($raw !== null && $raw !== '') {
+        $j = json_decode($raw, true);
+        if (is_array($j)) $cfg = array_replace_recursive($cfg, $j);
+    }
+    return $cfg;
+}
+function ary_shop_config_validate(array $in): array {
+    $out = [];
+    $out['base_cost'] = max(0, min(5000000, (int) ($in['base_cost'] ?? 0)));
+    $out['free_over'] = max(0, min(1000000000, (int) ($in['free_over'] ?? 0)));
+    $lat = $in['origin']['lat'] ?? null; $lng = $in['origin']['lng'] ?? null;
+    $o = ['lat' => null, 'lng' => null, 'label' => mb_substr(ary_clean_text((string) ($in['origin']['label'] ?? ''), 80), 0, 80)];
+    if ($o['label'] === '') $o['label'] = 'مبدأ فروشگاه';
+    if ($lat !== null && $lat !== '' && $lng !== null && $lng !== '') {
+        $fLat = (float) $lat; $fLng = (float) $lng;
+        if ($fLat < -90 || $fLat > 90 || $fLng < -180 || $fLng > 180) fail('مختصات مبدأ نامعتبر است (عرض بین -۹۰ تا ۹۰ و طول بین -۱۸۰ تا ۱۸۰).');
+        $o['lat'] = round($fLat, 6); $o['lng'] = round($fLng, 6);
+    }
+    $out['origin'] = $o;
+    $rawOpts = isset($in['shipping_options']) && is_array($in['shipping_options']) ? $in['shipping_options'] : [];
+    if (count($rawOpts) > 8) fail('حداکثر ۸ گزینه زمان ارسال مجاز است.');
+    $seen = []; $opts = [];
+    foreach ($rawOpts as $ro) {
+        if (!is_array($ro)) continue;
+        $id = strtolower(preg_replace('/[^a-z0-9_-]/', '', (string) ($ro['id'] ?? '')));
+        if ($id === '' || mb_strlen($id) > 32) $id = 'opt_' . bin2hex(random_bytes(4));
+        if (isset($seen[$id])) $id .= '_2'; $seen[$id] = 1;
+        $label = mb_substr(ary_clean_text((string) ($ro['label'] ?? ''), 60), 0, 60);
+        if (mb_strlen($label) < 2) continue;
+        $min = max(0, min(45, (int) ($ro['min_days'] ?? 0)));
+        $max = max(0, min(60, (int) ($ro['max_days'] ?? 0)));
+        if ($max < $min) fail('در گزینهٔ «' . $label . '» بیشترین روز نمی‌تواند کمتر از کمترین روز باشد.');
+        $opts[] = [
+            'id' => $id, 'label' => $label,
+            'min_days' => $min, 'max_days' => $max,
+            'extra_cost' => max(0, min(5000000, (int) ($ro['extra_cost'] ?? 0))),
+            'active' => !empty($ro['active']),
+            'is_default' => !empty($ro['is_default']),
+        ];
+    }
+    $act = array_values(array_filter($opts, fn($x) => $x['active']));
+    if (!$act) fail('دستِ‌کم یک گزینهٔ زمان ارسال باید فعال بماند تا مشتری بتواند سفارش ثبت کند.');
+    $anyDefault = array_filter($act, fn($x) => $x['is_default']);
+    if (!$anyDefault) $act[0]['is_default'] = true;
+    elseif (count($anyDefault) > 1) { $first = true; foreach ($opts as &$oo) { if ($oo['active'] && $oo['is_default']) { if ($first) $first = false; else $oo['is_default'] = false; } } unset($oo); }
+    $out['shipping_options'] = $opts;
+    return $out;
 }
 
 function rememberPendingOtp(string $key, string $id, string $otp, string $target): void {
@@ -281,6 +382,19 @@ if ($action === 'status') {
                       'name'   => defined('DB_NAME') ? DB_NAME : null];
     }
     ok($out);
+}
+
+// ── پیکربندی فروشگاه: گزینه‌های زمان ارسال + مبدأ نقشه (عمومی: خواندنی / ادمین: نوشتنی) ──
+if ($action === 'shop_config') {
+    ok(ary_shop_config());
+}
+if ($action === 'shop_config_save') {
+    requireAdminSession();
+    $in = is_array($rawBody['config'] ?? null) ? (array) $rawBody['config'] : (array) $rawBody;
+    $cfg = ary_shop_config_validate($in);
+    ary_setting_set('shop_config', json_encode($cfg, JSON_UNESCAPED_UNICODE));
+    ary_log('admin', 'SHOP-CONFIG saved by ' . (string) currentAdminId() . ' — ' . count($cfg['shipping_options']) . ' shipping options');
+    ok($cfg, 'تنظیمات ارسال و نقشه ذخیره شد.');
 }
 
 if ($action === 'csrf') { ok(['csrf' => ary_csrf_token()]); }
@@ -816,6 +930,8 @@ if ($action === 'user_login_step1') {
     $identifier = ary_clean_text($rawBody['identifier'] ?? '');
     $password   = (string) ($rawBody['password'] ?? '');
     if ($identifier === '' || $password === '') fail('شناسه و رمز عبور الزامی است.');
+    // پاسخ‌دهی یکسان هنگام قفل — تا وجود/عدمِوجود حساب لو نرود
+    if (!ary_throttle('user-login-id:' . sha1(mb_strtolower($identifier)), 8, 900)) fail('شناسه یا رمز عبور اشتباه است.', 401);
 
     $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
     $st = $eng->pdo()->prepare("SELECT * FROM $q WHERE email = ? OR phone = ? LIMIT 1");
@@ -846,6 +962,7 @@ if ($action === 'user_login_step2') {
 
     ary_session_regen();
     $_SESSION['user_id'] = (string) $user['id'];
+    $_SESSION['auth_ts'] = time();   // مهر زمانی سشن — برای ابطال با «تغییر رمز»
     ok([
         'csrf' => ary_csrf_token(),
         'user' => array_merge(userRowPublic($user), ['addresses' => json_decode((string) ($user['addresses'] ?? '[]'), true) ?: []]),
@@ -857,6 +974,8 @@ if ($action === 'user_reset_step1') {
     if (!ary_throttle('user-reset:' . strtolower(ary_client_ip()), 8, 600)) ary_throttle_fail('fail');
     $identifier = ary_clean_text($rawBody['identifier'] ?? '');
     if ($identifier === '') fail('شناسه را وارد کنید.');
+    // سقف جداگانه برای هر شناسه (ضد رمزگشایی توزیع‌شده روی یک حساب)
+    if (!ary_throttle('user-reset-id:' . sha1(mb_strtolower($identifier)), 4, 1800)) fail('برای این حساب چند بار پشت‌سرهم کد بازیابی خواسته شده؛ ۳۰ دقیقه صبر کنید.', 429);
     $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
     $st = $eng->pdo()->prepare("SELECT * FROM $q WHERE email = ? OR phone = ? LIMIT 1");
     $st->execute([$identifier, $identifier]);
@@ -872,28 +991,38 @@ if ($action === 'user_reset_step1') {
 
 if ($action === 'user_reset_step2') {
     $eng = engine();
+    if (!ary_throttle('user-reset2:' . ary_client_ip(), 15, 600)) ary_throttle_fail('fail');
     $otp  = preg_replace('/\D/', '', ary_clean_text($rawBody['otp'] ?? ''));
     $chk  = checkPendingOtp('userreset', $otp);
     if ($chk[0] !== true) fail($chk[1], 401);
     $userId = (string) $chk[2];
 
-    $new = (string) ($rawBody['new_password'] ?? '');
+    // سازگاری: هر دو نام فیلد پذیرفته می‌شود (بدنهٔ قدلیانت‌های قدیمی نمی‌شکند)
+    $new = (string) ($rawBody['new_password'] ?? $rawBody['password'] ?? '');
     $err = ary_password_policy_error($new);
     if ($err !== '') fail($err);
 
     $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
+    $cur = $eng->pdo()->prepare("SELECT password_hash FROM $q WHERE id = ? LIMIT 1");
+    $cur->execute([$userId]);
+    $curHash = (string) ($cur->fetchColumn() ?: '');
+    if ($curHash !== '' && ary_password_verify($new, $curHash)) fail('رمز جدید نباید با رمز قبلی یکی باشد.');
+
     $st = $eng->pdo()->prepare("UPDATE $q SET password_hash = ? WHERE id = ?");
     $st->execute([ary_password_hash($new), $userId]);
     clearPending('userreset');
-    ok([], 'رمز عبور تازه شد. حالا وارد شوید.');
+    ary_touch_pwd_epoch($userId);              // همهٔ نشست‌های فعال این حساب باطل می‌شود
+    ary_log('auth', 'PASSWORD-RESET uid=' . $userId . ' ip=' . ary_client_ip());
+    ok([], 'رمز عبور تازه شد. برای امنیت، در همهٔ دستگاه‌ها باید دوباره وارد شوید.');
 }
 
 if ($action === 'user_session') {
-    if (empty($_SESSION['user_id'])) ok(['loggedIn' => false]);
+    $sessUid = currentUserId();
+    if (!$sessUid) ok(['loggedIn' => false]);
     $eng = engine(); createSchema($eng);
     $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
     $st = $eng->pdo()->prepare("SELECT * FROM $q WHERE id = ? LIMIT 1");
-    $st->execute([(string) $_SESSION['user_id']]);
+    $st->execute([$sessUid]);
     $user = $st->fetch();
     if (!$user) { unset($_SESSION['user_id']); ok(['loggedIn' => false]); }
     ok([
@@ -954,6 +1083,13 @@ if ($action === 'user_update') {
                 foreach (['title', 'full', 'postal', 'plaque', 'unit'] as $k) {
                     if (isset($a[$k]) && !is_array($a[$k])) {
                         $row[$k] = ary_clean_text((string) $a[$k], $k === 'full' ? 1000 : 100);
+                    }
+                }
+                // مختصات نقشه (انتخاب مقصد تحویل) — در بازهٔ معتبر، با ۶ رقم اعشار
+                foreach (['lat' => [-90, 90], 'lng' => [-180, 180]] as $k => [$lo, $hi]) {
+                    if (isset($a[$k]) && !is_array($a[$k]) && $a[$k] !== '' && $a[$k] !== null && is_numeric($a[$k])) {
+                        $fv = (float) $a[$k];
+                        if ($fv >= $lo && $fv <= $hi) $row[$k] = round($fv, 6);
                     }
                 }
                 if (($row['full'] ?? '') !== '') $list[] = $row;
@@ -1043,12 +1179,19 @@ if ($action === 'user_change_password') {
     $st->execute([$userId]);
     $user = $st->fetch();
     if (!$user) fail('حساب یافت نشد.', 401);
-    if (!ary_password_verify((string) ($rawBody['current_password'] ?? ''), $user['password_hash'] ?? null)) fail('رمز فعلی اشتباه است.', 401);
+    $curPw = (string) ($rawBody['current_password'] ?? $rawBody['old_password'] ?? '');
+    if (!ary_password_verify($curPw, $user['password_hash'] ?? null)) {
+        if (!ary_throttle('pw-change-bad:' . $userId, 5, 900)) fail('تلاش‌های ناموفق زیاد است؛ ۱۵ دقیقه صبر کنید.', 429);
+        fail('رمز فعلی اشتباه است.', 401);
+    }
     $new = (string) ($rawBody['new_password'] ?? '');
     $err = ary_password_policy_error($new);
     if ($err !== '') fail($err);
+    if (ary_password_verify($new, (string) $user['password_hash'])) fail('رمز جدید نباید با رمز فعلی یکی باشد.');
     $eng->pdo()->prepare("UPDATE $q SET password_hash = ? WHERE id = ?")->execute([ary_password_hash($new), $userId]);
-    ok([], 'رمز عبور تغییر کرد.');
+    ary_touch_pwd_epoch($userId);              // خروج از همهٔ دستگاه‌ها (دفاع در برابر سشن دزدیده‌شده)
+    ary_log('auth', 'PASSWORD-CHANGE uid=' . $userId . ' ip=' . ary_client_ip());
+    ok([], 'رمز عبور تغییر کرد؛ برای امنیت، در همهٔ دستگاه‌ها از حساب خارج شدید.');
 }
 
 // حذف دائمی حساب توسط خود کاربر: حالا الزاماً تطبیق شناسه + سشن لازم است
@@ -1229,9 +1372,17 @@ if ($action === 'order_cancel' || $action === 'order_return') {
                 : 'این سفارش وارد فرایند ارسال شده و قابل لغو نیست؛ پس از تحویل می‌توانید درخواست مرجوعی بدهید.', 409);
         }
         $reason = mb_substr(ary_clean_text((string) ($rawBody['reason'] ?? ''), 480), 0, 500);
+        if (!$isAdmin) {
+            // طبق بازخورد کاربران: لغو حتماً با دلیل — تا آمار دلایل لغو در پنل دیده شود
+            if (mb_strlen(trim($reason)) < 5) fail('لطفاً دلیل لغو را انتخاب یا بنویسید (حداقل ۵ کاراکتر) — این نکته به بهتر شدن خدمات کمک می‌کند.');
+            $reason = 'مشتری: ' . trim($reason);
+        } else {
+            $reason = 'مدیر: ' . ($reason !== '' ? $reason : 'لغو اداری');
+            ary_log('admin', 'ORDER-CANCEL order=' . $rid . ' admin=' . (string) currentAdminId());
+        }
         $up = $eng->pdo()->prepare('UPDATE ' . $Q('orders') . ' SET ' . $Q('status') . ' = ?, ' . $Q('cancel_reason') . ' = ? WHERE ' . $Q('id') . ' = ?');
-        $up->execute(['canceled', $reason !== '' ? $reason : 'لغو توسط مشتری', $rid]);
-        ok(['id' => $rid, 'status' => 'canceled'], 'سفارش لغو شد؛ عودت مبلغ تا ۷۲ ساعت کاری انجام می‌شود.');
+        $up->execute(['canceled', $reason, $rid]);
+        ok(['id' => $rid, 'status' => 'canceled', 'cancel_reason' => $reason], 'سفارش لغو شد؛ عودت مبلغ تا ۷۲ ساعت کاری انجام می‌شود.');
     }
 
     // order_return — قوانین: فقط «تحویل شده»، داخل مهلت، بدون درخواست باز/در‌جریان (مدیر با فلگ admin می‌تواند دور بزند)
