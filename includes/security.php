@@ -232,7 +232,25 @@ function ary_throttle_fail(callable $failFn): void {
 
 // ── رمز عبور ───────────────────────────────────────────────────
 function ary_password_hash(string $plain): string {
-    return password_hash($plain, PASSWORD_DEFAULT, ['cost' => 11]);
+    // ترجیح Argon2id در PHPهای پشتیبانی‌کننده؛ در غیر این صورت bcrypt با cost قابل تنظیم
+    if (defined('PASSWORD_ARGON2ID')) {
+        return password_hash($plain, PASSWORD_ARGON2ID);
+    }
+    $cost = min(12, max(10, defined('ARYA_BCRYPT_COST') ? (int) ARYA_BCRYPT_COST : 11));
+    return password_hash($plain, PASSWORD_BCRYPT, ['cost' => $cost]);
+}
+
+function ary_password_needs_upgrade(string $hash): bool {
+    if ($hash === '') return false;
+    if (defined('PASSWORD_ARGON2ID')) return password_needs_rehash($hash, PASSWORD_ARGON2ID);
+    return password_needs_rehash($hash, PASSWORD_BCRYPT, ['cost' => min(12, max(10, defined('ARYA_BCRYPT_COST') ? (int) ARYA_BCRYPT_COST : 11))]);
+}
+
+// برابرسازی زمان پاسخ — از شمارش معکوسِ کاربران از طریق «تأخیر لاگین» جلوگیری می‌کند
+function ary_login_dummy_verify(): void {
+    static $dummy = null;
+    if ($dummy === null) $dummy = password_hash('arya-timing-equalizer', PASSWORD_BCRYPT, ['cost' => 11]);
+    password_verify('arya-timing-equalizer-miss', $dummy);
 }
 
 function ary_password_verify(string $plain, ?string $hash): bool {
@@ -248,11 +266,26 @@ function ary_password_verify(string $plain, ?string $hash): bool {
 }
 
 /** سیاست رمز: حداقل ۸ کاراکتر + حرف بزرگ + حرف کوچک + رقم */
-function ary_password_policy_error(string $p): string {
+function ary_password_policy_error(string $p, string $identity = ''): string {
     if (mb_strlen($p) < 8) return 'رمز عبور باید حداقل ۸ کاراکتر باشد.';
+    if (preg_match('/^\\d+$/', $p)) return 'رمز عبور نمی‌تواند فقط عدد باشد.';
     if (!preg_match('/[A-Z]/', $p)) return 'رمز باید حداقل یک حرف بزرگ (A-Z) داشته باشد.';
     if (!preg_match('/[a-z]/', $p)) return 'رمز باید حداقل یک حرف کوچک (a-z) داشته باشد.';
-    if (!preg_match('/\d/', $p)) return 'رمز باید حداقل یک رقم داشته باشد.';
+    if (!preg_match('/\\d/', $p)) return 'رمز باید حداقل یک رقم داشته باشد.';
+    $pl = mb_strtolower($p);
+    $weak = ['password1','passw0rd','p@ssword','qwertyui','qwerty1','1234567','2345678','3456789','4567890','1111111','0000000','admin12','abcd1234','iloveyou','letmein','monkey123','dragon123','sunshine1','princess1','football1'];
+    foreach ($weak as $w) {
+        if (str_contains($pl, $w)) return 'رمز عبور از فهرست رمزهای رایج و ضعیف است؛ رمز منحصربه‌فردتری انتخاب کنید.';
+    }
+    // رمز نباید شامل نام یا ایمیل خود کاربر باشد (واژه‌های عمومی مستثنا هستند)
+    if ($identity !== '') {
+        $generic = ['admin','user','test','demo','arya','shop','ir','info','web','mail','gmail','yahoo','email','com','net','org'];
+        foreach (preg_split('/[\\s,;@.\\-]+/', mb_strtolower($identity), -1, PREG_SPLIT_NO_EMPTY) as $tok) {
+            if (mb_strlen($tok) >= 4 && !in_array($tok, $generic, true) && str_contains($pl, $tok)) {
+                return 'رمز عبور نباید شامل نام یا ایمیل شما باشد.';
+            }
+        }
+    }
     return '';
 }
 
@@ -321,6 +354,9 @@ function ary_demo_mode(): bool {
 }
 
 function ary_log(string $tag, string $detail): void {
+    // سانسور داده حساس در لاگ (PII redaction) — یک‌نقطه‌ای: موبایل، رمز/توکن/OTP در هر ورودی
+    $detail = (string) preg_replace('/09\d{2}\d{6}/', '09xx******', $detail);
+    $detail = (string) preg_replace('/(passw[o0]rd|secret|token|otp|password_hash)[="\': ]+[^,;"\'\s]{2,}/i', '$1=***', $detail);
     error_log('[arya][' . $tag . '] ' . $detail);
 }
 

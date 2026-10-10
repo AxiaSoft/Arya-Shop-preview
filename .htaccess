@@ -5,6 +5,10 @@
 # غیرفعال‌سازی فهرست فایل‌ها
 Options -Indexes
 
+# سقف سختِ اندازهٔ بدنهٔ درخواست در سطح Apache (۱۰ مگابایت) —
+# پیش از اجرای PHP پاسخ 413 می‌دهد و از مصرف حافظهٔ SAPI جلوگیری می‌کند
+LimitRequestBody 10485760
+
 # ── محافظت از فایل‌های حساس ──
 <FilesMatch "^(config\.php|\.user\.ini|.*\.log|.*\.sqlite|.*\.sqlite3|.*\.db)$">
     Require all denied
@@ -13,9 +17,12 @@ Options -Indexes
     Require all denied
 </FilesMatch>
 
-# پوشه‌های داخلی از بیرون قابل دسترسی نباشند
+# پوشه‌های داخلی و ابزارهای سمت سرور از بیرون قابل دسترسی نباشند
 RedirectMatch 404 ^/includes/.*$
-RedirectMatch 404 ^/storage/(rate|logs)/.*$
+RedirectMatch 404 ^/storage(/|$)
+RedirectMatch 404 ^/scripts/.*$
+RedirectMatch 404 ^/tests/.*$
+RedirectMatch 404 ^/.git(/|$)
 
 # اگر mod_headers موجود باشد: هدرهای امنیتی برای فایل‌های استاتیک
 <IfModule mod_headers.c>
@@ -23,10 +30,12 @@ RedirectMatch 404 ^/storage/(rate|logs)/.*$
     Header always set X-Frame-Options "SAMEORIGIN"
     Header always set Referrer-Policy "same-origin"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
+    # HSTS فقط روی HTTPS (روی cPanel با Let's Encrypt فعال می‌شود)
+    Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains" env=HTTPS
     # CSP منعطف: اسکریپت‌های inline در این SPA استفاده شده‌اند؛
     # برای سفت‌کاری، event-handlerها را از inline خارج کنید سپس
     # 'unsafe-inline' را حذف کنید.
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https: blob:; connect-src 'self' data: blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' https: blob:; connect-src 'self' data: blob: https://nominatim.openstreetmap.org; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
     # عدم ذخیره‌سازی پاسخ API در کش مرورگر/CDN
     <FilesMatch "^Db\.php$">
         Header set Cache-Control "no-store, max-age=0"

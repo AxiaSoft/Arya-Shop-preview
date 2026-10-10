@@ -149,6 +149,10 @@ function checkRequestAuth(): string {
 
 function requireAdminSession(bool $csrf = true): string {
     if (empty($_SESSION['admin_id'])) fail('Unauthorized: admin session required', 401);
+    if (time() - (int) ($_SESSION['admin_auth_ts'] ?? 0) > 86400) { // عمر مطلق یک‌روزه برای نشست مدیر
+        unset($_SESSION['admin_id'], $_SESSION['admin_auth_ts']);
+        fail('نشست مدیر منقضی شده است؛ دوباره وارد شوید.', 401);
+    }
     if ($csrf) ary_require_csrf('fail');
     return (string) $_SESSION['admin_id'];
 }
@@ -156,6 +160,10 @@ function requireAdminSession(bool $csrf = true): string {
 function currentAdminId(): ?string { return isset($_SESSION['admin_id']) ? (string) $_SESSION['admin_id'] : null; }
 function currentUserId(): ?string {
     if (empty($_SESSION['user_id'])) return null;
+    if (time() - (int) ($_SESSION['auth_ts'] ?? 0) > 30 * 86400) { // عمر مطلق ۳۰ روزهٔ نشست کاربر
+        unset($_SESSION['user_id'], $_SESSION['auth_ts']);
+        return null;
+    }
     $uid = (string) $_SESSION['user_id'];
     // پس از هر تغییر/بازنشانی رمز، سشن‌های قدیمی (احتمالاً دزدیده‌شده) باطل می‌شوند
     $ep = ary_pwd_epoch($uid);
@@ -357,7 +365,25 @@ function otpResponse(string $otp, string $target): array {
 // با آن ممنوع است.
 
 // ── بدنه درخواست ──────────────────────────────────────────────
-$rawBody = json_decode(file_get_contents('php://input') ?: '', true);
+// سقف مطلق حجم بدنه — کاهش سطح حملات DoS با بارهای حجیم.
+// اول Content-Length بررسی می‌شود و بدنه حداکثر تا «سقف+۱ بایت» خوانده می‌شود؛
+// بنابراین درخواست بزرگ حتی در محیط‌های کم‌حافظه هم قبل از parse متوقف می‌شود.
+$aryaMaxBody = 8 * 1024 * 1024;
+$aryaCLen = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+if ($aryaCLen > $aryaMaxBody) fail('حجم بدنهٔ درخواست از حد مجاز (۸ مگابایت) بیشتر است.', 413);
+$__in = fopen('php://input', 'rb');
+$rawInput = '';
+if ($__in) {
+    if ($aryaCLen > 0) {
+        $rawInput = (string) fread($__in, $aryaCLen); // دقیقاً به اندازه اعلامی — بدون پیش‌تخصیص
+    } else {
+        $rawInput = (string) fread($__in, 65536);    // بدنه chunked/بی‌length
+        while (strlen($rawInput) <= $aryaMaxBody && ($ch = fread($__in, 65536)) !== false && $ch !== '') $rawInput .= $ch;
+    }
+    fclose($__in);
+}
+if (strlen($rawInput) > $aryaMaxBody) fail('حجم بدنهٔ درخواست از حد مجاز (۸ مگابایت) بیشتر است.', 413);
+$rawBody = is_string($rawInput) && $rawInput !== '' ? json_decode($rawInput, true) : [];
 if (!is_array($rawBody)) $rawBody = $_POST;
 $action  = $_GET['action'] ?? $rawBody['action'] ?? 'getAll';
 
@@ -648,7 +674,12 @@ if ($action === 'admin_login_step1') {
     $admin = $stmt->fetch();
 
     if (!$admin || !ary_password_verify($password, $admin['password_hash'] ?? null)) {
+        if (!$admin) ary_login_dummy_verify(); // زمان پاسخ یکنواخت — شناسایی حساب ثبت‌نشده سخت می‌شود
         fail('شناسه یا رمز عبور اشتباه است.', 401);
+    }
+    if (ary_password_needs_upgrade((string) ($admin['password_hash'] ?? ''))) { // ارتقای بی‌صدا هنگام ورود موفق
+        $db->prepare('UPDATE ' . AryaDbEngine::quoteIdent($eng->driver, 'admins') . ' SET password_hash = ? WHERE id = ?')
+           ->execute([ary_password_hash($password), (int) $admin['id']]);
     }
 
     $otp = ary_generate_otp6();
@@ -681,7 +712,7 @@ if ($action === 'admin_login_step2') {
     ary_session_regen();
     unset($_SESSION['pending_admin_2fa'], $_SESSION['pending_admin_id'],
           $_SESSION['pending_admin_otp'], $_SESSION['pending_admin_otp_at'], $_SESSION['pending_admin_otp_tries']);
-    $_SESSION['admin_id'] = (string) $admin['id'];
+    $_SESSION['admin_id'] = (string) $admin['id']; $_SESSION['admin_auth_ts'] = time(); // عمر مطلق ۲۴ ساعته
     ok([
         'two_factor_required' => false,
         'csrf' => ary_csrf_token(),
@@ -704,7 +735,7 @@ if ($action === 'admin_login_step3') {
     clearPending('admin');
     unset($_SESSION['pending_admin_2fa']);
     ary_session_regen();
-    $_SESSION['admin_id'] = (string) $admin['id'];
+    $_SESSION['admin_id'] = (string) $admin['id']; $_SESSION['admin_auth_ts'] = time(); // عمر مطلق ۲۴ ساعته
     ok([
         'csrf' => ary_csrf_token(),
         'must_change_password' => !empty($admin['must_change_password'] ?? null),
@@ -815,7 +846,7 @@ if ($action === 'admin_create') {
     if ($name === '' || $email === '' || $password === '') fail('نام، ایمیل و رمز عبور الزامی است.');
     if (!ary_is_email($email)) fail('ایمیل نامعتبر است.');
     if ($phone !== '' && !ary_is_ir_phone($phone)) fail('شماره موبایل باید با ۰۹ و ۱۱ رقم باشد.');
-    $err = ary_password_policy_error($password);
+    $err = ary_password_policy_error($password, $name . ' ' . $email . ' ' . $phone);
     if ($err !== '') fail($err);
 
     $q = AryaDbEngine::quoteIdent($eng->driver, 'admins');
@@ -908,7 +939,7 @@ if ($action === 'user_register') {
     if (mb_strlen($name) < 3) fail('نام باید حداقل ۳ کاراکتر باشد.');
     if (!ary_is_email($email)) fail('ایمیل نامعتبر است.');
     if (!ary_is_ir_phone($phone)) fail('شماره موبایل باید ۱۱ رقمی و با ۰۹ شروع شود.');
-    $err = ary_password_policy_error($password);
+    $err = ary_password_policy_error($password, $name . ' ' . $email . ' ' . $phone);
     if ($err !== '') fail($err);
 
     $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
@@ -937,7 +968,13 @@ if ($action === 'user_login_step1') {
     $st = $eng->pdo()->prepare("SELECT * FROM $q WHERE email = ? OR phone = ? LIMIT 1");
     $st->execute([$identifier, $identifier]);
     $user = $st->fetch();
-    if (!$user || !ary_password_verify($password, $user['password_hash'] ?? null)) fail('شناسه یا رمز عبور اشتباه است.', 401);
+    if (!$user || !ary_password_verify($password, $user['password_hash'] ?? null)) {
+        if (!$user) ary_login_dummy_verify();
+        fail('شناسه یا رمز عبور اشتباه است.', 401);
+    }
+    if (ary_password_needs_upgrade((string) ($user['password_hash'] ?? ''))) {
+        $eng->pdo()->prepare("UPDATE $q SET password_hash = ? WHERE id = ?")->execute([ary_password_hash($password), (int) $user['id']]);
+    }
 
     $otp = ary_generate_otp6();
     // TODO: ارسال واقعی پیامک به $user['phone']
@@ -999,7 +1036,10 @@ if ($action === 'user_reset_step2') {
 
     // سازگاری: هر دو نام فیلد پذیرفته می‌شود (بدنهٔ قدلیانت‌های قدیمی نمی‌شکند)
     $new = (string) ($rawBody['new_password'] ?? $rawBody['password'] ?? '');
-    $err = ary_password_policy_error($new);
+    $idRow = $eng->pdo()->prepare('SELECT name, email, phone FROM ' . AryaDbEngine::quoteIdent($eng->driver, 'users') . ' WHERE id = ?');
+    $idRow->execute([$userId]);
+    $idArr = (array) $idRow->fetch(PDO::FETCH_ASSOC);
+    $err = ary_password_policy_error($new, ($idArr['name'] ?? '') . ' ' . ($idArr['email'] ?? '') . ' ' . ($idArr['phone'] ?? ''));
     if ($err !== '') fail($err);
 
     $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
@@ -1185,7 +1225,7 @@ if ($action === 'user_change_password') {
         fail('رمز فعلی اشتباه است.', 401);
     }
     $new = (string) ($rawBody['new_password'] ?? '');
-    $err = ary_password_policy_error($new);
+    $err = ary_password_policy_error($new, (string) ($user['name'] ?? '') . ' ' . (string) ($user['email'] ?? '') . ' ' . (string) ($user['phone'] ?? ''));
     if ($err !== '') fail($err);
     if (ary_password_verify($new, (string) $user['password_hash'])) fail('رمز جدید نباید با رمز فعلی یکی باشد.');
     $eng->pdo()->prepare("UPDATE $q SET password_hash = ? WHERE id = ?")->execute([ary_password_hash($new), $userId]);
@@ -1476,13 +1516,10 @@ switch ($action) {
         }
         if (!$toInsert) fail('No valid fields');
 
-        // سیاست نوشتن روی فیلدهای سفارش/تیکت توسط کاربر
+        // سیاست نوشتن روی فیلدهای سفارش/تیکت توسط کاربر — همه‌چیز سمت سرور الزامی است
+        $stockTxOpen = false;
         if (!$isAdmin) {
             if ($table === 'orders') {
-                if (!empty($toInsert['status']) && !in_array($toInsert['status'], ['pending', 'processing'], true)) {
-                    $toInsert['status'] = 'pending';
-                }
-                // آدرس تحویل در ثبت سفارش جدید الزامی است — ثبت سفارش بی‌آدرس مسدود
                 $Qc = fn(string $t) => AryaDbEngine::quoteIdent($eng->driver, $t);
                 $exRow = null;
                 if (!empty($toInsert['id'])) {
@@ -1490,14 +1527,90 @@ switch ($action) {
                     $stChk->execute([(string) $toInsert['id']]);
                     $exRow = $stChk->fetchColumn();
                 }
-                if ($exRow === false || $exRow === null) {
-                    if (mb_strlen(trim((string) ($toInsert['address'] ?? ''))) < 10) {
-                        fail('آدرس تحویل الزامی است — شهر، خیابان، پلاک و واحد را کامل بنویسید.', 400);
-                    }
-                    if (empty($toInsert['user_phone'])) fail('شماره تماس سفارش الزامی است.', 400);
+                // ۱) ویرایش سفارش ثبت‌شده از مسیر عمومی ممکن نیست (لغو/مرجوعی: order_cancel / order_return)
+                if ($exRow !== false && $exRow !== null) {
+                    fail('این سفارش پیش‌تر ثبت شده است؛ ویرایش آن از این مسیر مجاز نیست.', 403);
                 }
-                // ثبت سفارش فقط با قیمت مجاز: total از مجموع آیتم‌ها (سمت سرور) محاسبه نشدنی است
-                // چون قیمت در رکورد نیست؛ ولی status/votes محافظت می‌شوند.
+                // ۲) فیلدلیست ورودی مشتری — از mass assignment/تشدید سطح دسترسی
+                //    (status/admin_note/return_status/tracking_code/payment_method/...) جلوگیری می‌کند
+                $clean = [];
+                foreach (['id', 'user_name', 'user_email', 'address', 'items', 'delivery_slot', 'created_at'] as $f) {
+                    if (array_key_exists($f, $toInsert)) $clean[$f] = $toInsert[$f];
+                }
+                $sessPhone = (string) ($_SESSION['user_phone'] ?? '');
+                $phoneIn = ary_clean_text((string) ($toInsert['user_phone'] ?? ''), 20);
+                $clean['user_phone'] = $sessPhone !== '' ? $sessPhone : $phoneIn; // کاربر لاگین‌شده فقط برای خودش
+                if (!preg_match('/^09\d{9}$/', $clean['user_phone'])) fail('شماره موبایل سفارش نامعتبر است.', 400);
+                if (mb_strlen(trim((string) ($clean['address'] ?? ''))) < 10) {
+                    fail('آدرس تحویل الزامی است — شهر، خیابان، پلاک و واحد را کامل بنویسید.', 400);
+                }
+                $clean['address'] = ary_clean_text((string) $clean['address'], 1200);
+                if (isset($clean['user_name'])) $clean['user_name'] = ary_clean_text((string) $clean['user_name'], 80);
+                if (isset($clean['user_email'])) {
+                    $clean['user_email'] = mb_strtolower(trim((string) $clean['user_email']));
+                    if ($clean['user_email'] !== '' && !ary_is_email($clean['user_email'])) fail('ایمیل سفارش نامعتبر است.', 400);
+                }
+                if (isset($clean['delivery_slot'])) $clean['delivery_slot'] = ary_clean_text((string) $clean['delivery_slot'], 100);
+                if (isset($clean['created_at']) && !preg_match('/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}:\d{2})?$/', (string) $clean['created_at'])) unset($clean['created_at']);
+                $clean['status'] = 'pending'; // وضعیت جدید همیشه pending — تایید فقط با فرایند مدیر
+                // ۳) قیمت و آیتم‌ها دقیقاً از پایگاه داده محاسبه می‌شوند؛ total/قیمت کلاینت هرگز پذیرفته نمی‌شود
+                $items = $clean['items'] ?? '[]';
+                if (is_string($items)) $items = json_decode($items, true);
+                if (!is_array($items) || count($items) < 1 || count($items) > 60) fail('سبد خرید خالی یا نامعتبر است.', 400);
+                $Qp = $Qc('products');
+                $hasStock = $eng->hasColumn('products', 'stock');
+                $hasTitle = $eng->hasColumn('products', 'title');
+                $serverTotal = 0.0; $stockOps = []; $itemsNorm = [];
+                foreach ($items as $it) {
+                    if (!is_array($it)) fail('یکی از آیتم‌های سبد خرید نامعتبر است.', 400);
+                    $pid = ary_clean_text((string) ($it['id'] ?? ''), 64);
+                    if (!ary_safe_id($pid)) fail('محصول سبد خرید نامعتبر است.', 400);
+                    $qty = (int) ($it['qty'] ?? $it['quantity'] ?? 1);
+                    if ($qty < 1 || $qty > 99) fail('تعداد هر کالا باید بین ۱ تا ۹۹ باشد.', 400);
+                    $selCols = 'price' . ($hasStock ? ', stock' : '') . ($hasTitle ? ', title' : '');
+                    $prQ = $eng->pdo()->prepare("SELECT $selCols FROM $Qp WHERE id = ? LIMIT 1");
+                    $prQ->execute([$pid]);
+                    $prow = $prQ->fetch(PDO::FETCH_ASSOC);
+                    if (!$prow) fail('یکی از کالاهای سبد خرید دیگر وجود ندارد.', 404);
+                    $price = round((float) $prow['price']);
+                    if ($price <= 0) fail('قیمت یکی از کالاها نامعتبر است.', 409);
+                    if ($hasStock) {
+                        $st0 = (int) ($prow['stock'] ?? 0);
+                        if ($st0 > 0 && $st0 < $qty) fail('موجودی یکی از کالاهای سبد خرید کافی نیست.', 409);
+                    }
+                    $serverTotal += $price * $qty;
+                    $stockOps[$pid] = ($stockOps[$pid] ?? 0) + $qty;
+                    $itemsNorm[] = ['id' => $pid, 'title' => (string) ($prow['title'] ?? ''), 'qty' => $qty, 'price' => $price];
+                }
+                $clean['items'] = json_encode($itemsNorm, JSON_UNESCAPED_UNICODE);
+                // ۴) هزینهٔ ارسال بر پایهٔ تنظیمات فروشگاه (سرور) + برچسب بازهٔ زمانی تحویل
+                $scfg = ary_shop_config();
+                if (!((int) $scfg['free_over'] > 0 && $serverTotal >= (int) $scfg['free_over'])) $serverTotal += (int) $scfg['base_cost'];
+                if (!empty($clean['delivery_slot'])) {
+                    foreach (array_filter($scfg['shipping_options'], static fn($o) => !empty($o['active'])) as $o) {
+                        if ($clean['delivery_slot'] === $o['id'] || str_starts_with((string) $clean['delivery_slot'], (string) $o['label'])) {
+                            $serverTotal += (int) $o['extra_cost'];
+                            $clean['delivery_slot'] = (string) $o['label'] . ' — ' . (int) $o['min_days'] . ' تا ' . (int) $o['max_days'] . ' روز کاری';
+                            break;
+                        }
+                    }
+                }
+                $clean['total'] = (string) round($serverTotal);
+                // ۵) رزرو موجودی پیش از درج سفارش (به‌روزرسانی شرطی — ضد فروش بیش‌ازحد)؛
+                //    تراکنش فقط در صورت موفقیت INSERT کامیت می‌شود
+                if ($hasStock && $stockOps) {
+                    $eng->pdo()->beginTransaction();
+                    $stockTxOpen = true;
+                    foreach ($stockOps as $pid => $qty) {
+                        $dec = $eng->pdo()->prepare("UPDATE $Qp SET stock = CASE WHEN stock > 0 THEN stock - ? ELSE stock END WHERE id = ? AND (stock = 0 OR stock >= ?)");
+                        $dec->execute([$qty, $pid, $qty]);
+                        if ($dec->rowCount() === 0) {
+                            $eng->pdo()->rollBack(); $stockTxOpen = false;
+                            fail('موجودی یکی از کالاها همین حالا تمام شده است؛ لطفاً دوباره تلاش کنید.', 409);
+                        }
+                    }
+                }
+                $toInsert = $clean;
             }
             if ($table === 'reviews') $toInsert['status'] = 'pending';
         }
@@ -1507,7 +1620,9 @@ switch ($action) {
         $vals = array_values($toInsert);
         try {
             $eng->pdo()->prepare($sql)->execute($vals);
+            if ($stockTxOpen) $eng->pdo()->commit(); // موجودی + سفارش، اتمی و با هم
         } catch (Throwable $e) {
+            if ($stockTxOpen && $eng->pdo()->inTransaction()) $eng->pdo()->rollBack();
             ary_log('upsert', $e->getMessage());
             fail('ذخیره‌سازی ناموفق بود. نام فیلدها را با ساختار جدول مطابقت دهید.', 422);
         }

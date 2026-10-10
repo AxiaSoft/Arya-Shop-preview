@@ -34,6 +34,17 @@ final class AryaHttp
         $basic   = $opts['basic'] ?? null;   // [user, pass]
         $insecure= !empty($opts['insecure']);
 
+        // محافظت SSRF: نشانی‌های متادیتای ابر/لینک‌لوکال مسدود (localhost مجاز — پنل میزبان مشتر)
+        $h = (string) (parse_url($url, PHP_URL_HOST) ?: '');
+        if ($h !== '') {
+            $ipx = filter_var($h, FILTER_VALIDATE_IP) ? $h : (gethostbyname($h) ?: '');
+            $lng = $ipx !== '' ? ip2long($ipx) : false;
+            if (($lng !== false && $lng >= ip2long('169.254.0.0') && $lng <= ip2long('169.254.255.255'))
+                || str_starts_with(mb_strtolower($h), 'metadata.')) {
+                return ['status' => 0, 'error' => 'bad_target', 'body' => ''];
+            }
+        }
+
         $hdrLines = [];
         foreach ($headers as $k => $v) $hdrLines[] = "$k: $v";
         if ($basic) $hdrLines[] = 'Authorization: Basic ' . base64_encode($basic[0] . ':' . $basic[1]);
@@ -42,8 +53,10 @@ final class AryaHttp
             $ch = curl_init($url);
             curl_setopt_array($ch, [
                 CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_FOLLOWLOCATION => true,
-                CURLOPT_MAXREDIRS      => 3,
+                // بدون ریدایرکت (API پنل لازم ندارد) و فقط HTTP/HTTPS — ضد SSRF/پرتکل‌های خطرناک
+                CURLOPT_FOLLOWLOCATION => false,
+                CURLOPT_PROTOCOLS      => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+                CURLOPT_REDIR_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
                 CURLOPT_CONNECTTIMEOUT => 10,
                 CURLOPT_TIMEOUT        => $timeout,
                 CURLOPT_CUSTOMREQUEST  => strtoupper($method),
@@ -66,7 +79,8 @@ final class AryaHttp
                 'header'        => implode("\r\n", $hdrLines),
                 'content'       => $body ?? '',
                 'timeout'       => $timeout,
-                'ignore_errors' => true,
+                'ignore_errors'   => true,
+                'follow_location' => 0,
             ],
             'ssl' => [
                 'verify_peer'      => !$insecure,

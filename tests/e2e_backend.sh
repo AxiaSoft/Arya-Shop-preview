@@ -6,6 +6,8 @@
 # ═══════════════════════════════════════════════════════════════
 BASE="${BASE_URL:-http://127.0.0.1:8211}"
 U="$BASE/Db.php"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+rm -f "$ROOT/storage/rate"/*.json 2>/dev/null   # اجرای testهای پیاپی به ریت‌لیمیت نخورد
 J=$(mktemp)
 PASS=0; FAIL=0
 pyj() { python3 -c "import json,sys;d=json.load(sys.stdin);print(d$1)" 2>/dev/null; }
@@ -61,11 +63,11 @@ import json,sys; d=json.load(sys.stdin)
 print(json.dumps({'ok': all('password_hash' not in r for r in d.get('data',[]))}))")"
 
 echo "— 4) User registration / login —"
-t "register user" ok "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Sara Test","email":"sara@t.test","phone":"09123456789","password":"Sara@12345"}')"
+t "register user" ok "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Sara Test","email":"sara@t.test","phone":"09123456789","password":"Zx9!looper77"}')"
 t "duplicate email rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Dup","email":"sara@t.test","phone":"09999999999","password":"Abcdefg12"}')"
 t "weak password rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"z","email":"z@z.test","phone":"09122222222","password":"123"}')"
 KU=$(mktemp)
-R=$(curl -s -c $KU -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"sara@t.test","password":"Sara@12345"}')
+R=$(curl -s -c $KU -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"sara@t.test","password":"Zx9!looper77"}')
 t "user login step1" ok "$R"
 UOTP=$(echo "$R" | pyj "['data']['otp_demo']")
 R=$(curl -s -b $KU -c $KU -X POST "$U?action=user_login_step2" -H 'Content-Type: application/json' -d "{\"otp\":\"$UOTP\"}")
@@ -76,10 +78,11 @@ t "user update profile" ok "$(curl -s -b $KU -X POST "$U?action=user_update" -H 
 
 echo "— 5) Orders / reviews / tickets —"
 t "guest order w/o csrf blocked" fail "$(curl -s -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order0","user_phone":"09123456789","items":"[]","total":1,"status":"pending"}}')"
-t "guest order (with csrf)" ok "$(curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order1","user_phone":"09123456789","address":"تهران، خیابان آزادی، پلاک ۱۲","items":"[]","total":500000,"status":"shipped-by-hack"}}')"
-t "guest status forced to pending" ok "$(curl -s "$U?action=getById&table=orders&id=ar_order1&user_phone=09123456789" | python3 -c "
-import json,sys; d=json.load(sys.stdin)
-print(json.dumps({'ok': d.get('data',{}).get('status')=='pending'}))")"
+t "guest empty-cart order blocked" fail "$(curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order0b","user_phone":"09123456789","address":"تهران، خیابان آزادی، پلاک ۱۲","items":"[]","total":1250000,"status":"pending"}}')"
+t "guest order (with csrf)" ok "$(curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"ar_order1","user_phone":"09123456789","address":"تهران، خیابان آزادی، پلاک ۱۲","items":[{"id":"p_1","qty":2}],"total":1,"status":"shipped-by-hack"}}')"
+t "status forced pending + server price recalc" ok "$(curl -s "$U?action=getById&table=orders&id=ar_order1&user_phone=09123456789" | python3 -c "
+import json,sys; o = (json.load(sys.stdin).get('data') or {})
+print(json.dumps({'ok': o.get('status')=='pending' and float(o.get('total') or 0)==2500000}))")"
 t "guest fetch own order" ok "$(curl -s "$U?action=getById&table=orders&id=ar_order1&user_phone=09123456789")"
 t "guest fetch w/o phone blocked" fail "$(curl -s "$U?action=getById&table=orders&id=ar_order1")"
 t "wrong-phone fetch cannot see" ok "$(curl -s "$U?action=getById&table=orders&id=ar_order1&user_phone=09120000001" | python3 -c "
@@ -177,6 +180,56 @@ t "session invalidated after password change" ok "$(curl -s -b $KU9 "$U?action=u
 t "old password no longer works" fail "$(curl -s -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"09128887766","password":"First@12345"}')"
 t "new password works" ok "$(curl -s -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' -d '{"identifier":"pwd9@t.test","password":"Second@54321"}')"
 t "reset2 accepts password alias key" ok "$(curl -s -X POST "$U?action=user_reset_step1" -H 'Content-Type: application/json' -d '{"identifier":"pwd9@t.test"}' | python3 -c "import json,sys;d=json.load(sys.stdin);print(json.dumps({'ok':bool(d.get('ok'))}))")"
+
+
+echo "— 9) Security audit regressions (e-commerce integrity / authz / DoS) —"
+ORD() { curl -s -b $G -X POST "$U?action=upsert&table=orders" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d "$1"; }
+t "create sec-product ar_p9" ok "$(A 'upsert&table=products' '{"record":{"id":"ar_p9","title":"ساعت امنیتی","price":400000,"stock":5}}')"
+t "empty-cart order rejected" fail "$(ORD '{"record":{"id":"ar_secX","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":"[]","total":99000}}')"
+SEC1OUT=$(ORD '{"record":{"id":"ar_sec1","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":[{"id":"ar_p9","qty":1}],"total":1,"status":"delivered","admin_note":"HACK","return_status":"approved","tracking_code":"X1","payment_method":"free"}}')
+t "mass-assign stripped + server total" ok "$(SC=$(curl -s "$U?action=shop_config"); export SC; curl -s "$U?action=getById&table=orders&id=ar_sec1&user_phone=09123456789" | python3 -c "
+import json, sys, os
+o = json.load(sys.stdin).get('data') or {}
+sc = json.loads(os.environ.get('SC') or '{}').get('data') or {}
+exp = 400000 + (0 if int(sc.get('free_over') or 0) > 0 and 400000 >= int(sc.get('free_over') or 0) else int(sc.get('base_cost') or 0))
+ok = (o.get('status') == 'pending' and abs(float(o.get('total') or 0) - exp) < 1
+      and not o.get('admin_note') and (o.get('return_status') or '') not in ('approved', 'rejected')
+      and not o.get('tracking_code'))
+print(json.dumps({'ok': ok}))")"
+t "edit existing order blocked (use order_cancel)" fail "$(ORD '{"record":{"id":"ar_sec1","status":"processing","total":1}}')"
+t "over-stock order rejected" fail "$(ORD '{"record":{"id":"ar_sec2","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":[{"id":"ar_p9","qty":99}]}}')"
+t "negative qty rejected" fail "$(ORD '{"record":{"id":"ar_sec3","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":[{"id":"p_1","qty":-5}]}}')"
+t "unknown product in cart rejected" fail "$(ORD '{"record":{"id":"ar_sec4","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":[{"id":"p_ghost99","qty":1}]}}')"
+t "stock decremented server-side" ok "$(curl -s "$U?action=getById&table=products&id=ar_p9" | python3 -c "
+import json, sys
+p = json.load(sys.stdin).get('data') or {}
+print(json.dumps({'ok': int(p.get('stock') if p.get('stock') is not None else -1) == 4}))")"
+t "bad record id chars rejected" fail "$(ORD '{"record":{"id":"../../etc/passwd","user_phone":"09123456789","address":"تهران، ولیعصر، پلاک ۹","items":[{"id":"p_1","qty":1}]}}')"
+t "SQLi in login identifier rejected" fail "$(curl -s -X POST "$U?action=user_login_step1" -H 'Content-Type: application/json' --data-binary '{"identifier":"admin\" OR 1=1--","password":"whatever1"}')"
+t "SQLi string in review harmless" ok "$(curl -s -X POST "$U?action=review_create" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"product_id":"p_1","name":"Sec","rating":3,"text":"a\"); DROP TABLE reviews;--"}' >/dev/null; curl -s "$U?action=getAll&table=reviews" | python3 -c "
+import json, sys
+d = json.load(sys.stdin)
+print(json.dumps({'ok': d.get('ok') is True and isinstance(d.get('data'), list)}))")"
+t "rating out of range rejected" fail "$(curl -s -X POST "$U?action=review_create" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"product_id":"p_1","name":"R99","rating":99,"text":"clamp test"}')"
+t "GET on state-changing action blocked" fail "$(curl -s "$U?action=delete&table=products&id=p_1")"
+BIG=$(mktemp); python3 -c "import json, sys; open(sys.argv[1], 'w').write(json.dumps({'record': {'id': 'big1', 'title': 'A' * 9000000}}))" "$BIG"
+t "oversized body rejected (413)" fail "$(curl -s -b $J -X POST "$U?action=upsert&table=products" -H "Origin: $BASE" -H "X-CSRF-Token: $CSRF" -H 'Content-Type: application/json' --data-binary @$BIG)"
+rm -f "$BIG"
+t "session cookie hardened (HttpOnly+SameSite)" ok "$(curl -sI "$U?action=csrf" | tr -d '\r' | python3 -c "
+import json, sys
+c = '\n'.join(l for l in sys.stdin if l.lower().startswith('set-cookie')).lower()
+print(json.dumps({'ok': 'httponly' in c and 'samesite' in c}))")"
+t "guest stats exposes no users" ok "$(curl -s "$U?action=stats" | python3 -c "
+import json, sys
+d = json.load(sys.stdin).get('data') or {}
+print(json.dumps({'ok': 'users' not in d and 'admins' not in d and 'products' in d}))")"
+t "password containing own name rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Bobak Test","email":"bobak@t.test","phone":"09126667788","password":"Bobak@12345"}')"
+t "weak common password rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Weak One","email":"weak@t.test","phone":"09126669900","password":"Password123"}')"
+for i in 1 2 3 4; do curl -s -X POST "$U?action=user_reset_step1" -H 'Content-Type: application/json' -d '{"identifier":"sara@t.test"}' >/dev/null; done
+t "forgot-OTP per-identifier throttle" fail "$(curl -s -X POST "$U?action=user_reset_step1" -H 'Content-Type: application/json' -d '{"identifier":"sara@t.test"}')"
+t "guest cannot read tickets via getAll" fail "$(curl -s "$U?action=getAll&table=tickets")"
+t "guest cannot read admins" fail "$(curl -s "$U?action=getAll&table=admins")"
+t "unknown table rejected" fail "$(curl -s "$U?action=getAll&table=settings")"
 
 
 echo
