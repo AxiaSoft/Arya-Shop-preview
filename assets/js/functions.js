@@ -473,13 +473,15 @@ function logout() {
         case 'checkout':return renderCheckoutPage();
         case 'login':   return renderLoginPage();
         case 'profile': return renderProfilePage();
+        case 'blog':    return typeof renderBlogPage === 'function' ? renderBlogPage() : renderHomePage();
+        case 'article': return typeof renderArticlePage === 'function' ? renderArticlePage() : renderBlogPage();
         default:        return renderHomePage();
       }
     });
 
+    // فرم محصول دیگر پاپ‌آپ نیست: با پرچم productFormPage در خودِ تب محصولات رندر می‌شود
     const overlays = [
       state.confirmModal ? safe(() => renderConfirmModal()) : '',
-      state.editProduct  ? safe(() => renderProductModal()) : '',
       state.videoPlayer  ? safe(() => renderVideoPlayerModal()) : ''
     ].join('');
 
@@ -589,6 +591,9 @@ function logout() {
     if (keep) restoreKeepState(appEl, keep);
     lastHTML = html;
     lastPage = state.page;
+
+    // رویداد عمومی پس از هر رندر (نشانک چت، مانت نقشهٔ آدرس و…)
+    try { document.dispatchEvent(new CustomEvent('ary:rendered', { detail: state.page })); } catch (e) {}
 
     // هماهنگ‌سازی آدرس نوار مرورگر با وضعیت فعلی (برای پشتیبانی از
     // دکمه بازگشت/جلو در هر دو سایت اصلی و پنل مدیریت)

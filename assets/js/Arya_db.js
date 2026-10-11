@@ -8,7 +8,7 @@
   'use strict';
 
   const DB_NAME    = 'AryaStoreDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2; // v2: افزودن جدول blog
 
   // جداول دیتابیس
   const STORES = {
@@ -17,13 +17,14 @@
     users:    { keyPath: 'id', indexes: ['email', 'phone'] },
     tickets:  { keyPath: 'id', indexes: ['user_phone', 'status'] },
     categories: { keyPath: 'id', indexes: [] },
+    blog:     { keyPath: 'id', indexes: ['status', 'created_at'] },
     reviews:  { keyPath: 'id', indexes: ['product_id', 'status'] },
     admins:   { keyPath: 'id', indexes: ['email', 'phone'] },
     settings: { keyPath: 'key', indexes: [] },
   };
 
   // ── همگام‌سازی با سرور (Arya_api.js) — در صورت نبود config، فقط محلی ──
-  const SERVER_SYNC_TABLES = ['products', 'categories', 'orders', 'reviews'];
+  const SERVER_SYNC_TABLES = ['products', 'categories', 'orders', 'reviews', 'blog'];
   function serverOn() { return !!(window.AryaServer && AryaServer.isConfigured()); }
 
   let db = null;

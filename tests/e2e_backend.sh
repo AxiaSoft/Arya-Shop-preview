@@ -63,7 +63,11 @@ import json,sys; d=json.load(sys.stdin)
 print(json.dumps({'ok': all('password_hash' not in r for r in d.get('data',[]))}))")"
 
 echo "— 4) User registration / login —"
-t "register user" ok "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Sara Test","email":"sara@t.test","phone":"09123456789","password":"Zx9!looper77"}')"
+KR=$(mktemp)
+R=$(curl -s -c $KR -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Sara Test","email":"sara@t.test","phone":"09123456789","password":"Zx9!looper77"}')
+t "register user" ok "$R"
+t "register auto-login (no re-login)" ok "$(echo "$R" | python3 -c "import json,sys;d=json.load(sys.stdin);print(json.dumps({'ok':bool(d.get('ok')) and d.get('data',{}).get('loggedIn') is True}))")"
+t "auto-session usable" ok "$(curl -s -b $KR "$U?action=user_session" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('loggedIn') is True}))")"
 t "duplicate email rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Dup","email":"sara@t.test","phone":"09999999999","password":"Abcdefg12"}')"
 t "weak password rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"z","email":"z@z.test","phone":"09122222222","password":"123"}')"
 KU=$(mktemp)
@@ -174,6 +178,9 @@ R=$(curl -s -c $KU9 -X POST "$U?action=user_login_step1" -H 'Content-Type: appli
 POTP=$(echo "$R" | pyj "['data']['otp_demo']")
 t "user login for pwd test" ok "$(curl -s -b $KU9 -c $KU9 -X POST "$U?action=user_login_step2" -H "Origin: $BASE" -H 'Content-Type: application/json' -d "{\"otp\":\"$POTP\"}")"
 KCSRF=$(curl -s -b $KU9 "$U?action=csrf" | pyj "['data']['csrf']")
+t "change blocked without OTP" fail "$(curl -s -b $KU9 -X POST "$U?action=user_change_password" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d '{"current_password":"First@12345","new_password":"Second@54321"}')"
+PWOTP=$(curl -s -b $KU9 -X POST "$U?action=user_pwchange_otp_send" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d '{"channel":"sms"}' | pyj "['data']['otp_demo']")
+t "pw-otp send+verify ok" ok "$(curl -s -b $KU9 -X POST "$U?action=user_pwchange_otp_verify" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d "{\"otp\":\"$PWOTP\"}")"
 t "same-as-current password rejected" fail "$(curl -s -b $KU9 -X POST "$U?action=user_change_password" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d '{"current_password":"First@12345","new_password":"First@12345"}')"
 t "change password (old_password compat key)" ok "$(curl -s -b $KU9 -X POST "$U?action=user_change_password" -H "Origin: $BASE" -H "X-CSRF-Token: $KCSRF" -H 'Content-Type: application/json' -d '{"old_password":"First@12345","new_password":"Second@54321"}')"
 t "session invalidated after password change" ok "$(curl -s -b $KU9 "$U?action=user_session" | python3 -c "import json,sys;d=json.load(sys.stdin).get('data') or {};print(json.dumps({'ok':d.get('loggedIn') is False}))")"
@@ -227,6 +234,22 @@ t "password containing own name rejected" fail "$(curl -s -X POST "$U?action=use
 t "weak common password rejected" fail "$(curl -s -X POST "$U?action=user_register" -H "Origin: $BASE" -H 'Content-Type: application/json' -d '{"name":"Weak One","email":"weak@t.test","phone":"09126669900","password":"Password123"}')"
 for i in 1 2 3 4; do curl -s -X POST "$U?action=user_reset_step1" -H 'Content-Type: application/json' -d '{"identifier":"sara@t.test"}' >/dev/null; done
 t "forgot-OTP per-identifier throttle" fail "$(curl -s -X POST "$U?action=user_reset_step1" -H 'Content-Type: application/json' -d '{"identifier":"sara@t.test"}')"
+t "blog guest sees only published" ok "$(curl -s "$U?action=getAll&table=blog" | python3 -c "
+import json,sys
+d=json.load(sys.stdin).get('data') or []
+print(json.dumps({'ok': isinstance(d, list) and all((r.get('status') or 'published')=='published' for r in d)}))")"
+t "blog guest upsert blocked" fail "$(curl -s -b $G -X POST "$U?action=upsert&table=blog" -H "Origin: $BASE" -H "X-CSRF-Token: $GCSRF" -H 'Content-Type: application/json' -d '{"record":{"id":"hack_post","title":"x","status":"published"}}')"
+t "blog admin create draft" ok "$(A 'upsert&table=blog' '{"record":{"id":"e2e_post","title":"یادداشت آزمایشی","excerpt":"تست","body":"<p>hello</p>","status":"draft","tags":"test","author":"e2e","media":"[]","cover":""}}')"
+t "draft hidden from public" ok "$(curl -s "$U?action=getAll&table=blog" | python3 -c "
+import json,sys
+d=json.load(sys.stdin).get('data') or []
+print(json.dumps({'ok': not any(r.get('id')=='e2e_post' for r in d)}))")"
+t "blog admin publish" ok "$(A 'upsert&table=blog' '{"record":{"id":"e2e_post","status":"published","title":"یادداشت آزمایشی"}}')"
+t "published visible to public" ok "$(curl -s "$U?action=getAll&table=blog" | python3 -c "
+import json,sys
+d=json.load(sys.stdin).get('data') or []
+print(json.dumps({'ok': any(r.get('id')=='e2e_post' for r in d)}))")"
+t "blog delete (admin)" ok "$(A 'delete&table=blog' '{"id":"e2e_post"}')"
 t "guest cannot read tickets via getAll" fail "$(curl -s "$U?action=getAll&table=tickets")"
 t "guest cannot read admins" fail "$(curl -s "$U?action=getAll&table=admins")"
 t "unknown table rejected" fail "$(curl -s "$U?action=getAll&table=settings")"

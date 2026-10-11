@@ -112,6 +112,8 @@ window.AryaServer = (function () {
     requestContactChange: (rec) => call('user_contact_step1', { body: rec }),
     confirmContactChange: (rec) => call('user_contact_step2', { body: rec }),
     changePassword: (oldPw, newPw) => call('user_change_password', { body: { current_password: oldPw, new_password: newPw } }),
+    pwOtpSend: (channel) => call('user_pwchange_otp_send', { body: { channel } }),
+    pwOtpVerify: (otp) => call('user_pwchange_otp_verify', { body: { otp } }),
     removeAccount: () => call('user_delete', { body: {} }),
     // محتوا
     createReview: (rec) => call('review_create', { body: rec }),

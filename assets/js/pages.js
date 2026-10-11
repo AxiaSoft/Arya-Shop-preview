@@ -225,8 +225,8 @@ function renderHomePage() {
                 class="glass rounded-2xl p-5 lg:p-6 text-center card animate-fade hover:shadow-lg hover:shadow-blue-500/10 transition-shadow group"
                 style="animation-delay:${i * 0.06}s"
               >
-                <div class="mb-2 inline-flex text-blue-300 transition-transform group-hover:scale-110">${aryCatIcon(cat, 'w-6 h-6 lg:w-8 lg:h-8')}</div>
-                <h3 class="font-semibold text-xs lg:text-sm">${aryEsc(cat.title)}</h3>
+                ${(cat.icon || cat.ic) ? `<div class="mb-2 inline-flex text-blue-300 transition-transform group-hover:scale-110">${aryCatIcon(cat, 'w-6 h-6 lg:w-8 lg:h-8')}</div>` : ''}
+                <h3 class="font-bold leading-6 ${(cat.icon || cat.ic) ? 'text-xs lg:text-sm' : 'text-sm lg:text-lg'}">${aryEsc(cat.title)}</h3>
               </button>
             `
               )
@@ -581,9 +581,11 @@ window.AryaSupportChat = (function () {
     if (!fab) return;
     let badge = fab.querySelector('.ary-fab-badge');
     const n = u() ? myTickets().filter(t => t.status === 'answered').length : 0;
+    // طبق خواسته کاربر: هیچ‌وقت شماره/عدد روی نشانک نباشد — فقط نقطک (ضد اسپمِ بصری)
     if (n > 0) {
       if (!badge) { badge = document.createElement('span'); badge.className = 'ary-fab-badge'; const b = fab.querySelector('.ary-fab-btn'); if (b) b.appendChild(badge); }
-      badge.textContent = n > 9 ? '۹+' : String(n);
+      badge.textContent = '';
+      badge.setAttribute('aria-label', n + ' پاسخ جدید — بدون شمارش');
     } else if (badge) badge.remove();
   }
   return { open, close, toggle: () => (isOpen ? close() : open()), updateBadge };
@@ -731,6 +733,7 @@ window.aryDealsScroll = function (dir) {
   }
   function hashPass(p) { return btoa(unescape(encodeURIComponent(p || ''))); }
   function verifyPass(plain, hash) { return hashPass(plain) === hash; }
+  window.aryaUsers = { getUsers, saveUsers, hashPass, verifyPass };
 
   // حالت سرور: وقتی Db.php پیکربندی است، همه‌ی مسیرهای احراز هویت سمت سرور می‌روند
   function serverAuth() { return !!(window.AryaServer && AryaServer.isConfigured()); }
@@ -1028,6 +1031,18 @@ window.aryDealsScroll = function (dir) {
     if (serverAuth()) {
       AryaServer.register({ name, email, phone, password: pass }).then(r => {
         if (!r.ok) { state.authError = r.msg || 'خطا در ثبت‌نام.'; render(); return; }
+        // ورود خودکار: سرور کوکی سشن + csrf را ست کرده — کاربر دوباره لاگین نمی‌کند
+        const d = (r && r.data) || {};
+        if (d.loggedIn && d.user) {
+          const userObj = { id: d.user.id, name: d.user.name || '', phone: d.user.phone || '', email: d.user.email || '', addresses: [], avatar: '', nationalId: '' };
+          state.user = userObj; state.currentUser = userObj;
+          if (window.AppState) AppState.set({ loggedIn: true, user: userObj, currentUser: userObj });
+          if (window.AryaCsrf && d.csrf && typeof AryaCsrf.set === 'function') { try { AryaCsrf.set(d.csrf); } catch (e) {} }
+          state.authError = '';
+          toast('ثبت‌نام انجام شد — وارد پنل کاربری شدید', 'success');
+          if (typeof goTo === 'function') goTo('profile'); else { state.page = 'profile'; render(); }
+          return;
+        }
         state.authError = ''; state.authTab = 'login';
         toast('ثبت‌نام انجام شد. برای ادامه وارد حساب شوید.');
         render();
@@ -1064,9 +1079,11 @@ window.aryDealsScroll = function (dir) {
     });
 
     state.authError = '';
-    state.authTab = 'login';
-    toast('ثبت‌نام موفق! وارد شوید.');
-    render();
+    const userObj = { id: newUser.id, name, email, phone, addresses: [], avatar: '', nationalId: '' };
+    state.user = userObj; state.currentUser = userObj;
+    if (window.AppState) AppState.set({ loggedIn: true, user: userObj, currentUser: userObj });
+    toast('ثبت‌نام انجام شد — وارد پنل کاربری شدید', 'success');
+    if (typeof goTo === 'function') goTo('profile'); else render();
   }
 
   // ── FORGOT PASSWORD ──
@@ -2977,8 +2994,14 @@ function renderProductPage() {
 
         <!-- Info -->
         <div class="space-y-6">
+          <nav class="flex items-center gap-1.5 text-[11px] text-white/45 flex-wrap" aria-label="مسیر">
+            <button type="button" class="hover:text-white transition" onclick="goTo('home')">خانه</button><span>‹</span>
+            <button type="button" class="hover:text-white transition" onclick="goTo('shop')">فروشگاه</button>
+            ${category ? `<span>‹</span><button type="button" class="hover:text-white transition" onclick="state.productFilter.category='${aryEsc(String(category.id))}'; goTo('shop')">${aryEsc(category.title)}</button>` : ''}
+            <span>‹</span><span class="text-white/70">${aryEsc(product.title)}</span>
+          </nav>
           ${category ? `
-            <span class="inline-block bg-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-sm font-medium">
+            <span class="inline-block bg-blue-500/20 text-blue-400 px-4 py-1.5 rounded-full text-sm font-medium w-fit">
               ${category.title}
             </span>
           ` : ''}
@@ -3001,6 +3024,14 @@ function renderProductPage() {
           <p class="text-white/70 leading-relaxed text-sm md:text-base">
             ${product.description || ''}
           </p>
+          <div class="grid grid-cols-3 gap-2.5 text-center">
+            ${[['🚚','ارسال سریع','بر اساس گزینهٔ انتخابی'], ['↩️','۷ روز مرجوعی','طبق سیاست فروشگاه'], ['🛡️','ضمانت اصالت','مستقیم از فروشگاه آریا']].map(t => `
+              <div class="glass rounded-2xl px-2 py-3">
+                <div class="text-lg mb-1">${t[0]}</div>
+                <div class="text-[11px] font-bold text-white/80">${t[1]}</div>
+                <div class="text-[10px] text-white/45 mt-0.5 hidden sm:block">${t[2]}</div>
+              </div>`).join('')}
+          </div>
 
           <!-- Price & stock & wishlist -->
           <div class="glass rounded-2xl p-5 md:p-6 space-y-4">
@@ -4173,6 +4204,7 @@ function renderProductPage() {
             {id:'addresses', label:'آدرس‌ها', icon:'pin'},
             {id:'wishlist', label:'علاقه‌مندی‌ها', icon:'heart'},
             {id:'tickets', label:'پشتیبانی', icon:'chat'},
+            {id:'security', label:'امنیت حساب', icon:'key'},
           ].map(tab => `
             <button type="button"
               onclick="switchProfileTab('${tab.id}')""
@@ -4257,6 +4289,13 @@ function renderProductPage() {
                 <span id="addr-geo-note" class="text-[11px] text-emerald-300/80"></span>
               </div>
               <input type="hidden" id="addr-lat"><input type="hidden" id="addr-lng">
+              <div class="mt-3 overflow-hidden rounded-2xl border border-blue-500/25" style="background:rgba(59,130,246,.05)">
+                <div class="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5">
+                  <span class="text-xs font-bold text-blue-200 inline-flex items-center gap-1.5">${aryIcon('pin','w-4 h-4')}<span>نقشهٔ آدرس — نشانک را روی مقصد بگذارید</span></span>
+                  <button type="button" onclick="aryAddrMapPick('addr')" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition inline-flex items-center gap-1.5">${aryIcon('search','w-3.5 h-3.5')}<span>جست‌وجوی نشانی / بزرگ‌نمایی</span></button>
+                </div>
+                <div id="ary-addr-map" class="w-full" style="height:12rem"></div>
+              </div>
             </div>
             <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
               <button type="submit" class="btn-primary px-4 py-3 rounded-xl w-full md:w-auto">افزودن آدرس</button>
@@ -4292,6 +4331,9 @@ function renderProductPage() {
         </div>
 
         ` : ''}
+
+        <!-- TAB: Security (تغییر رمز با OTP) -->
+        ${state.profileTab === 'security' ? (typeof renderProfileSecurityTab === 'function' ? renderProfileSecurityTab(user) : '') : ''}
 
         <!-- TAB: Orders -->
         ${state.profileTab === 'orders' ? `
@@ -5077,3 +5119,300 @@ if (window.AryaServer && typeof state !== 'undefined') {
     }).catch(() => {});
   });
 }
+
+// ═══════════════════════════════════════════════════════════════
+// BLOG — لیست + صفحهٔ مقاله (داده از سرور یا IndexedDB محلی)
+// ═══════════════════════════════════════════════════════════════
+function aryParseMaybe(v, fb) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string' && v.trim()) { try { return JSON.parse(v); } catch (e) { return fb; } }
+  return fb;
+}
+function aryBlogPosts() {
+  const raw = Array.isArray(state.blog) ? state.blog.slice() : [];
+  return raw
+    .filter(p => p && p.id && (p.status || 'published') === 'published')
+    .sort((a, b) => String(b.created_at || b.updated_at || '').localeCompare(String(a.created_at || a.updated_at || '')));
+}
+window.aryBlogPosts = aryBlogPosts;
+
+function renderPostMedia(media) {
+  const arr = aryParseMaybe(media, []);
+  if (!Array.isArray(arr) || !arr.length) return '';
+  const sizeCls = s => s === 'half' ? 'md:w-1/2' : s === 'third' ? 'md:w-1/3' : 'w-full';
+  const alignCls = a => a === 'start' ? 'items-start' : a === 'end' ? 'items-end' : 'items-center';
+  return `<div class="flex flex-col gap-6 my-7">` + arr.map(m => {
+    if (!m || !m.url) return '';
+    const rad = m.radius === false ? '' : ' rounded-2xl';
+    const cap = m.caption ? `<p class="text-[11px] text-white/45 mt-2 text-center max-w-xl">${aryEsc(m.caption)}</p>` : '';
+    let body = '';
+    if (m.type === 'video') body = `<video controls preload="metadata" class="w-full max-h-[420px] object-cover${rad}"><source src="${aryEsc(m.url)}" type="video/mp4"></video>`;
+    else if (m.type === 'embed') body = `<div class="w-full aspect-video overflow-hidden${rad} bg-white/5"><iframe loading="lazy" referrerpolicy="no-referrer" src="${aryEsc(m.url)}" allowfullscreen class="w-full h-full border-0"></iframe></div>`;
+    else body = `<img loading="lazy" src="${aryEsc(m.url)}" alt="${aryEsc(m.caption || '')}" class="object-cover max-h-[460px]${rad}">`;
+    return `<figure class="flex flex-col ${alignCls(m.align)} ${sizeCls(m.size)} gap-0 w-full md:w-auto max-w-full">${body}${cap}</figure>`;
+  }).join('') + `</div>`;
+}
+window.renderPostMedia = renderPostMedia;
+
+function renderBlogPage() {
+  const posts = aryBlogPosts();
+  const dt = v => { try { return new Date(v).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return ''; } };
+  return `
+    ${typeof renderHeader === 'function' ? renderHeader() : ''}
+    <main class="max-w-5xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+      <header class="mb-9 animate-fade-up">
+        <span class="inline-flex items-center gap-1.5 text-[11px] font-bold text-sky-300 bg-sky-500/10 border border-sky-400/20 rounded-full px-3 py-1 mb-3">
+          <span class="w-1.5 h-1.5 rounded-full bg-sky-400 inline-block"></span><span>بلاگ آریا</span>
+        </span>
+        <h1 class="text-2xl lg:text-4xl font-black leading-tight">مقاله‌ها و راهنمای خرید</h1>
+        <p class="text-white/55 text-sm mt-2">محتوای تخصصی، بی‌تعارف و کاربردی — نوشتهٔ تیم فروشگاه آریا</p>
+      </header>
+      ${posts.length === 0
+        ? `<div class="glass rounded-3xl p-12 text-center text-white/55 text-sm">هنوز مقاله‌ای منتشر نشده است — از پنل مدیریت می‌توانید مقاله بنویسید.</div>`
+        : `<div class="grid gap-5 md:grid-cols-2">
+            ${posts.map((p, i) => {
+              const cover = p.cover || (aryParseMaybe(p.media, [])[0] && aryParseMaybe(p.media, [])[0].type !== 'embed' ? aryParseMaybe(p.media, [])[0].url : '');
+              const tags = aryParseMaybe(String(p.tags || '').split(',').map(t => t.trim()).filter(Boolean), []);
+              return `
+              <article class="glass card overflow-hidden group animate-fade" style="animation-delay:${i * 0.06}s">
+                <button type="button" class="block w-full text-right" onclick="aryOpenPost('${aryEsc(String(p.id))}')">
+                  <div class="h-44 w-full overflow-hidden bg-gradient-to-br from-blue-600/30 to-sky-500/10 flex items-center justify-center">
+                    ${cover ? `<img loading="lazy" src="${aryEsc(cover)}" alt="" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.04]">` : `<span class="text-5xl font-black text-white/15">${aryEsc(String(p.title || 'آ').trim().charAt(0))}</span>`}
+                  </div>
+                  <div class="p-5 lg:p-6">
+                    <div class="flex items-center gap-2 text-[10px] text-white/40 mb-2">
+                      ${p.created_at ? `<span>${dt(p.created_at)}</span>` : ''}
+                      ${p.author ? `<span>• ${aryEsc(p.author)}</span>` : ''}
+                    </div>
+                    <h2 class="font-black text-base lg:text-lg leading-7 mb-2 group-hover:text-blue-300 transition-colors">${aryEsc(p.title)}</h2>
+                    <p class="text-xs lg:text-sm text-white/55 leading-6 line-clamp-2">${aryEsc(p.excerpt || '')}</p>
+                    <div class="flex flex-wrap items-center gap-1.5 mt-3.5">
+                      ${tags.slice(0, 3).map(t => `<span class="text-[10px] px-2 py-0.5 rounded-full bg-white/8 text-white/55">${aryEsc(t)}</span>`).join('')}
+                      <span class="mr-auto text-[11px] font-bold text-blue-300 inline-flex items-center gap-1">ادامهٔ مطلب ${aryIcon('arrowleft', 'w-3.5 h-3.5')}</span>
+                    </div>
+                  </div>
+                </button>
+              </article>`;
+            }).join('')}
+          </div>`}
+    </main>
+    ${typeof renderFooter === 'function' ? renderFooter() : ''}
+  `;
+}
+window.renderBlogPage = renderBlogPage;
+
+function renderArticlePage() {
+  const posts = aryBlogPosts();
+  const p = posts.find(x => String(x.id) === String(state.blogActiveId)) || posts[0];
+  if (!p) return renderBlogPage();
+  const dt = v => { try { return new Date(v).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return ''; } };
+  const tags = String(p.tags || '').split(',').map(t => t.trim()).filter(Boolean);
+  const others = posts.filter(x => x.id !== p.id).slice(0, 3);
+  return `
+    ${typeof renderHeader === 'function' ? renderHeader() : ''}
+    <main class="max-w-3xl mx-auto px-4 lg:px-6 py-10 lg:py-14">
+      <nav class="flex items-center gap-1.5 text-[11px] text-white/45 mb-6" aria-label="مسیر">
+        <button type="button" class="hover:text-white transition" onclick="goTo('blog')">بلاگ</button><span>‹</span><span class="text-white/70">${aryEsc(p.title)}</span>
+      </nav>
+      <header class="mb-6">
+        <h1 class="text-2xl lg:text-4xl font-black leading-tight mb-3">${aryEsc(p.title)}</h1>
+        <div class="flex flex-wrap items-center gap-2.5 text-[11px] text-white/45">
+          ${p.created_at ? `<span class="glass rounded-full px-3 py-1">${dt(p.created_at)}</span>` : ''}
+          ${p.author ? `<span class="glass rounded-full px-3 py-1 inline-flex items-center gap-1">${aryIcon('user', 'w-3 h-3')}<span>${aryEsc(p.author)}</span></span>` : ''}
+          ${tags.map(t => `<span class="px-2.5 py-1 rounded-full bg-blue-500/12 text-blue-300 border border-blue-400/20 font-bold">${aryEsc(t)}</span>`).join('')}
+        </div>
+      </header>
+      ${p.cover ? `<figure class="mb-7"><img loading="lazy" src="${aryEsc(p.cover)}" alt="" class="w-full max-h-[420px] object-cover rounded-3xl border border-white/10"></figure>` : ''}
+      ${p.excerpt ? `<p class="text-sm lg:text-base text-white/70 leading-8 border-r-4 border-blue-500/70 pr-4 py-1 mb-7 bg-white/[0.03] rounded-l-xl">${aryEsc(p.excerpt)}</p>` : ''}
+      <article class="prose-arya text-[15px] leading-8 text-white/85 [&_h2]:text-xl [&_h2]:font-black [&_h2]:mt-8 [&_h2]:mb-3 [&_h3]:text-base [&_h3]:font-bold [&_h3]:mt-6 [&_h3]:mb-2 [&_p]:mb-4 [&_ul]:list-disc [&_ul]:pr-5 [&_ul]:mb-4 [&_li]:mb-1.5 [&_img]:rounded-2xl [&_a]:text-blue-300 [&_a]:underline">${p.body || ''}</article>
+      ${renderPostMedia(p.media)}
+      ${others.length ? `
+        <section class="mt-12 pt-8 border-t border-white/10">
+          <h2 class="font-black text-sm mb-4 text-white/70">مقاله‌های دیگر</h2>
+          <div class="grid gap-3">
+            ${others.map(o => `
+              <button type="button" onclick="aryOpenPost('${aryEsc(String(o.id))}')" class="glass rounded-2xl p-4 text-right hover:bg-white/10 transition-colors group">
+                <div class="font-bold text-sm group-hover:text-blue-300 transition-colors">${aryEsc(o.title)}</div>
+                <div class="text-[11px] text-white/40 mt-1 line-clamp-1">${aryEsc(o.excerpt || '')}</div>
+              </button>`).join('')}
+          </div>
+        </section>` : ''}
+      <div class="mt-8">
+        <button type="button" onclick="goTo('blog')" class="btn-ghost px-5 py-2.5 rounded-xl text-sm inline-flex items-center gap-2">${aryIcon('arrowleft', 'w-4 h-4')}<span>بازگشت به بلاگ</span></button>
+      </div>
+    </main>
+    ${typeof renderFooter === 'function' ? renderFooter() : ''}
+  `;
+}
+window.renderArticlePage = renderArticlePage;
+
+window.aryOpenPost = function (id) {
+  state.blogActiveId = id;
+  if (typeof goTo === 'function') goTo('article'); else { state.page = 'article'; render(); }
+};
+
+// بارگذاری دادهٔ بلاگ (سرور یا IndexedDB محلی) — با هر ورود به صفحه
+window.aryBlogLoad = async function () {
+  try {
+    if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+      const r = await AryaServer.crud.getAll('blog');
+      if (r && r.ok && Array.isArray(r.data)) state.blog = r.data;
+    } else if (window.AryaDB && typeof AryaDB.getAll === 'function') {
+      const rows = await AryaDB.getAll('blog');
+      if (Array.isArray(rows)) state.blog = rows;
+    }
+  } catch (e) { /* بی‌صدا — صفحه حالت خالی را نشان می‌دهد */ }
+};
+document.addEventListener('ary:rendered', e => {
+  const pg = e && e.detail;
+  if ((pg === 'blog' || pg === 'article') && !window._aryBlogBusy) {
+    window._aryBlogBusy = 1;
+    window.aryBlogLoad().then(() => { window._aryBlogBusy = 0; render(); }).catch(() => { window._aryBlogBusy = 0; });
+  }
+});
+
+// ── نقشهٔ درون‌فرم آدرس — مانت بعد از هر رندرِ تب آدرس‌ها ──
+function aryAddrMapMount() {
+  const el = document.getElementById('ary-addr-map');
+  if (!el || el._aryMounted || !window.AryaMap) return;
+  el._aryMounted = 1;
+  const a = document.getElementById('addr-lat'), b = document.getElementById('addr-lng');
+  const la = a && a.value ? parseFloat(a.value) : null, ln = b && b.value ? parseFloat(b.value) : null;
+  AryaMap.mountInline(el, {
+    lat: isFinite(la) ? la : null, lng: isFinite(ln) ? ln : null,
+    onChange: (pLa, pLn) => {
+      if (a) a.value = pLa; if (b) b.value = pLn;
+      const note = document.getElementById('addr-geo-note');
+      if (note) note.textContent = '✓ مختصات ثبت شد — می‌توانید ادامهٔ آدرس (پلاک/واحد) را کامل کنید';
+    }
+  }).then(inst => { el._aryInst = inst; })
+    .catch(() => { el._aryMounted = 0; el.innerHTML = '<div class="p-4 text-xs text-white/50">نقشه بارگذاری نشد (اتصال اینترنت لازم است) — آدرس را دستی وارد کنید.</div>'; });
+}
+document.addEventListener('ary:rendered', () => { try { aryAddrMapMount(); } catch (e) {} });
+if (typeof render === 'function') { try { setTimeout(() => { try { aryAddrMapMount(); } catch (e) {} }, 250); } catch (e) {} }
+
+// ── تب «امنیت حساب» — تغییر رمز با پیش‌احراز OTP (پیامک/ایمیل) ──
+function renderProfileSecurityTab(user) {
+  const pw = state.pw || (state.pw = { step: 'idle', err: '', channel: '', masked: '', demo: '' });
+  const online = !!(window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured());
+  const stepOtp = pw.step === 'otp';
+  const done = pw.step === 'done';
+  const mask = (v, keep) => { v = String(v || ''); return v.length > keep * 2 ? v.slice(0, keep) + '•'.repeat(Math.max(3, v.length - keep * 2)) + v.slice(-keep) : v; };
+  const phone = user && user.phone ? mask(user.phone, 4) : '—';
+  const email = user && user.email ? mask(user.email, 3) : '—';
+  return `
+    <div class="glass rounded-2xl p-6 mb-8 max-w-xl">
+      <h3 class="font-bold flex items-center gap-2 mb-1.5"><span class="inline-flex text-blue-300">${aryIcon('key', 'w-5 h-5')}</span><span>تغییر رمز عبور</span></h3>
+      <p class="text-[11px] text-white/45 mb-5 leading-5">برای امنیت بیشتر، ابتدا به موبایل یا ایمیل شما <b class="text-white/70">کد یکبارمصرفِ تغییر رمز</b> ارسال می‌شود؛ پس از تأیید کد، فرم تعیین رمز جدید باز می‌شود.</p>
+      ${done ? `
+        <div class="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 flex items-start gap-2">
+          <span class="mt-0.5">✅</span><span>رمز عبور با موفقیت تغییر کرد. اگر دستگاه دیگری باز است، با رمز قبلی کار نخواهد کرد.</span>
+        </div>` : `
+      ${stepOtp ? `
+        <form class="space-y-4" onsubmit="event.preventDefault(); aryPwSubmit(this);">
+          <div class="rounded-2xl border border-blue-400/25 bg-blue-500/[0.06] px-4 py-3 text-xs text-blue-100 leading-6">
+            کد ۶ رقمی به ${pw.channel === 'email' ? 'ایمیل <b dir="ltr">' + aryEsc(pw.masked || email) + '</b>' : 'شماره <b dir="ltr">' + aryEsc(pw.masked || phone) + '</b>'} ارسال شد.${pw.demo ? `<br><span class="text-amber-300">حالت دمو — کد شما: <b dir="ltr" class="font-mono text-sm">${aryEsc(pw.demo)}</b></span>` : ''}
+          </div>
+          ${online ? `
+          <div>
+            <label class="block text-sm text-white/70 mb-1">کد تأیید *</label>
+            <input name="otp" inputmode="numeric" maxlength="6" dir="ltr" class="input-style w-full text-center font-mono tracking-[0.4em] text-lg" placeholder="••••••" value="${aryEsc(pw.demo || '')}">
+          </div>` : ''}
+          <div>
+            <label class="block text-sm text-white/70 mb-1">رمز عبور فعلی *</label>
+            <input name="curpass" type="password" class="input-style w-full" autocomplete="current-password" required>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm text-white/70 mb-1">رمز جدید *</label>
+              <input name="newpass" type="password" class="input-style w-full" autocomplete="new-password" required placeholder="حداقل ۸ کاراکتر">
+            </div>
+            <div>
+              <label class="block text-sm text-white/70 mb-1">تکرار رمز جدید *</label>
+              <input name="newpass2" type="password" class="input-style w-full" autocomplete="new-password" required>
+            </div>
+          </div>
+          ${pw.err ? `<div class="rounded-xl px-4 py-2.5 border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs">${aryEsc(pw.err)}</div>` : ''}
+          <div class="flex gap-3">
+            <button type="submit" class="btn-primary flex-1 py-3 rounded-xl font-bold">ثبت رمز جدید</button>
+            <button type="button" class="btn-ghost px-4 py-3 rounded-xl text-sm" onclick="state.pw.step='idle'; render()">بازگشت</button>
+          </div>
+        </form>` : `
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <button type="button" ${user && user.phone ? '' : 'disabled'} onclick="aryPwSend('sms')" class="glass rounded-2xl p-4 text-right hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed">
+            <div class="text-lg mb-1.5">📱</div>
+            <div class="font-bold text-sm mb-0.5">ارسال کد به موبایل</div>
+            <div class="text-[11px] text-white/45 font-mono" dir="ltr">${aryEsc(phone)}</div>
+          </button>
+          <button type="button" ${user && user.email ? '' : 'disabled'} onclick="aryPwSend('email')" class="glass rounded-2xl p-4 text-right hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed">
+            <div class="text-lg mb-1.5">✉️</div>
+            <div class="font-bold text-sm mb-0.5">ارسال کد به ایمیل</div>
+            <div class="text-[11px] text-white/45 font-mono" dir="ltr" style="overflow-wrap:anywhere">${aryEsc(email)}</div>
+          </button>
+        </div>
+        ${pw.err ? `<div class="mt-3 rounded-xl px-4 py-2.5 border border-rose-500/30 bg-rose-500/10 text-rose-300 text-xs">${aryEsc(pw.err)}</div>` : ''}
+        ${online ? '' : `<p class="mt-3 text-[11px] text-white/40">در حالت آفلاین، کد احراز ارسال نمی‌شود و تغییر رمز محلی انجام می‌گیرد.</p>`}
+        <form class="mt-4 space-y-4 ${online ? 'hidden' : ''}" onsubmit="event.preventDefault(); aryPwSubmit(this);">
+          <div>
+            <label class="block text-sm text-white/70 mb-1">رمز عبور فعلی *</label>
+            <input name="curpass" type="password" class="input-style w-full" autocomplete="current-password" required>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div><label class="block text-sm text-white/70 mb-1">رمز جدید *</label><input name="newpass" type="password" class="input-style w-full" required placeholder="حداقل ۸ کاراکتر"></div>
+            <div><label class="block text-sm text-white/70 mb-1">تکرار *</label><input name="newpass2" type="password" class="input-style w-full" required></div>
+          </div>
+          <button type="submit" class="btn-primary w-full py-3 rounded-xl font-bold">تغییر رمز (حالت آفلاین)</button>
+        </form>
+      `}`}
+    </div>`;
+}
+window.renderProfileSecurityTab = renderProfileSecurityTab;
+
+window.aryPwSend = function (channel) {
+  state.pw = state.pw || { step: 'idle', err: '' };
+  state.pw.err = ''; state.pw.demo = '';
+  const apply = r => {
+    if (!r || !r.ok) { state.pw.err = (r && r.msg) || 'ارسال کد ناموفق بود.'; state.pw.step = 'idle'; render(); return; }
+    const d = r.data || {};
+    state.pw.step = 'otp'; state.pw.channel = d.channel || channel; state.pw.masked = d.target_masked || ''; state.pw.demo = d.otp_demo || '';
+    toast('کد یکبارمصرف «تغییر رمز عبور» ارسال شد.', 'success');
+    render();
+  };
+  if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+    AryaServer.pwOtpSend(channel).then(apply).catch(() => { state.pw.err = 'ارتباط با سرور برقرار نشد.'; render(); });
+  } else { state.pw.step = 'otp'; render(); }
+};
+
+window.aryPwSubmit = async function (form) {
+  const online = !!(window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured());
+  const otp = (form.otp ? form.otp.value : '').replace(/\D/g, '');
+  const cur = (form.curpass && form.curpass.value) || '';
+  const np = (form.newpass && form.newpass.value) || '';
+  const np2 = (form.newpass2 && form.newpass2.value) || '';
+  if (np.length < 8 || np !== np2) { state.pw.err = 'رمز جدید باید حداقل ۸ کاراکتر باشد و تکرارش یکسان باشد.'; render(); return; }
+  try {
+    if (online) {
+      if (state.pw.step === 'otp') {
+        if (otp.length !== 6) { state.pw.err = 'کد ۶ رقمی را وارد کنید.'; render(); return; }
+        const v = await AryaServer.pwOtpVerify(otp);
+        if (!v || !v.ok) { state.pw.err = (v && v.msg) || 'کد تأیید نامعتبر یا منقضی است.'; render(); return; }
+      }
+      const r = await AryaServer.changePassword(cur, np);
+      if (!r || !r.ok) { state.pw.err = (r && r.msg) || 'تغییر رمز ناموفق بود.'; render(); return; }
+      state.pw = { step: 'done', err: '' };
+      toast('رمز عبور تغییر کرد ✓', 'success');
+      render();
+    } else {
+      const aux = window.aryaUsers || {};
+      if (typeof aux.getUsers !== 'function') { state.pw.err = 'ذخیره‌ساز محلی در دسترس نیست.'; render(); return; }
+      const users = aux.getUsers();
+      const u = users.find(x => x.id === (state.user && state.user.id));
+      if (!u) { state.pw.err = 'حساب محلی پیدا نشد.'; render(); return; }
+      if (aux.hashPass(cur) !== u.passwordHash) { state.pw.err = 'رمز فعلی اشتباه است.'; render(); return; }
+      u.passwordHash = aux.hashPass(np); aux.saveUsers(users);
+      state.pw = { step: 'done', err: '' };
+      toast('رمز عبور تغییر کرد ✓', 'success');
+      render();
+    }
+  } catch (e) { state.pw.err = 'خطای ارتباط با سرور.'; render(); }
+};

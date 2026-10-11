@@ -319,6 +319,7 @@ window.aryCatIcon = function (cat, extra) {
             <nav class="hidden lg:flex items-center gap-8">
               <button onclick="navigate('home')" class="text-white/80 hover:text-white text-sm font-medium transition-colors ${state.page==='home'?'text-white':''}" type="button">خانه</button>
               <button onclick="navigate('shop')" class="text-white/80 hover:text-white text-sm font-medium transition-colors ${state.page==='shop'?'text-white':''}" type="button">فروشگاه</button>
+              <button onclick="navigate('blog')" class="text-white/80 hover:text-white text-sm font-medium transition-colors ${state.page==='blog'?'text-white':''}" type="button">بلاگ</button>
               
               <!-- Categories Dropdown -->
               <div class="relative group">

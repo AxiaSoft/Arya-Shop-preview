@@ -203,10 +203,10 @@ function ensureAdminUpgrade(AryaDbEngine $eng): void {
 }
 
 // ── سیاست دسترسی به جداول عمومی ───────────────────────────────
-const ALLOWED_TABLES = ['products','orders','users','categories','tickets','reviews','settings'];
+const ALLOWED_TABLES = ['products','orders','users','categories','tickets','reviews','settings','blog'];
 
 // جداول حساس: هرگز از مسیر عمومی CRUD قابل نوشتن نیستند
-const ADMIN_ONLY_TABLES = ['products','categories','settings','users','admins'];
+const ADMIN_ONLY_TABLES = ['products','categories','settings','users','admins','blog'];
 
 function validateTable(string $t): string {
     if (!in_array($t, ALLOWED_TABLES, true)) fail('Invalid table: ' . $t);
@@ -952,7 +952,55 @@ if ($action === 'user_register') {
         VALUES (?,?,?,?,?,'[]',{$eng->nowExpr()})");
     $st->execute([$id, $name, $email, $phone, ary_password_hash($password)]);
 
-    ok(['user' => ['id' => $id, 'name' => $name, 'email' => $email, 'phone' => $phone]], 'ثبت‌نام انجام شد.');
+    // ورود خودکار بلافاصله پس از ثبت‌نام — کاربر دوباره نباید لاگین کند
+    ary_session_start();
+    session_regenerate_id(true);
+    $_SESSION['user_id']    = $id;
+    $_SESSION['user_phone'] = $phone;
+    $_SESSION['auth_ts']    = time();
+    ok([
+        'user'     => ['id' => $id, 'name' => $name, 'email' => $email, 'phone' => $phone],
+        'loggedIn' => true,
+        'csrf'     => ary_csrf_token(),
+    ], 'ثبت‌نام انجام شد؛ وارد حساب شدید.');
+}
+
+// ── تغییر رمز عبور با پیش‌احراز OTP (اول کد تأیید، بعد فرم رمز جدید) ──
+if ($action === 'user_pwchange_otp_send') {
+    $eng = engine();
+    $userId = currentUserId();
+    if (!$userId) fail('ابتدا وارد حساب خود شوید.', 401);
+    if (!ary_throttle('pw-otp-send:' . $userId, 3, 600)) fail('درخواست کد زیاد است؛ چند دقیقه صبر کنید.', 429);
+    $q = AryaDbEngine::quoteIdent($eng->driver, 'users');
+    $st = $eng->pdo()->prepare("SELECT name, email, phone FROM $q WHERE id = ? LIMIT 1");
+    $st->execute([$userId]);
+    $u = (array) $st->fetch(PDO::FETCH_ASSOC);
+    $wantEmail = (string) ($rawBody['channel'] ?? '') === 'email';
+    $hasSms = (bool) preg_match('/^09\\d{9}$/', (string) ($u['phone'] ?? ''));
+    $hasMail = ary_is_email((string) ($u['email'] ?? ''));
+    $channel = $wantEmail ? 'email' : ($hasSms ? 'sms' : 'email');
+    if ($channel === 'email' && !$hasMail) fail('برای این حساب ایمیل معتبری ثبت نشده است؛ کانال پیامک را انتخاب کنید.', 400);
+    if ($channel === 'sms' && !$hasSms && $hasMail) $channel = 'email';
+    $target = $channel === 'sms' ? (string) $u['phone'] : (string) $u['email'];
+    $otp = (string) random_int(100000, 999999);
+    rememberPendingOtp('pwchange', $userId, $otp, $target);
+    $data = otpResponse($otp, $target);
+    $data['channel'] = $channel;
+    ok($data, 'کد یکبارمصرف «تغییر رمز عبور» ارسال شد.');
+}
+
+if ($action === 'user_pwchange_otp_verify') {
+    $userId = currentUserId();
+    if (!$userId) fail('ابتدا وارد حساب خود شوید.', 401);
+    if (!ary_throttle('pw-otp-verify:' . $userId, 6, 600)) ary_throttle_fail('fail');
+    $otp = preg_replace('/\\D/', '', ary_clean_text($rawBody['otp'] ?? ''));
+    if (strlen($otp) !== 6) fail('کد ۶ رقمی را وارد کنید.', 400);
+    $chk = checkPendingOtp('pwchange', $otp);
+    if ($chk[0] !== true) fail($chk[1], 401);
+    if ((string) ($chk[2] ?? '') !== $userId) fail('این کد برای حساب شما صادر نشده است.', 401);
+    ary_session_start();
+    $_SESSION['pw_verified_at'] = time(); // پنجره ۱۰ دقیقه‌ای برای ثبت رمز جدید
+    ok(['verified' => true], 'کد تأیید شد؛ اکنون رمز جدید را ثبت کنید.');
 }
 
 if ($action === 'user_login_step1') {
@@ -1219,6 +1267,10 @@ if ($action === 'user_change_password') {
     $st->execute([$userId]);
     $user = $st->fetch();
     if (!$user) fail('حساب یافت نشد.', 401);
+    // سیاست جدید: تغییر رمز فقط پس از تأیید کد یکبارمصرف (ایمک/ایمیل) — حداکثر ۱۰ دقیقه اعتبار
+    if (time() - (int) ($_SESSION['pw_verified_at'] ?? 0) > 600) {
+        fail('برای تغییر رمز، نخست کد یکبارمصرف ارسال‌شده را تأیید کنید.', 412);
+    }
     $curPw = (string) ($rawBody['current_password'] ?? $rawBody['old_password'] ?? '');
     if (!ary_password_verify($curPw, $user['password_hash'] ?? null)) {
         if (!ary_throttle('pw-change-bad:' . $userId, 5, 900)) fail('تلاش‌های ناموفق زیاد است؛ ۱۵ دقیقه صبر کنید.', 429);
@@ -1229,6 +1281,7 @@ if ($action === 'user_change_password') {
     if ($err !== '') fail($err);
     if (ary_password_verify($new, (string) $user['password_hash'])) fail('رمز جدید نباید با رمز فعلی یکی باشد.');
     $eng->pdo()->prepare("UPDATE $q SET password_hash = ? WHERE id = ?")->execute([ary_password_hash($new), $userId]);
+    unset($_SESSION['pw_verified_at']);        // یک‌مصرفی شدن احراز OTP
     ary_touch_pwd_epoch($userId);              // خروج از همهٔ دستگاه‌ها (دفاع در برابر سشن دزدیده‌شده)
     ary_log('auth', 'PASSWORD-CHANGE uid=' . $userId . ' ip=' . ary_client_ip());
     ok([], 'رمز عبور تغییر کرد؛ برای امنیت، در همهٔ دستگاه‌ها از حساب خارج شدید.');
@@ -1453,6 +1506,7 @@ switch ($action) {
         // سیاست خواندن برای کاربران مهمان
         if (!$isAdmin) {
             if ($table === 'reviews') { $where .= " AND status = 'approved'"; }
+            if ($table === 'blog') { $where .= " AND status = 'published'"; }
             if ($table === 'orders') {
                 if (!empty($_GET['user_phone']) && ary_is_ir_phone((string) $_GET['user_phone'])) {
                     $where .= ' AND user_phone = ?'; $params[] = preg_replace('/\D/', '', (string) $_GET['user_phone']);

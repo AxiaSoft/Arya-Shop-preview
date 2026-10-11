@@ -261,6 +261,15 @@ final class AryaDbEngine
                 'cols' => [['id','str',64,'pk'], ['title','str',255], ['icon','str',50], ['created_at','ts']],
                 'indexes' => [],
             ],
+            'blog' => [
+                'cols' => [
+                    ['id','str',64,'pk'], ['title','str',255], ['excerpt','str',600],
+                    ['body','long'], ['cover','text'], ['media','long'],
+                    ['tags','str',255], ['status','str',20], ['author','str',80],
+                    ['created_at','ts'], ['updated_at','ts'],
+                ],
+                'indexes' => [],
+            ],
             'tickets' => [
                 'cols' => [
                     ['id','str',64,'pk'], ['user_phone','str',20], ['user_name','str',255],

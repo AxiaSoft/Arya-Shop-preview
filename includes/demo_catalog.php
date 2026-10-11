@@ -24,9 +24,11 @@ function arya_seed_demo(AryaDbEngine $eng): array {
     $data = json_decode((string)file_get_contents($file), true);
     if (!is_array($data) || empty($data['products'])) throw new RuntimeException('ساختار demo-catalog.json نامعتبر است.');
 
-    $counts = ['categories' => 0, 'products' => 0];
+    $counts = ['categories' => 0, 'products' => 0, 'blog' => 0];
     $pdo = $eng->pdo();
-    foreach (['categories' => $data['categories'] ?? [], 'products' => $data['products']] as $table => $rows) {
+    $seedRows = ['categories' => $data['categories'] ?? [], 'products' => $data['products']];
+    if (!empty($data['blog'])) $seedRows['blog'] = $data['blog'];
+    foreach ($seedRows as $table => $rows) {
         $cols = $eng->columnsOf($table);
         foreach ($rows as $row) {
             if (!is_array($row) || empty($row['id'])) continue;
