@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>طراحی، توسعه و سئوی وب با AI — مطالعه موردی: آریاشاپ</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+<style>
+:root{
+  --bg0:#081226; --bg1:#0c1e3e; --ink:#eaf2fd; --mut:#9fb4d4; --dim:#6c83a8;
+  --blue:#3b82f6; --sky:#60a5fa; --deep:#1d4ed8; --glass:rgba(255,255,255,.055);
+  --edge:rgba(140,180,240,.22); --good:#34d399; --warn:#fbbf24;
+  --r1:4px; --r2:8px; --r4:16px; --full:9999px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:Vazirmatn,Tahoma,sans-serif; color:var(--ink); overflow:hidden;
+  background:
+    radial-gradient(1100px 600px at 85% -10%, rgba(59,130,246,.16), transparent 60%),
+    radial-gradient(900px 500px at 5% 110%, rgba(14,165,233,.12), transparent 55%),
+    linear-gradient(160deg,var(--bg0),var(--bg1));
+}
+#deck{position:fixed;inset:0;display:grid;place-items:center}
+.slide{
+  width:min(96vw, calc(96vh * 16 / 9)); aspect-ratio:16/9;
+  display:none; position:relative; padding:clamp(18px,3.2vw,48px) clamp(20px,3.6vw,56px);
+  background:linear-gradient(180deg,rgba(11,23,48,.35),rgba(8,16,34,.55));
+  border:1px solid var(--edge); border-radius:22px;
+  box-shadow:0 24px 80px rgba(2,8,24,.55), inset 0 1px 0 rgba(255,255,255,.06);
+  overflow:hidden;
+}
+.slide.on{display:block;animation:in .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes in{from{opacity:0;transform:translateY(14px) scale(.99)}}
+.slide::after{content:"";position:absolute;inset:auto 0 0 0;height:4px;
+  background:linear-gradient(90deg,var(--deep),var(--sky) 60%,transparent)}
+.kicker{display:inline-flex;align-items:center;gap:.5em;font-size:clamp(11px,1.05vw,15px);
+  color:#bfe0ff;background:rgba(59,130,246,.14);border:1px solid rgba(96,165,250,.35);
+  padding:.35em 1em;border-radius:var(--full);font-weight:700}
+.dot{width:.5em;height:.5em;border-radius:var(--full);background:var(--sky);display:inline-block;
+  box-shadow:0 0 12px var(--sky)}
+h1{font-weight:900;font-size:clamp(21px,2.9vw,44px);line-height:1.45;margin:.55em 0 .15em;letter-spacing:-.01em}
+.sub{color:var(--mut);font-size:clamp(12px,1.25vw,19px);line-height:2}
+.cols{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(14px,2.2vw,36px);margin-top:clamp(10px,1.6vh,22px);align-items:stretch}
+@media(max-aspect-ratio:1/1){.cols{grid-template-columns:1fr}}
+ul.pts{list-style:none;display:grid;gap:clamp(6px,1.15vh,14px)}
+ul.pts li{position:relative;padding-inline-start:1.5em;color:#dbe8fb;
+  font-size:clamp(12px,1.28vw,19px);line-height:1.95}
+ul.pts li::before{content:"";position:absolute;inset-inline-start:0;top:.85em;width:.55em;height:.55em;
+  border-radius:var(--r1);background:linear-gradient(135deg,var(--blue),var(--sky))}
+ul.pts b{color:#fff}
+ul.pts .mut{color:var(--mut)}
+/* —— visual panel (mockups) —— */
+.visual{border:1px solid var(--edge);border-radius:var(--r4);background:rgba(6,14,30,.5);
+  display:grid;place-items:center;padding:clamp(10px,1.4vw,22px);min-height:0;overflow:hidden}
+.browser{width:100%;max-width:560px;background:#0a1730;border:1px solid rgba(140,180,240,.28);
+  border-radius:12px;overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.45);font-size:clamp(8px,.9vw,12px)}
+.b-bar{display:flex;align-items:center;gap:.55em;padding:.6em .8em;background:#0d1d3c;border-bottom:1px solid rgba(140,180,240,.2)}
+.b-bar i{width:.8em;height:.8em;border-radius:var(--full);background:rgba(255,255,255,.16);display:inline-block}
+.b-bar i:first-child{background:#f43f5e}.b-bar i:nth-child(2){background:var(--warn)}.b-bar i:nth-child(3){background:var(--good)}
+.b-bar b{margin-inline-start:auto;color:var(--dim);font-weight:500;direction:ltr}
+.b-body{padding:.9em;display:grid;gap:.6em}
+.row{display:grid;gap:.5em}
+.c4{grid-template-columns:repeat(4,1fr)}.c3{grid-template-columns:repeat(3,1fr)}.c2{grid-template-columns:repeat(2,1fr)}
+.mini{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);border-radius:8px;
+  padding:.55em;display:grid;gap:.4em}
+.mini .img{height:2.6em;border-radius:6px;background:linear-gradient(135deg,rgba(59,130,246,.5),rgba(14,165,233,.22))}
+.mini .l{height:.55em;border-radius:var(--full);background:rgba(255,255,255,.22)}
+.mini .l.s{width:55%}.mini .price{height:.7em;width:42%;background:rgba(96,165,250,.55);border-radius:var(--full)}
+.mini .price.off{background:rgba(244,63,94,.4)}
+.tagchip{display:inline-block;padding:.15em .6em;border-radius:var(--full);background:rgba(59,130,246,.2);
+  border:1px solid rgba(96,165,250,.35);color:#cfe5ff;font-size:.85em}
+.glassp{background:rgba(13,29,60,.92);border:1px solid rgba(96,165,250,.4);border-radius:12px;padding:.7em}
+.map{position:relative;height:100%;min-height:6.5em;border-radius:10px;overflow:hidden;
+  background:
+   repeating-linear-gradient(0deg,transparent 0 22px,rgba(255,255,255,.05) 22px 23px),
+   repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,255,255,.05) 22px 23px),
+   linear-gradient(135deg,#0b2447,#0a1a36)}
+.map .pin{position:absolute;left:50%;top:45%;transform:translate(-50%,-50%);width:1.5em;height:1.5em;
+  background:var(--sky);border-radius:60% 60% 60% 0;rotate:-45deg;box-shadow:0 0 0 6px rgba(96,165,250,.18)}
+.serp{max-width:560px;width:100%;display:grid;gap:.8em}
+.serp .res{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1em 1.2em;text-align:start}
+.serp .u{color:#7dd3fc;font-size:clamp(9px,.95vw,13px)}
+.serp .t{color:#bfdbfe;font-weight:800;font-size:clamp(13px,1.5vw,21px);margin:.25em 0}
+.serp .d{color:var(--mut);font-size:clamp(10px,1.05vw,14px);line-height:1.9}
+.serp .marks{display:flex;gap:.5em;flex-wrap:wrap;margin-top:.5em}
+.loop{display:flex;align-items:center;gap:.9em;flex-wrap:wrap;justify-content:center}
+.loop .node{background:rgba(59,130,246,.14);border:1px solid rgba(96,165,250,.4);border-radius:14px;
+  padding:.8em 1.1em;text-align:center;min-width:6.2em}
+.loop .node b{display:block;font-size:clamp(12px,1.35vw,19px)}
+.loop .node span{color:var(--mut);font-size:clamp(9px,.95vw,13px)}
+.loop .ar{color:var(--sky);font-size:clamp(14px,1.8vw,26px)}
+.chips{display:flex;flex-wrap:wrap;gap:.5em}
+.check{display:grid;grid-template-columns:auto 1fr;gap:.35em 1em;color:#d7e6fa}
+.check i{color:var(--good);font-style:normal}
+.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:.7em;width:100%}
+.stat{background:rgba(59,130,246,.1);border:1px solid rgba(96,165,250,.3);border-radius:14px;padding:1em .6em;text-align:center}
+.stat b{font-size:clamp(20px,2.6vw,38px);display:block;color:#b9dbff}
+.stat span{color:var(--mut);font-size:clamp(9px,1vw,14px)}
+.stack{display:grid;gap:.55em;width:100%;max-width:520px}
+.stack .lyr{display:flex;align-items:center;gap:.8em;background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:.65em .95em}
+.stack .lyr i{width:.9em;height:.9em;border-radius:3px;background:var(--sky);flex:none}
+.stack .lyr b{font-size:clamp(11px,1.2vw,16px)}
+.stack .lyr span{margin-inline-start:auto;color:var(--dim);font-size:clamp(9px,.95vw,13px)}
+.devices{display:flex;align-items:flex-end;gap:1em;justify-content:center}
+.dev{border:2px solid rgba(140,180,240,.35);border-radius:12px;background:rgba(10,23,48,.85);padding:.5em}
+.dev .scr{display:grid;gap:.3em}
+.dev .cell{height:1.5em;border-radius:5px;background:rgba(96,165,250,.18);border:1px solid rgba(96,165,250,.25)}
+.dev.ph{width:4.2em}.dev.ph .scr{grid-template-columns:1fr 1fr}
+.dev.tb{width:7em}.dev.tb .scr{grid-template-columns:repeat(3,1fr)}
+.dev.ds{width:11em}.dev.ds .scr{grid-template-columns:repeat(4,1fr)}
+.small{font-size:clamp(10px,1vw,14px);color:var(--dim);text-align:center;margin-top:.6em}
+/* chrome */
+#bar{position:fixed;inset-inline:0;bottom:0;height:4px;background:rgba(255,255,255,.08);z-index:9}
+#bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--blue),var(--sky));transition:width .3s ease}
+#hud{position:fixed;bottom:12px;inset-inline-start:50%;transform:translateX(50%);display:flex;gap:8px;align-items:center;
+  background:rgba(9,20,42,.85);border:1px solid var(--edge);border-radius:var(--full);padding:6px 14px;z-index:9;
+  font-size:12.5px;backdrop-filter:blur(10px)}
+#hud button{all:unset;cursor:pointer;padding:3px 12px;border-radius:var(--full);color:#d9e9ff;
+  background:rgba(59,130,246,.2);border:1px solid rgba(96,165,250,.35);font:inherit;transition:.18s}
+#hud button:hover{background:rgba(59,130,246,.45)}
+#num{color:var(--mut);min-width:64px;text-align:center}
+#notes{position:fixed;inset-block:auto 52px;inset-inline:6vw 6vw;max-height:38vh;overflow:auto;display:none;z-index:8;
+  background:rgba(9,20,42,.96);border:1px solid rgba(96,165,250,.4);border-radius:16px;padding:18px 26px;
+  color:#cfe0f5;line-height:2.15;font-size:14.5px;backdrop-filter:blur(10px)}
+#notes b{color:#9cc8ff}
+#fulltext{position:fixed;inset:0;z-index:20;background:rgba(5,11,24,.97);overflow:auto;display:none;
+  padding:6vh 8vw 12vh}
+#fulltext article{max-width:820px;margin:auto;display:grid;gap:2.2em}
+#fulltext h2{color:#a9cdff;font-size:1.2em;margin-bottom:.4em;border-inline-start:4px solid var(--blue);padding-inline-start:.6em}
+#fulltext p{line-height:2.3;color:#d7e4f6;font-size:1.02em}
+#fulltext .close{position:fixed;top:16px;inset-inline-end:22px}
+.overview .slide{display:none}
+/* cover extras */
+.cover{display:grid;place-items:center;height:100%;text-align:center}
+.cover h1{font-size:clamp(26px,3.9vw,58px);margin:.35em 0 .25em}
+.cover .who{color:var(--dim);margin-top:1.4em;font-size:clamp(11px,1.15vw,16px)}
+.cover .ring{position:absolute;border:1px solid rgba(96,165,250,.16);border-radius:50%}
+.float{position:absolute;background:rgba(13,29,60,.8);border:1px solid rgba(96,165,250,.35);
+  border-radius:12px;padding:.5em 1em;font-size:clamp(10px,1.05vw,15px);color:#c9defc;
+  box-shadow:0 10px 30px rgba(2,10,28,.5)}
+@media print{
+  body{background:#fff}
+  #hud,#bar,#notes{display:none!important}
+  #deck{position:static}
+  .slide{display:block!important;width:100%;height:66vw;page-break-after:always;border:none;box-shadow:none;background:#fff;color:#111}
+  .slide h1,.slide .sub,ul.pts li,.loop .node span,.serp .d,.stat span,.stack .lyr span,.float{color:#222}
+}
+</style>
+</head>
+<body>
+<div id="deck">
+
+<!-- 1 ─────────────── -->
+<section class="slide on">
+  <div class="cover" style="position:relative">
+    <div class="ring" style="width:70%;aspect-ratio:1;top:8%;inset-inline-start:-20%"></div>
+    <div class="ring" style="width:55%;aspect-ratio:1;bottom:-16%;inset-inline-end:-14%"></div>
+    <div class="float" style="top:16%;inset-inline-start:7%">خانه · فروشگاه · بلاگ</div>
+    <div class="float" style="bottom:22%;inset-inline-end:7%">پنل مدیریت · ۱۰ صفحه</div>
+    <div class="float" style="top:24%;inset-inline-end:13%">سئو: متا، اسکیما، بلاگ</div>
+    <div class="float" style="bottom:17%;inset-inline-start:12%">۱۲ تست · صفر خطا</div>
+    <div>
+      <span class="kicker"><span class="dot"></span>طراحی · توسعه · سئو با هوش مصنوعی</span>
+      <h1>آریاشاپ<br><span style="font-size:.62em;color:#a9cbf7">مطالعه موردی یک فروشگاه واقعی، از سیستم طراحی تا استقرار</span></h1>
+      <p class="sub">ارائهٔ ۱۰ دقیقه‌ای — سه نگاه: چطور طراحی شد، چطور ساخته و سئو شد، AI کجای این مسیر بود</p>
+      <div class="who">[نام ارائه‌دهنده] — حوزهٔ طراحی و توسعهٔ وب و سئو با AI</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>بریف و مسیر کار</span>
+  <h1>هر پروژه از یک بریف شروع می‌شود — و AI در شش ایستگاه کنار کار بود</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>بریف آریا:</b> فروشگاه فارسیِ راست‌به‌چپ که روی هاست اشتراکیِ ارزان اجرا شود، پنل مدیریت کامل، لایهٔ امنیت و سئوی واقعی داشته باشد</li>
+      <li><b>روش کار:</b> نوشتن یکباره نه؛ شکستن بریف به <b>شش تکر</b> — هر تکر: پرامپت مشخص → پیاده‌سازی → تست در مرورگر → ممیزی امنیتی AI → تکر بعد</li>
+      <li>خروجی هر ایستگاه را با نمونهٔ زندهٔ آریا می‌بینید: <span class="mut">طراحی → مهندسی → ریسپانسیو → سئوی فنی → سئوی محتوا → کیفیت</span></li>
+      <li>در پایان، یک <b>تور زنده</b> از محیط سایت و پنل و بعد جمع‌بندی با عددها</li>
+    </ul>
+    <div class="visual">
+      <div class="loop">
+        <div class="node"><b>پژوهش و بریف</b><span>تحلیل رقبا با AI</span></div><div class="ar">‹</div>
+        <div class="node"><b>سیستم طراحی</b><span>Figma → توکن</span></div><div class="ar">‹</div>
+        <div class="node"><b>مهندسی UI</b><span>رندر + کش</span></div>
+      </div>
+      <div class="loop" style="margin-top:1.2em">
+        <div class="node"><b>سئو</b><span>میدان + محتوا</span></div><div class="ar">‹</div>
+        <div class="node"><b>امنیت</b><span>ممیزی AI</span></div><div class="ar">‹</div>
+        <div class="node"><b>تست و استقرار</b><span>E2E + ویزارد</span></div>
+      </div>
+      <div class="small">شش ایستگاه خط تولید — AI در همه، تصمیم‌ها مال من</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>نگاه اول: طراحی</span>
+  <h1>اول سیستم را می‌سازم، بعد صفحه را</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>سیستم طراحی از SDS (فیگما):</b> فاصله‌ها از واحد پایهٔ ۴/۸ — کارت‌ها ۱۶، تنفس بخش‌ها ۲۴</li>
+      <li><b>مقیاس گردی ۴ قدم:</b> کوچک برای برچسب، ۸ برای ورودی، ۱۶ برای کارت، تمام‌گرد برای دکمه‌ها</li>
+      <li><b>سایه‌های لایه‌ای:</b> حالت عادی سایهٔ سبک، هاور سایهٔ عمیق‌تر — عمق واقعی، نه تزئین</li>
+      <li><b>پالت:</b> سرمه‌ایِ تیره + یک خانوادهٔ آبی؛ رنگ در UI فروشگاهی وظیفه‌اش جلب توجه است نه تزئین</li>
+      <li><b>تایپوگرافی:</b> وزیرمتن با ارقام فارسی — قیمت و تاریخ شمسی نیتیو</li>
+      <li><b>RTL یک تصمیم معماری است،</b> نه یک صفت: گریدها، بنر کاروسل، توست‌ها و شیت موبایل همه راست‌به‌چپ متولد شده‌اند</li>
+      <li>میکروجزئیات حرفه‌ای: حلقهٔ فوکوس ۲پیکسلی، حالت‌های hover، بسته‌شدن با سوایپ، نقطکِ چت <b>بدون عدد</b></li>
+    </ul>
+    <div class="visual">
+      <div style="width:100%;max-width:520px;display:grid;gap:.7em">
+        <div class="glassp">
+          <div style="font-weight:800;margin-bottom:.4em">کارت محصول — یک نمونه از سیستم</div>
+          <div class="c4 row">
+            <div class="mini"><div class="img"></div><div class="l"></div><div class="price off"></div><span class="tagchip">٪۲۰−</span></div>
+            <div class="mini"><div class="img"></div><div class="l"></div><div class="price"></div></div>
+            <div class="mini"><div class="img"></div><div class="l s"></div><div class="price"></div></div>
+            <div class="mini" style="display:grid;place-items:center;border-style:dashed;background:transparent">
+              <span class="tagchip">فاصله ۱۶ · گردی ۱۶</span></div>
+          </div>
+        </div>
+        <div class="glassp" style="display:flex;gap:.6em;align-items:center;flex-wrap:wrap">
+          <span style="font-size:.8em;color:var(--mut)">پالت:</span>
+          <i style="width:2em;height:2em;border-radius:6px;background:#081226;border:1px solid var(--edge)"></i>
+          <i style="width:2em;height:2em;border-radius:6px;background:#0c1e3e;border:1px solid var(--edge)"></i>
+          <i style="width:2em;height:2em;border-radius:6px;background:var(--deep)"></i>
+          <i style="width:2em;height:2em;border-radius:6px;background:var(--blue)"></i>
+          <i style="width:2em;height:2em;border-radius:6px;background:var(--sky)"></i>
+          <span style="margin-inline-start:auto" class="tagchip">سایهٔ لایه‌ای در هاور</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>نگاه دوم: مهندسی</span>
+  <h1>ساده‌سازی، تا روی هر هاستی زنده بماند</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>صفر ابزار بیلد:</b> HTML/CSS/JS خالص + تیلویند — کپی فایل روی هاست = دیپلوی کامل</li>
+      <li><b>موتور رندر سبک:</b> با هر تغییر وضعیت صفحه بازسازی می‌شود، بدون پرش اسکرول؛ کرسر و متنِ در حال تایپ حفظ می‌شود</li>
+      <li><b>بک‌اند تک‌پرونده‌ای (PHP):</b> نشست، توکن CSRF، محدودیت نرخ، سقف حجم درخواست — با سیاست دسترسی برای هر جدول</li>
+      <li><b>دیتابیس قفل موتور نیست:</b> SQLite / MySQL / PostgreSQL / SQL Server + اتصال API به cPanel، DirectAdmin، Plesk با ویزارد نصب</li>
+      <li><b>حالت آفلاین:</b> کل اپ با IndexedDB مرورگر کار می‌کند؛ بعداً دوطرفه با سرور هم‌سان می‌شود</li>
+      <li><b>قیمت سفارش سمت سرور محاسبه می‌شود</b> — نه اعتماد به مرورگر؛ یعنی ضددست‌کاری و درست‌ثبت‌شده</li>
+    </ul>
+    <div class="visual">
+      <div class="stack">
+        <div class="lyr"><i></i><b>مرورگر — UI</b><span>HTML · CSS · JS · Tailwind</span></div>
+        <div class="lyr" style="text-align:center;padding:.1em;border:none;color:var(--sky)">▼</div>
+        <div class="lyr"><i></i><b>API واحد PHP</b><span>Session · CSRF · Rate-limit</span></div>
+        <div class="lyr" style="text-align:center;padding:.1em;border:none;color:var(--sky)">▼</div>
+        <div class="lyr"><i></i><b>موتور دیتابیس</b><span>SQLite · MySQL · PostgreSQL · SQL Server</span></div>
+        <div class="lyr" style="text-align:center;padding:.1em;border:none;color:var(--sky)">▼</div>
+        <div class="lyr"><i></i><b>پنل میزبان</b><span>cPanel · DirectAdmin · Plesk</span></div>
+        <div class="glassp" style="margin-top:.4em"><span class="tagchip">+ لایهٔ آفلاین: IndexedDB ⇄ هم‌سانی خودکار</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>نگاه دوم: ریسپانسیو و میکرو اینتراکشن</span>
+  <h1>یک کد، سه چهره — و سرعتی که به نفع سئو است</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>موبایل‌فرست:</b> گرید ۲ ستون موبایل ← ۳ تبلت ← ۴ دسکتاپ</li>
+      <li><b>سایدبار پنل ادمین در موبایل تبدیل به شیت پایین کشویی می‌شود</b> — همان الگوی ناوبری اپ‌ها</li>
+      <li>بنرها: اسکرول لمسی + درگ ماوس + اسنپ به کارت؛ توست‌ها پشته‌ای با حذف سوایپی</li>
+      <li>مودال‌ها سقف ارتفاع ۹۰٪ ویوپورت با اسکرول داخلی — هیچ فرمی از صفحه بیرون نمی‌زند</li>
+      <li><b>این مستقیماً به نمرهٔ موبایل‌فرست گوگل تبدیل می‌شود:</b> پیمانهٔ لمسی مناسب، کیبورد عددیِ درست برای هر فیلد، بدون زوم اجباری</li>
+    </ul>
+    <div class="visual">
+      <div class="devices">
+        <div class="dev ph"><div class="scr"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i></div></div>
+        <div class="dev tb"><div class="scr"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i></div></div>
+        <div class="dev ds"><div class="scr"><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i><i class="cell"></i></div></div>
+      </div>
+      <div class="small">۲ ← ۳ ← ۴ ستون — همان کامپوننت‌ها، همان توکن‌ها</div>
+      <div class="chips" style="justify-content:center;margin-top:1em">
+        <span class="tagchip">LCP سبک — بدون باندل سنگین</span>
+        <span class="tagchip">تنها یک فایل HTML</span>
+        <span class="tagchip">تصاویر Lazy-load</span>
+        <span class="tagchip">فونت بهینه</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>نگاه سوم: سئوی فنی و On-Page</span>
+  <h1>سئو یک افزودنی نیست — در پنل ساخته شده</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li>برای هر محصول/صفحه در پنل: <b>عنوان سئو، متا دیسکریپشن، کلمات کلیدی، اسلاگ تمیز، کانونیکال و دستور robots</b></li>
+      <li><b>پیش‌نمایش شبکه‌ای درست:</b> فیلدهای جداگانهٔ Open Graph و Twitter Card برای هر صفحه</li>
+      <li><b>داده ساختاریافته:</b> JSON-LD قابل‌ویرایش برای محصول + ریس‌کرumble‌های نشانه‌گذاری‌شده برای درک سلسله‌مراتب توسط گوگل</li>
+      <li><b>HTML سمانتیک:</b> یک h1 در هر صفحه، سلسله‌مراتب درست، تگ‌های واقعیِ nav/article، alt تصاویر</li>
+      <li><b>سرعت به‌عنوان رتبه‌فاکتور:</b> خروجی سبک، API سبک، Lazy-load، کش آفلاین — Core Web Vitals در حالت ایده‌آل</li>
+      <li>فلسفهٔ من: <b>ابزار باید طوری ساخته شود که سئو را بشکند نه اینکه متن اضافه بنویسد</b> — همهٔ این میدان‌ها واقعی، اعتبارسنجی و تست‌شونده‌اند</li>
+    </ul>
+    <div class="visual">
+      <div class="serp">
+        <div class="res">
+          <div class="u">aryashop.ir › headphone › arya-studio-x</div>
+          <div class="t">هدفون استودیویی آریا | قیمت: ۲٬۴۵۰٬۰۰۰ تومان</div>
+          <div class="d">⭐ ۴.۸ از  · ۱۴ نظر — موجود · ارسال سریع · ۷ روز مرجوعی</div>
+          <div class="marks"><span class="tagchip">Rich Result: Review</span><span class="tagchip">Price</span><span class="tagchip">Availability</span></div>
+        </div>
+        <div class="res">
+          <div class="u">aryashop.ir › blog</div>
+          <div class="t">راهنمای انتخاب هدفون مناسب — وبلاگ آریا</div>
+          <div class="d">محتوای تخصصی تیم آریا · تازه‌سازی مداوم با ویرایشگر پنل</div>
+        </div>
+      </div>
+      <div class="small">همین نتیجه را میدان‌های سئوی پنل می‌سازند — نه افزونه</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>نگاه سوم: سئوی محتوا</span>
+  <h1>بلاگ، موتور ترافیک قیف محتوایی است</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>کلمهٔ کلیدی قیف اطلاعاتی:</b> کسی که «راهنمای خرید هدفون» را جست‌وجو می‌کند مشتری فرداست — بلاگ آریا دقیقاً برای همین است</li>
+      <li><b>تازه‌سازی:</b> انتشار از پنل یک کلیک است؛ سیگنال سایت زنده برای موتور</li>
+      <li><b>عمق محتوا:</b> بلوک رسانهٔ درشت (تصویر تمام‌عرض/نصف/یک‌سوم، ویدیو، iframe با زیرنویس و تراز) — زمان ماندگاری بالاتر</li>
+      <li><b>لینک داخلی هدفمند:</b> مقالهٔ بلاگ → صفحهٔ محصول؛ بخش «مقاله محصولات» در هر صفحهٔ محصول؛ ریز‌لینگ از دسته به خانه — حلقه بسته</li>
+      <li><b>سیاست محتوا سمت سرور:</b> پیش‌نویس هرگز در ایندکس نمی‌افتد؛ یعنی کنترل کامل انتشار از پنل با تست خودکارِ پوششی</li>
+    </ul>
+    <div class="visual">
+      <div style="width:100%;max-width:540px;display:grid;gap:.8em">
+        <div class="glassp row c3">
+          <div class="mini"><div class="img"></div><div class="l"></div><div class="l s"></div></div>
+          <div class="mini"><div class="img"></div><div class="l"></div><div class="l s"></div></div>
+          <div class="mini"><div class="img"></div><div class="l"></div><div class="l s"></div></div>
+        </div>
+        <div style="text-align:center;color:var(--sky);font-size:1.3em">▼ صفحهٔ مقاله با بلوک رسانه</div>
+        <div class="glassp row">
+          <div class="mini" style="height:5.5em;display:grid;place-items:center"><span class="tagchip">تصویر تمام‌عرض</span></div>
+          <div class="row c2"><div class="mini" style="height:3.4em;display:grid;place-items:center"><span class="tagchip">نیمه — راست</span></div>
+          <div class="mini" style="height:3.4em;display:grid;place-items:center"><span class="tagchip">ویدیو/iframe</span></div></div>
+        </div>
+        <div class="chips" style="justify-content:center">
+          <span class="tagchip">لینک به محصول ۱</span><span class="tagchip">لینک به محصول ۲</span><span class="tagchip">→ دسته‌بندی</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>AI در خط تولید</span>
+  <h1>حلقهٔ «پرامپت → پیاده‌سازی → ممیزی» — شش تکر</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>طراحی:</b> بریف + قیدها به AI؛ خروجی: نگاشت سیستم طراحی به توکن‌های CSS — من انتخاب و چیدمان کردم</li>
+      <li><b>مهندسی:</b> ماژول‌به‌ماژول (سفارش، نشست، بلاگ…)؛ هر تکر با بازبینی امنیتی AI — حقن، جعل شناسه، دست‌کاری قیمت و موجودی</li>
+      <li><b>تست:</b> AI نویسندهٔ تست‌های مخرب است؛ ۱۲۰ تست سرتاسری متنی که در بیلد اجرا می‌شود؛ من همه را بازبینی کردم</li>
+      <li><b>محتوا و سئو:</b> پیش‌نویس مقالات محصول و بلاگ، تولید انبوه متا و alt و داده ساختاریافته — ویرایش نهایی مال من</li>
+      <li><b>قاعدهٔ حرفه‌ای:</b> <b>AI پیشنهاد می‌دهد، من تصمیم می‌گیرم.</b> هیچ خروجی AI بدون مرور انسانی کاشته نمی‌شود</li>
+      <li>نتیجه: کل پروژه — طراحی، کد، محتوا، امنیت، تست — در چند روز؛ روشی که خودِ آریا برایش ساخته شده</li>
+    </ul>
+    <div class="visual">
+      <div class="loop">
+        <div class="node"><b>پرامپت</b><span>بریف مشخص + قیدها</span></div><div class="ar">‹</div>
+        <div class="node" style="border-color:rgba(96,165,250,.7)"><b>AI می‌سازد</b><span>کد/محتوا/تست</span></div><div class="ar">‹</div>
+        <div class="node"><b>ممیزی انسانی</b><span>تصمیم من</span></div>
+      </div>
+      <div style="text-align:center;color:var(--sky);font-size:1.6em;margin:.5em 0">⟲</div>
+      <div class="loop">
+        <div class="node" style="border-color:rgba(251,191,36,.5)"><b>تست خودکار</b><span>E2E در هر تکر</span></div><div class="ar">‹</div>
+        <div class="node" style="border-color:rgba(52,211,153,.5)"><b>فیکس در همان تکر</b><span>حلقهٔ بسته</span></div>
+      </div>
+      <div class="small">AI معکوس‌گر سرعت است، نه میان‌بُر کیفیت — اصلِ کار من</div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>کیفیت و امنیت</span>
+  <h1>سایتی که اعتماد نمی‌شکند، فروش هم نمی‌شکند</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li>ورود سه‌مرحله‌ای: رمز ← کد یکبارمصرف پیامک/ایمیل ← نشست کوکیِ HttpOnly+SameSite + توکن CSRF</li>
+      <li>ثبت‌نام = <b>ورود خودکار</b> به پنل؛ تغییر رمز با احراز OTP و ابطال بقیه دستگاه‌ها</li>
+      <li><b>وایت‌لیست فیلدها:</b> فیلد ناشناخته ذخیره نمی‌شود — ارتقای نقش با تزریق ممکن نیست</li>
+      <li>قیمت و موجودی سمت سرور · محدودیت نرخ OTP · رد بدنهٔ حجیم با ۴۱ · لاگ بدون اطلاعات هویتی</li>
+      <li><b>۱۲۰ تست سرتاسری روی API واقعی، صفر خطا</b> — امنیت نصف دیگر نقش AI: ممیزِ همیشگی</li>
+    </ul>
+    <div class="visual">
+      <div class="glassp" style="width:100%;max-width:520px">
+        <div class="check" style="gap:.5em 1em">
+          <i>✓</i><span>ورود/تغییر رمز OTP + ابطال سشن</span>
+          <i>✓</i><span>CSRF روی هر درخواست نوشتن</span>
+          <i>✓</i><span>محاسبهٔ مالی سمت سرور</span>
+          <i>✓</i><span>سیاست رمز عبور (رد ضعیف/تکراری)</span>
+          <i>✓</i><span>Rate-Limit روی کدها و لاگین</span>
+          <i>✓</i><span>وایت‌لیست فیلدها + پاک‌سازی ورودی</span>
+          <i>✓</i><span>سیاست دسترسی جدول‌ها (بلاگ، کاربران)</span>
+        </div>
+        <div class="stat4" style="margin-top:1em">
+          <div class="stat"><b>۱۲۰</b><span>تست E2E</span></div>
+          <div class="stat"><b>۰</b><span>خطا</span></div>
+          <div class="stat"><b>۶</b><span>تکر AI</span></div>
+          <div class="stat"><b>۴</b><span>موتور DB</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>تور زنده</span>
+  <h1>محیط سایت را قدم‌به‌قدم می‌بینیم</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>فروشگاه:</b> خانه با بنر فقط-تخفیف‌دارها → کارت محصول: گالری/لایت‌باکس، مقالهٔ محصول، نظرات → افزودن به سبد و چک‌اوت با گزینه‌های ارسال و نقشهٔ آدرس</li>
+      <li><b>پنل کاربر:</b> ثبت‌نام → ورود خودکار → سفارشات/لغو با دلیل → تب امنیت: جریان OTP تغییر رمز</li>
+      <li><b>بلاگ:</b> فهرست و مقالهٔ نمونه + یادآوریِ سیاستِ پیش‌نویس/منتشر</li>
+      <li><b>پنل مدیریت:</b> فرم تمام‌صفحهٔ محصول با فیلدهای سئو → تنظیمات ارسال مبدأ روی نقشه → ویرایشگر بلاگ با بلوک رسانه → صفحهٔ دیتابیس و آمار</li>
+      <li>هرچه در این اسلایدها دیدید، <b>همین‌جا واقعی و قابل‌کلیک</b> است</li>
+    </ul>
+    <div class="visual">
+      <div class="browser">
+        <div class="b-bar"><i></i><i></i><i></i><b>aryashop.ir/#product</b></div>
+        <div class="b-body">
+          <div class="row c3" style="grid-template-columns:1.6fr 1fr">
+            <div class="mini" style="gap:.5em"><div class="img" style="height:7em"></div>
+              <div style="display:flex;gap:.4em"><span class="tagchip">◀ ▶</span><span class="tagchip">۲ / ۵</span><span class="tagchip">Esc</span></div>
+            </div>
+            <div class="glassp row">
+              <div class="l"></div><div class="l s"></div>
+              <div class="price" style="width:60%"></div>
+              <span class="tagchip" style="justify-self:start">افزودن به سبد 🛒</span>
+              <span class="tagchip" style="justify-self:start;background:rgba(52,211,153,.12);border-color:rgba(52,211,153,.4)">✓ سمانتیک: h1 + JSON-LD</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="small">نمونه از محیط زنده — اسکرول‌ها، کلیک‌ها، نقشه‌ها همه فعال</div>
+    </div>
+  </div>
+</section>
+
+<!-- 11 ─────────────── -->
+<section class="slide">
+  <span class="kicker"><span class="dot"></span>جمع‌بندی</span>
+  <h1>روش مهم‌تر از پروژه است — و عددها حرف می‌زنند</h1>
+  <div class="cols">
+    <ul class="pts">
+      <li><b>طراحی با سیستم</b> (توکن‌های SDS روی پالت اختصاصی) → <b>مهندسی با پیچیدگی صفر</b> (بدون بیلد، تک‌API، چندنویسه) → <b>سئوی ساختاریافته</b> (پنل‌محور، نه افزودنی) → <b>AI به‌عنوان ضریب</b> در طراحی/کد/محتوا/ممیزی</li>
+      <li>آریا اثبات عملی همین روش است: یک فروشگاه واقعی که هم به طراح خوش می‌آید، هم به سئوکار، هم بهOps</li>
+      <li>سؤالات؟ — و اگر بخواهید، همین حالا یک سفارش واقعی در محیط زنده ثبت می‌کنم</li>
+    </ul>
+    <div class="visual">
+      <div class="stat4" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat"><b>۱۰</b><span>صفحه پنل مدیریت</span></div>
+        <div class="stat"><b>۱۲۰</b><span>تست موفق</span></div>
+        <div class="stat"><b>۴</b><span>موتور دیتابیس</span></div>
+        <div class="stat"><b>۳</b><span>پنل هاست متصل</span></div>
+        <div class="stat"><b>۰</b><span>وابستگی بیلد</span></div>
+        <div class="stat"><b>۶</b><span>تکر با AI</span></div>
+      </div>
+      <div class="small" style="margin-top:1.4em">ممنون که وقت گذاشتید — [نام شما] · طراحی و توسعهٔ وب و سئو با AI</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<div id="notes"></div>
+<div id="fulltext"><button class="btn tagchip close" onclick="toggleFull(false)">بستن (T)</button><article id="ft"></article></div>
+<div id="hud">
+  <button onclick="go(-1)">قبلی ›</button><span id="num"></span><button onclick="go(1)">‹ بعدی</button>
+  <button onclick="toggleNotes()" title="N">متن گفتار (N)</button>
+  <button onclick="toggleFull()" title="T">متن کامل (T)</button>
+  <button onclick="overview=!overview;document.body.classList.toggle('ov',overview)" title="O">نمای کلی (O)</button>
+</div>
+<div id="bar"><i id="prog"></i></div>
+
+<style>
+  body.ov{overflow:auto;background:#060d1e}
+  body.ov #deck{position:static;display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:20px}
+  body.ov .slide{display:block!important;width:100%;height:56.25vw}
+  body.ov .slide.on{outline:2px solid var(--blue)}
+</style>
+
+<script>
+const NOTES = [
+`اسلاید ۱ — شروع (≈۴۵ ثانیه)
+سلام. حوزهٔ کاری من طراحی و توسعهٔ وب‌سایت و سئو با هوش مصنوعی است و چیزی که این ده دقیقه می‌بینید یک قالب یا موکاپ نیست؛ یک فروشگاه واقعی و درحال‌اجراست به نام «آریا». کل این پروژه — از طراحی و مهندسی تا محتوا، سئو و تست — با کمک AI ساخته شده و من می‌خواهم آن را با سه نگاه توضیح بدهم: نگاه طراح، نگاه مهندس، و نگاه سئوکار؛ و در هر سه، بگویم AI دقیقاً کجا نشسته بود. نقشهٔ ده دقیقه: اول مسیر کار و بریف، بعد طراحی، مهندسی، ریسپانسیو، سئوی فنی، سئوی محتوا، نقش AI، امنیت و کیفیت؛ بعد یک تور زنده از محیط سایت و پنل، و در آخر جمع‌بندی با عددها.`,
+`اسلاید ۲ — بریف و مسیر کار (≈۶۰ ثانیه)
+هر پروژه‌ای با بریف شروع می‌شود. بریف آریا این بود: یک فروشگاه کاملاً فارسیِ راست‌به‌چپ که روی ارزان‌ترین هاست اشتراکی قابل اجرا باشد، پنل مدیریت کامل داشته باشد، و امنیت و سئو در آن تزئینی نباشند. روش من در کار با AI هیچ‌وقت «یک پرامپت بده و کل سایت را تحویل بگیر» نبوده؛ بریف را به شش تکر شکستم و هر تکر یک حلقهٔ کوچک داشت: پرامپت مشخص، پیاده‌سازی توسط AI، تست در مرورگر، ممیزی امنیتی مجدد توسط AI، و بعد تکر بعد. این خط تولید شش ایستگاه داشت: پژوهش، سیستم طراحی، مهندسی UI، سئوی فنی، سئوی محتوا، و تست و استقرار. از اینجا به بعد خروجیِ هر ایستگاه را با نمونهٔ زنده آریا نشان می‌دهم.`,
+`اسلاید ۳ — طراحی (≈۷۵ ثانیه)
+در طراحی، اولین حرکت من ساختن «سیستم» است نه صفحه. برای آریا یک سیستم طراحی بازمتن را مبنا قرار دادم که مقیاس‌های فاصله، گردی و سایه‌اش استاندارد است: فاصله‌ها از واحد پایهٔ چهار و هشت می‌آیند — شانزده برای چیدمان کارت‌ها و بیست‌وچهار برای تنفس بین بخش‌ها؛ گردی‌ها چهار مرحله‌اند؛ سایه‌ها لایه‌ای‌اند — کارت در حالت عادی سایهٔ سبک و در هاور عمیق‌تر، که همان حس عمق واقعی را می‌دهد. پالت رنگ را محدود کردم: سرمه‌ای تیره با یک خانوادهٔ آبی؛ در رابط فروشگاهی رنگ وظیفه دارد، تزیین نه. تایپوگرافی وزیرمتن است با ارقام فارسی — قیمت‌ها و تاریخ‌ها نیتیو فارسی خوانده می‌شوند. راست‌به‌چپ را از روز اول در معماری گذاشتم: گریدها، بنر کاروسل، توست‌ها، حتی شیت پایین موبایل همه RTL زاده شده‌اند نه چرخانده. میکروجزئیات همان‌جا حرفه‌ای بودن را می‌سازد: حلقهٔ فوکوس دوپیکسلی برای کاربر کیبوردی، حالت‌های هاور، بسته‌شدن توست با سوایپ، و دکمهٔ چت که برای اطلاع‌رسانی عدد نشانک را حذف کرده و فقط یک نقطک پالس‌دار گذاشته — تصمیمی کوچک با اثر روانی بزرگ.`,
+`اسلاید ۴ — مهندسی (≈۶۵ ثانیه)
+سمت مهندسی، تصمیم کلیدی «ساده‌سازی» بود. سایت هیچ ابزار بیلدی ندارد: HTML، CSS و جاوااسکریپت خالص با تیلویند. یک موتور رندر سبک روی state قرار دارد؛ با هر تغییر، صفحه بازسازی می‌شود بدون این‌که اسکرول بپرد یا متنِ در حال تایپ کاربر از دست برود — این را تست‌ها هم پوشش می‌دهند. سمت سرور عملاً یک فایل PHP است که همهٔ درخواست‌ها از همان یک در وارد می‌شوند: مدیریت نشست، توکن CSRF، محدودیت نرخ روی کدها و لاگین، سقف حجم درخواست؛ و یک سیاست دسترسی که مشخص می‌کند هر جدول را چه نقشی می‌تواند بخواند یا بنویسد. دیتابیس به یک موتور قفل نیست — SQLite، MySQL/MariaDB، PostgreSQL و SQL Server — با ویزارد نصب و اتصال مستقیم به API پنل‌های cPanel و DirectAdmin و Plesk که ساخت دیتابیس را خودکار می‌کند. و یکی از نقاط عطف مهندسی، حالت آفلاین است: اگر سرور نصب نشده باشد کل سایت با IndexedDB مرورگر کار می‌کند و بعداً دوطرفه هم‌سان می‌شود. نکتهٔ مهم مالی را هم اضافه کنم: قیمت نهایی سفارش هرگز در مرورگر حساب نمی‌شود؛ سرور دوباره محاسبه می‌کند، پس دست‌کاری فریمورک‌دولت‌تولز بی‌اثر است.`,
+`اسلاید ۵ — ریسپانسیو (≈۵۰ ثانیه)
+رویکرد موبایل‌فرست است: همان گریدِ کارت‌ها در موبایل دو ستون، در تبلت سه و در دسکتاپ چهار ستونه می‌شود. مهم‌ترین حرکتِ ریسپانسیو در پنل مدیریتی است: سایدبارِ ثابتِ دسکتاپ در موبایل تبدیل می‌شود به شیتِ پایینِ کشویی؛ یعنی ناوبری پنل روی گوشی دقیقاً الگوی اپ‌ها را دارد. بنرها اسکرول لمسی با درگ ماوس و اسنپ‌شدن به هر کارت دارند؛ توست‌ها پشته‌ای‌اند و با سوایپ حذف می‌شوند؛ هیچ مودالی از صفحه بیرون نمی‌زند چون سقف ارتفاع نود درصد ویوپورت با اسکرول داخلی دارد. فرم‌ها برای لمس ساخته شده‌اند: هدف‌های چهل‌وچهار پیکسلی و کیبورد عددیِ درست برای فیلدهای عددی. و اینجاست که ریسپانسیو به سئو وصل می‌شود: گوگل موبایل‌فرست ایندکس است؛ خروجیِ تک‌فایلِ سبک با JS حداقلی، تصویر Lazy و فونت بهینه یعنی LCP و CWV سبز، بدون این‌که حتی یک افزونهٔ بهینه‌سازی نصب کرده باشم.`,
+`اسلاید ۶ — سئوی فنی (≈۷۵ ثانیه)
+نگاه سومِ من، سئو — و در آریا سئو یک افزودنی نیست؛ در خود پنل ساخته شده. برای هر محصول و صفحه این میدان‌ها در فرم پنل وجود دارد: عنوان سئو، متا دیسکریپشن، کلمات کلیدی، اسلاگ تمیز، canonical و دستور robots؛ جدا از آن‌ها فیلدهای Open Graph و Twitter Card که پیش‌نمایش لینک در شبکه‌های اجتماعی را درست می‌سازند. داده ساختاریافته: برای هر محصول می‌توان JSON-LD ویرایش کرد — قیمت، موجودی، امتیاز — تا گوگل Rich Result بگیرد؛ مسیرهای هدایت‌کرده هم markup می‌شوند تا سلسله‌مراتب دسته‌بندی‌ها واضح باشد. HTML سمانتیک واقعی است: یک h1 در هر صفحه، سلسله‌مراتب درست، تگ‌های واقعی nav و article، alt تصاویر. و در پس‌زمینه، همان سبک‌سازی فنی: یک فایل، صفر باندل، API سبک، کش آفلاین. فلسفه‌ام در یک جمله است: سایت را طوری بساز که سئو «نتواند» بشکند — نه این‌که متن سئو‌شده بنویسی و امیدوار باشی؛ این میدان‌ها همه اعتبارسنجی می‌شوند و در تست‌های خودکار هم پوشش دارند.`,
+`اسلاید ۷ — سئوی محتوا (≈۶۰ ثانیه)
+صفحات محصول به‌تنهایی ترافیک نمی‌سازند؛ محتواست که دم بلند جست‌وجوها را می‌گیرد. آریا یک وبلاگ کامل با جدول اختصاصی و ویرایشگر قدرتمند دارد و از نگاه سئو سه کار روی دوشش است: اول، هدف‌گیری کلمات کلیدی قیف اطلاعاتی — کسی که «راهنمای انتخاب هدفون» را جست‌وجو می‌کند مشتریِ فرداست؛ دوم، تازه‌سازی — انتشار از پنل یک کلیک است و سیگنال سایتِ زنده به موتور می‌رسد؛ سوم، عمق محتوا — ویرایشگر بلوک‌های رسانهٔ درشت دارد: تصویر با عرض کامل/نصف/یک‌سوم و تراز و زیرنویس، ویدیو با پخش‌کنندهٔ داخلی، یا iframe. صفحهٔ ماندگاری بالا می‌سازد و engagement را به‌طور غیرمستقیم بالا می‌برد. حلقهٔ لینک داخلی بسته است: مقاله به محصول لینک می‌دهد، در هر صفحهٔ محصول بخشی به نام «مقالهٔ محصول» هست که همان راهنمای خرید کامل است، دسته‌ها به خانه و همه به هم. و یک نکتهٔ فنی: سیاست «پیش‌نویس فقط در پنل» سمت سرور اعمال می‌شود — یعنی پیش‌نویس هرگز نمی‌تواند در ایندکس بیفتد، و این رفتار با تست خودکار قفل شده است.`,
+`اسلاید ۸ — AI در خط تولید (≈۷۵ ثانیه)
+این اسلاید، خلاصهٔ حرفِ حرفه‌ای من است: AI کجای کار بود؟ مدل من حلقهٔ سه‌مرحله‌ای است: پرامپت، پیاده‌سازی توسط AI، ممیزی انسانی — و این شش بار تکرار شد. در طراحی، بریف و قیدها را به AI دادم — راست‌به‌چپ، پالت محدود، لیست کامپوننت‌ها — و خروجی، نگاشت سیستم طراحی به توکن‌های CSS بود؛ انتخاب و چیدمان نهایی مال من بود. در مهندسی، ماژول‌به‌ماژول پیش رفتیم — سبد، سفارش، نشست، بلاگ — و در هر تکر AI خودش را ممیزی می‌کرد: حقن، جعل شناسه‌ها، دست‌کاری قیمت و موجودی، تزریق فیلدِ نقش. اینجاست که AI نقش دومش را پیدا می‌کند: نه سازنده، که ممیز. در تست، صد‌وبیست تست سرتاسری را AI نوشت و من بازبینی کردم — ورودی‌های مخرب، سناریوهای واقعی کاربر. در محتوا و سئو، پیش‌نویس مقالات محصول و پست‌های وبلاگ با AI نوشته شد و ویرایش و لحن نهایی مال من بود؛ تولید انبوه متا، alt و داده ساختاریافته را هم AI انجام داد. یک قاعدهٔ بی‌قیدوشرط دارم: AI پیشنهاد می‌دهد، من تصمیم می‌گیرم — هیچ خروجی AI بدون مرور انسانی در پروژه جا نمی‌شود؛ و نتیجه‌اش این شد که کل این پروژه در چند روز بسته شد، جایی که روش سنتی هفته‌ها طول می‌داد.`,
+`اسلاید ۹ — امنیت و کیفیت (≈۵۰ ثانیه)
+یک جمله در مورد پروژه‌های واقعی: سایتی که فروش را نبندد قابل اصلاح است؛ سایتی که اعتماد را نبندد، قابل اعتماد نیست. در آریا ورود کاربر سه‌مرحله‌ای است: رمز، بعد کد یکبارمصرف پیامکی یا ایمیلی با انقضا و سقف تلاش، بعد نشست با کوکی HttpOnly و SameSite و توکن CSRF روی هر نوشتن. ثبت‌نام بلافاصله ورود خودکار به پنل است و تغییر رمز بدون تأیید هویت OTP انجام نمی‌شود؛ بعدش همهٔ دستگاه‌های دیگر ابطال می‌شوند. فیلدهای ورودی وایت‌لیست‌اند، پس تزریق فیلدی مثل «مدیر» بی‌اثر است؛ قیمت و موجودی سمت سرور محاسبه و قفل می‌شود؛ بدنهٔ حجیم با ۴۱ رد می‌شود تا سرور نبندد؛ و در لاگ هیچ رمز یا اطلاعات هویتی ثبت نمی‌شود. کیفیت را هم عدد می‌دهم: صد‌وبیست تست سرتاسری روی API واقعی با صفر خطا در آخرین اجرا — همین تست‌ها نیمی‌شان حمله‌های شبیه‌سازی‌شده‌اند.`,
+`اسلاید ۱۰ — تور زنده (≈۷۰ ثانیه)
+حالا به جای اسلاید، خودِ محیط را قدم می‌زنم. خانه: هدر شیشه‌ای چسبان، بنرِ فقط محصولات تخفیف‌دار، شبکهٔ دسته‌بندی‌ها. یک محصول باز می‌کنم: گالری با لایت‌باکس کیبورد-محور، بخش «مقاله محصول»، امتیاز و نظرات، افزودن به سبد. به سبد و چک‌اوت می‌روم: گزینه‌های ارسال را مدیر در پنل تعریف کرده، فاصلهٔ آدرس تا مبدأ از نقشه محاسبه می‌شود، و آدرس را با انتخاب روی نقشه می‌نویسم. یک حساب تازه می‌سازم — و نکته: بلافاصله لاگین‌شده وارد پنل می‌شود. در پنل کاربر: سفارشات و لغو با دلیل اجباری، و تب امنیت با جریان کامل OTP تغییر رمز. یک تیکت پشتیبانی باز می‌کنم: پاسخ مدیر در پنل، همان‌جا در گفت‌وگو می‌نشیند و روی چت فقط یک نقطک اطلاع می‌بینید، نه عدد. حالا بلاگ: فهرست با کارت‌ها و یک مقالهٔ کامل با بلوک رسانه. و پنل مدیریت: فرم محصول صفحه‌ای است با تمام میدان‌های سئو؛ تنظیمات ارسال با نقشهٔ مبدأ؛ ویرایشگر بلاگ با بلوک‌های تصویر/ویدیو/iframe؛ صفحهٔ اختصاصی دیتابیس با آمار و خروجی SQL. هرچه دیدید واقعی است — موکاپ نبود.`,
+`اسلاید ۱۱ — جمع‌بندی (≈۴۵ ثانیه)
+جمع‌بندی من از این ارائه یک جمله است: روش، مهم‌تر از پروژه است. طراحی با سیستم، مهندسی با پیچیدگی صفر، سئوی ساختاریافته در ابزار، و AI نه به‌عنوان میان‌بُر، که به‌عنوان ضریبِ سرعت در طراحی، توسعه، محتوا، سئو و ممیزی. آریا اثباتِ عملیِ همین روش است — عددهایش روی صفحه: ده صفحه پنل مدیریت، صد‌وبیست تست با صفر خطا، چهار موتور دیتابیس، سه اتصال پنل هاست، صفر وابستگی بیلد، شش تکرِ طراحی‌شده با AI. ممنون که وقت گذاشتید؛ سؤال اگر هست در خدمتم — و اگر بخواهید همین حالا یک سفارش واقعی در محیط زنده ثبت می‌کنم تا کل مسیر تا پنل ادمین را با هم ببینیم.`
+];
+const slides=[...document.querySelectorAll('.slide')];
+const fa=n=>String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[+d]);
+let i=0, notesOn=false, overview=false;
+const notes=document.getElementById('notes'), prog=document.getElementById('prog'), num=document.getElementById('num');
+function paint(){
+  slides.forEach((s,k)=>s.classList.toggle('on',k===i&&!overview));
+  prog.style.width=((i+1)/slides.length*100)+'%';
+  num.textContent=`${fa(i+1)} / ${fa(slides.length)}`;
+  notes.innerHTML='<b>متن گفتار — اسلاید '+fa(i+1)+' —</b><br>'+NOTES[i].split('\n')[1];
+  history.replaceState(null,'','#'+(i+1));
+}
+function go(d){i=Math.min(slides.length-1,Math.max(0,i+d));paint();}
+function toggleNotes(){notesOn=!notesOn;notes.style.display=notesOn?'block':'none';}
+function toggleFull(v){
+  const el=document.getElementById('fulltext');
+  const show = v===undefined ? el.style.display!=='block' : v;
+  if(show&&!el.dataset.built){el.querySelector('#ft').innerHTML=NOTES.map(t=>{
+    const [h,...rest]=t.split('\n');return '<div><h2>'+h+'</h2><p>'+rest.join(' ').replace(/«/g,'«').replace(/</g,'&lt;')+'</p></div>';}).join('');el.dataset.built=1;}
+  el.style.display=show?'block':'none';
+}
+addEventListener('keydown',e=>{
+  if(e.key==='Escape'){toggleFull(false);if(notesOn)toggleNotes();return;}
+  if(e.target.tagName==='TEXTAREA')return;
+  if(['ArrowRight','ArrowDown',' ','PageUp'].includes(e.key))go(1);
+  else if(['ArrowLeft','ArrowUp','PageDown'].includes(e.key))go(-1);
+  else if(e.key==='Home'){i=0;paint()}
+  else if(e.key==='End'){i=slides.length-1;paint()}
+  else if(e.key.toLowerCase()==='n')toggleNotes();
+  else if(e.key.toLowerCase()==='t')toggleFull();
+});
+let x0=null;
+addEventListener('touchstart',e=>x0=e.touches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{if(x0==null)return;const dx=e.changedTouches[0].clientX-x0;
+  if(Math.abs(dx)>60)go(dx<0?1:-1);x0=null;},{passive:true});
+slides.forEach(s=>s.addEventListener('click',e=>{if(overview||e.target.closest('button'))return;go(1);}));
+const h=parseInt(location.hash.slice(1),10);if(h>=1&&h<=slides.length)i=h-1;
+paint();
+</script>
+</body>
+</html>
