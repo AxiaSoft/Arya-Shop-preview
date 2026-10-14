@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05070f">
-<title>طراحی، توسعه و سئوی وب با AI — آریاشاپ | آریین علوی</title>
+<title>طراحی، توسعه و سئوی وب با AI — آریاشاپ | آرین علوی</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%233b82f6'/><text x='32' y='42' font-size='30' text-anchor='middle' fill='white' font-family='sans-serif'>آ</text></svg>">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
@@ -40,6 +40,13 @@ body::before{
   animation:drift 22s var(--ease) infinite alternate}
 .orb.a{width:44vmax;height:44vmax; top:-18vmax; right:-12vmax; background:radial-gradient(circle,rgba(59,130,246,.35),transparent 65%)}
 .orb.b{width:36vmax;height:36vmax; bottom:-16vmax; left:-10vmax; background:radial-gradient(circle,rgba(56,189,248,.26),transparent 65%); animation-delay:-11s}
+.orb.c{width:26vmax;height:26vmax; top:44%; left:32%; background:radial-gradient(circle,rgba(56,189,248,.15),transparent 62%); animation:drift2 34s var(--ease) infinite alternate; opacity:.4}
+.aur{position:fixed; z-index:0; pointer-events:none; border-radius:44% 56% 62% 38%/48% 42% 58% 52%; filter:blur(70px); will-change:transform; mix-blend-mode:screen}
+.aur.a1{inset-block-start:-42vmax; inset-inline-end:-24vmax; width:78vmax; height:78vmax; background:conic-gradient(from 0deg,rgba(59,130,246,.15),rgba(56,189,248,.08),transparent 38%,rgba(29,78,216,.13),transparent 74%,rgba(96,165,250,.10)); animation:spin 74s linear infinite}
+.aur.a2{inset-block-end:-46vmax; inset-inline-start:-20vmax; width:60vmax; height:60vmax; background:conic-gradient(from 180deg,rgba(29,78,216,.12),transparent 30%,rgba(56,189,248,.10),transparent 60%,rgba(59,130,246,.12)); animation:spin 92s linear infinite reverse}
+@keyframes spin{to{rotate:360deg}}
+@keyframes drift2{to{transform:translate3d(5vmax,-5vmax,0) scale(1.12)}}
+@media (prefers-reduced-motion:reduce){.orb.c,.aur{animation:none}}
 @keyframes drift{to{transform:translate3d(-4vmax,4vmax,0) scale(1.08)}}
 
 /* ═══ slides: full viewport, fluid, never clipped ═══ */
@@ -178,10 +185,10 @@ ul.pts .mut{color:var(--mut)}
 @media (max-width:760px),(max-height:560px){.float{display:none}.cover{min-height:0}}
 
 /* ═══ chrome ═══ */
-#topbar{position:fixed;top:0;inset-inline:0;height:3px;z-index:40;background:rgba(148,187,255,.1)}
+#topbar{position:fixed;top:0;inset-inline:0;height:3px;z-index:55;background:rgba(148,187,255,.1)}
 #topbar i{display:block;height:100%;width:0;background:var(--grad);transition:width .45s var(--ease);box-shadow:0 0 14px rgba(96,165,250,.8)}
 #hud{position:fixed;bottom:max(10px,env(safe-area-inset-bottom));inset-inline:0;margin-inline:auto;width:max-content;max-width:96vw;
-  display:flex;gap:6px;align-items:center;z-index:40;padding:6px 10px;border-radius:99px;
+  display:flex;gap:6px;align-items:center;z-index:60;padding:6px 10px;border-radius:99px;
   background:rgba(8,14,30,.72);border:1px solid var(--hair2);backdrop-filter:blur(14px) saturate(1.3);
   box-shadow:0 14px 44px rgba(0,0,0,.5);font-size:clamp(10.5px,1.05vw,13px)}
 #hud button{all:unset;cursor:pointer;padding:5px clamp(8px,1vw,13px);border-radius:99px;color:#d9e9ff;font:inherit;
@@ -189,13 +196,15 @@ ul.pts .mut{color:var(--mut)}
 #hud button:hover{background:rgba(59,130,246,.4);transform:translateY(-1px)}
 #hud button.act{background:rgba(59,130,246,.5);border-color:var(--c1)}
 #num{color:var(--mut);min-width:52px;text-align:center;font-weight:700;border:0;background:none!important}
+#clk{color:var(--dim);font-size:.92em;min-width:44px;text-align:center;font-variant-numeric:tabular-nums;padding:0 2px}
+@media (max-width:860px){#clk{display:none}}
 #dots{display:flex;gap:5px;align-items:center;padding:0 4px}
 #dots b{width:7px;height:7px;border-radius:99px;background:rgba(148,187,255,.25);cursor:pointer;transition:.25s var(--ease)}
 #dots b.on{background:var(--c1);width:20px;box-shadow:0 0 10px rgba(96,165,250,.7)}
 @media (max-width:860px){#dots{display:none}#hud .lbl{display:none}#hud{gap:4px;padding:5px 8px}}
-#notes{position:fixed;inset-inline:0;bottom:0;z-index:41;max-height:44vh;overflow:auto;display:none;
+#notes{position:fixed;inset-inline:0;bottom:0;z-index:44;max-height:40vh;overflow:auto;display:none;
   background:rgba(7,13,28,.95);border-top:1px solid var(--hair2);backdrop-filter:blur(18px);
-  padding:18px max(20px,4vw) calc(24px + env(safe-area-inset-bottom))}
+  padding:16px max(20px,4vw) calc(76px + env(safe-area-inset-bottom))}
 #notes.on{display:block}
 #notes b{color:#9cc8ff;font-size:14px}
 #notes .t{color:#d9e7fb;line-height:2.1;font-size:14.5px;margin-top:6px;max-width:900px}
@@ -295,7 +304,8 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
 </style>
 </head>
 <body>
-<div class="orb a"></div><div class="orb b"></div>
+<div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+<div class="aur a1"></div><div class="aur a2"></div>
 <div id="topbar"><i id="prog"></i></div>
 <canvas id="fx" aria-hidden="true"></canvas>
 <section class="slide on" data-n="۰۱">
@@ -310,12 +320,12 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       <p class="sub">ارائهٔ ۱۰ دقیقه‌ای با سه نگاه: طراح، مهندس، سئوکار — و نقش AI در تمام مسیر</p>
       <div class="meta">
         <div class="m hl"><small>نام درس</small><b>برنامه‌نویسی مبتنی بر وب</b></div>
-        <div class="m"><small>ارائه‌دهنده</small><b>آریین علوی</b></div>
+        <div class="m"><small>ارائه‌دهنده</small><b>آرین علوی</b></div>
         <div class="m"><small>استاد درس</small><b>جناب آقای خوبی</b></div>
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی — ۱۴۰۵</div>
+  <div class="credit">آرین علوی — ۱۴۰۵</div>
 </section>
 
 <!-- ۲ -->
@@ -345,7 +355,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۳ -->
@@ -385,7 +395,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۴ -->
@@ -414,7 +424,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۵ -->
@@ -446,7 +456,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۶ -->
@@ -481,7 +491,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۷ -->
@@ -515,7 +525,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۸ -->
@@ -547,7 +557,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۹ -->
@@ -582,7 +592,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۱۰ -->
@@ -617,7 +627,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
     </div>
   </div>
-  <div class="credit">آریین علوی</div>
+  <div class="credit">آرین علوی</div>
 </section>
 
 <!-- ۱۱ -->
@@ -629,7 +639,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       <li><b>طراحی با سیستم</b> → <b>مهندسی با پیچیدگی صفر</b> → <b>سئوی ساختاریافته</b> → <b>AI به‌عنوان ضریب</b></li>
       <li>آریا اثباتِ عملیِ همین روش است — هم به طراح خوش می‌آید، هم به سئوکار، هم به Ops</li>
       <li>سؤال؟ — و اگر بخواهید همین حالا یک سفارش واقعی ثبت می‌کنم</li>
-      <li class="mut" style="list-style:none">درس: برنامه‌نویسی مبتنی بر وب · استاد: خوبی · ارائه‌دهنده: آریین علوی</li>
+      <li class="mut" style="list-style:none">درس: برنامه‌نویسی مبتنی بر وب · استاد: خوبی · ارائه‌دهنده: آرین علوی</li>
     </ul>
     <div class="viz">
       <div class="stat4" style="grid-template-columns:repeat(3,1fr)">
@@ -640,12 +650,12 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
         <div class="stat"><b>۰</b><span>وابستگی بیلد</span></div>
         <div class="stat"><b>۶</b><span>تکر با AI</span></div>
       </div>
-      <div class="small" style="margin-top:18px;font-size:14px">ممنون که وقت گذاشتید — <b style="color:#bcd9ff">آریین علوی</b></div>
+      <div class="small" style="margin-top:18px;font-size:14px">ممنون که وقت گذاشتید — <b style="color:#bcd9ff">آرین علوی</b></div>
     </div>
   </div>
-  <div class="credit">آریین علوی — ۱۴۰۵</div>
+  <div class="credit">آرین علوی — ۱۴۰۵</div>
 </section>
-<div class="hint">کلیدها: ‹ › جابه‌جایی · O فهرست · T متن روایت · N یادداشت · F تمام‌صفحه</div>
+<div class="hint">کلیدها: → بعدی · ← قبلی · O فهرست · T متن روایت · N یادداشت · F تمام‌صفحه</div>
 
 <!-- ۱۲ ═══ پایان -->
 <section class="slide" data-n="۱۲">
@@ -662,7 +672,7 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       </div>
       <p class="sub" style="margin-top:clamp(14px,2.6vh,24px);color:#cfe6ff">سوالی هست؟ با کمال میل در خدمتم 🙋</p>
       <div class="chips" style="margin-top:clamp(10px,2vh,18px)">
-        <span class="tagchip">تهیه و اجرا: آریین علوی</span>
+        <span class="tagchip">تهیه و اجرا: آرین علوی</span>
         <span class="tagchip">استاد درس: جناب آقای خوبی</span>
         <span class="tagchip">درس: برنامه‌نویسی مبتنی بر وب</span>
         <span class="tagchip">کد پروژه: Arya-Shop-preview</span>
@@ -670,13 +680,14 @@ h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
       <div class="cue"><span>اسلاید قبل با ‏›‏ — بازگشت به ابتدا با کلید Home</span><i>⌄</i></div>
     </div>
   </div>
-  <div class="credit">آریین علوی — ۱۴۰۵</div>
+  <div class="credit">آرین علوی — ۱۴۰۵</div>
 </section>
 
 <div id="hud">
-  <button id="prev" title="قبلی">›<span class="lbl"> قبلی</span></button>
+  <button id="next" title="بعدی">›<span class="lbl"> بعدی</span></button>
   <span id="num"></span>
-  <button id="next" title="بعدی">‹<span class="lbl"> بعدی</span></button>
+  <button id="prev" title="قبلی">‹<span class="lbl"> قبلی</span></button>
+  <span id="clk"></span>
   <div id="dots"></div>
   <button id="bIdx" title="فهرست اسلایدها">O<span class="lbl"> فهرست</span></button>
   <button id="bTxt" title="متن کامل روایت">T<span class="lbl"> متن</span></button>
@@ -722,7 +733,8 @@ function go(i,smooth){
   [...idxList.children].forEach((b,j)=>b.classList.toggle('cur',j===i));
   history.replaceState(null,'','#'+(i+1));
   animateStats(slides[i]);
-  if(!ftOpen)renderNote();
+  renderNote();
+  if(ftOpen){const t=document.getElementById('ft-sec-'+i);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});}
 }
 const next=()=>{document.body.classList.add('seen');go(cur+1)},prev=()=>go(cur-1);
 for(let i=0;i<N;i++){const d=document.createElement('b');d.onclick=()=>go(i);dots.appendChild(d);}
@@ -742,7 +754,7 @@ let ftOpen=false;
 function buildFT(){
   const w=document.getElementById('ftWrap'); w.innerHTML='';
   NOTES.forEach((t,i)=>{
-    const sec=document.createElement('div');sec.className='sec';
+    const sec=document.createElement('div');sec.className='sec';sec.id='ft-sec-'+i;
     const h=document.createElement('h2');h.textContent=fa(i+1)+' — '+t[0];
     const p=document.createElement('p');p.textContent=t[1];
     sec.appendChild(h);sec.appendChild(p);w.appendChild(sec);
@@ -754,9 +766,9 @@ const closeOv=()=>{ov.classList.remove('on');};
 document.getElementById('bIdx').onclick=()=>ov.classList.contains('on')?closeOv():openOv();
 document.getElementById('idxClose').onclick=closeOv;
 ov.addEventListener('click',e=>{if(e.target===ov)closeOv();});
-document.getElementById('bTxt').onclick=()=>{ftOpen=!ft.classList.contains('on');ft.classList.toggle('on',ftOpen);if(ftOpen){ft.scrollTop=slides[cur].scrollTop;}};
+document.getElementById('bTxt').onclick=()=>{ftOpen=!ft.classList.contains('on');ft.classList.toggle('on',ftOpen);if(ftOpen){notesEl.classList.remove('on');document.getElementById('bNote').classList.remove('act');ft.scrollTop=0;const t=document.getElementById('ft-sec-'+cur);if(t)t.scrollIntoView({block:'start'});}};
 document.getElementById('ftClose').onclick=()=>{ftOpen=false;ft.classList.remove('on');};
-document.getElementById('bNote').onclick=()=>{const on=!notesEl.classList.contains('on');notesEl.classList.toggle('on',on);document.getElementById('bNote').classList.toggle('act',on);renderNote();};
+document.getElementById('bNote').onclick=()=>{const on=!notesEl.classList.contains('on');notesEl.classList.toggle('on',on);document.getElementById('bNote').classList.toggle('act',on);if(on){ftOpen=false;ft.classList.remove('on');}renderNote();};
 const bFs=document.getElementById('bFs');
 function tFs(){if(document.fullscreenElement){document.exitFullscreen();}else{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen();}}
 document.addEventListener('fullscreenchange',()=>bFs.classList.toggle('act',!!document.fullscreenElement));
@@ -767,9 +779,8 @@ addEventListener('keydown',e=>{
   if(e.metaKey||e.ctrlKey||e.altKey)return;
   const k=e.key;
   if(k==='Escape'){closeOv();ftOpen=false;ft.classList.remove('on');notesEl.classList.remove('on');document.getElementById('bNote').classList.remove('act');return;}
-  if(ftOpen||ov.classList.contains('on'))return;
-  if(k==='ArrowLeft'||k==='ArrowDown'||k===' '||k==='PageDown'){e.preventDefault();next();}
-  else if(k==='ArrowRight'||k==='ArrowUp'||k==='PageUp'){e.preventDefault();prev();}
+  if(k==='ArrowRight'||k==='ArrowDown'||k===' '||k==='PageDown'){e.preventDefault();next();}
+  else if(k==='ArrowLeft'||k==='ArrowUp'||k==='PageUp'){e.preventDefault();prev();}
   else if(k==='Home'){e.preventDefault();go(0);}
   else if(k==='End'){e.preventDefault();go(N-1);}
   else if(k==='f'||k==='F'||k==='ف'){tFs();}
@@ -778,9 +789,15 @@ addEventListener('keydown',e=>{
   else if(k==='n'||k==='N'||k==='گ'){document.getElementById('bNote').click();}
 });
 addEventListener('hashchange',()=>{const h=+location.hash.slice(1);if(h>=1&&h<=N)go(h-1);});
+const clk=document.getElementById('clk');
+function tick(){const d=new Date();
+ const p=x=>String(x).padStart(2,'0').replace(/\d/g,m=>FA[+m]);
+ clk.textContent=p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+tick();setInterval(tick,1000);
 let lock=0;
 addEventListener('wheel',e=>{
-  if(ftOpen||ov.classList.contains('on')||notesEl.classList.contains('on'))return;
+  if(ftOpen||ov.classList.contains('on'))return;
+  if(notesEl.classList.contains('on')&&e.target.closest('#notes'))return;
   if(!matchMedia('(min-width:900px) and (pointer:fine)').matches)return;
   const sl=slides[cur]; if(sl.scrollHeight-sl.clientHeight>6)return;
   if(Math.abs(e.deltaY)<24||performance.now()<lock)return;
@@ -841,6 +858,11 @@ function animateStats(sl){
  function loop(t){
   raf=requestAnimationFrame(loop);
   g.clearRect(0,0,W,H);g.globalCompositeOperation='lighter';
+  for(let a=0;a<P.length;a++)for(let b2=a+1;b2<P.length;b2++){
+   const A=P[a],B=P[b2];const dx=(A.x-B.x)*W,dy=(A.y-B.y)*H;const d2=dx*dx+dy*dy;
+   if(d2<16000*dpr*dpr){const al=(1-Math.sqrt(d2)/(40*dpr))*.07;if(al>0){
+    g.strokeStyle='rgba(120,175,255,'+al.toFixed(3)+')';g.lineWidth=dpr*.7;
+    g.beginPath();g.moveTo((A.x+Math.sin(t/2600+A.ph)*.012)*W,A.y*H);g.lineTo((B.x+Math.sin(t/2600+B.ph)*.012)*W,B.y*H);g.stroke();}}}
   for(const p of P){
    p.y-=p.v; if(p.y<-.02){p.y=1.02;p.x=Math.random();}
    const x=(p.x+Math.sin(t/2600+p.ph)*.012)*W, y=p.y*H;
