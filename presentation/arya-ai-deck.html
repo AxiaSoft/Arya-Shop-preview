@@ -243,11 +243,61 @@ ul.pts .mut{color:var(--mut)}
   .cover{min-height:0;height:100%}
   .credit,.slide::after{display:block}
 }
+
+/* ═══ v2 — motion & FX ═══ */
+#fx{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.6}
+@media (prefers-reduced-motion:reduce){#fx{display:none}}
+body::after{content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:0;transition:opacity .8s;
+  background:radial-gradient(540px 540px at var(--mx,50%) var(--my,28%),rgba(59,130,246,.09),transparent 70%)}
+@media (pointer:fine){body.spot::after{opacity:1}}
+@keyframes riseS{from{opacity:0;transform:translateY(24px);filter:blur(8px)}to{filter:none;opacity:1;transform:none}}
+@keyframes pop{from{opacity:0;transform:translateY(15px) scale(.955)}70%{opacity:1}}
+@keyframes ghostIn{from{opacity:0;transform:translateY(34px)}}
+@keyframes lineIn{from{transform:scaleX(0);transform-origin:right}}
+@keyframes shine{from{background-position:200% 0}to{background-position:-200% 0}}
+@keyframes sweep{0%,64%{transform:translateX(-130%)}100%{transform:translateX(130%)}}
+@keyframes dotPulse{50%{box-shadow:0 0 4px rgba(96,165,250,.4)}}
+@keyframes cueBob{50%{transform:translateY(6px)}}
+.slide{transition:opacity .45s var(--ease),transform .45s var(--ease),visibility 0s .45s}
+@media (min-width:901px){
+  .slide{transition:opacity .45s var(--ease),transform .45s var(--ease),filter .45s var(--ease),visibility 0s .45s}
+  .slide:not(.on){filter:blur(5px)}
+}
+.slide.on .kicker{animation:riseS .6s var(--ease) both;animation-delay:.02s}
+.slide.on h1{animation:riseS .7s var(--ease) both;animation-delay:.09s}
+.slide.on .cols,.slide.on .cover{animation:riseS .8s var(--ease) both;animation-delay:.16s}
+.slide.on .chips{animation:riseS .7s var(--ease) both;animation-delay:.4s}
+.slide.on::before{animation:ghostIn 1s .05s var(--ease) both}
+.slide.on::after{animation:lineIn .9s .3s var(--ease) both}
+[data-anim]{--base:.22s}
+.slide.on [data-anim]{animation:pop .6s var(--ease) both;animation-delay:calc(var(--base) + var(--i,0)*.07s)}
+.kicker{position:relative;overflow:hidden}
+.kicker::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(110deg,transparent 32%,rgba(255,255,255,.2) 50%,transparent 68%);
+  transform:translateX(-130%);animation:sweep 4.2s var(--ease) 1.2s infinite}
+h1 .hl{background-size:220% 100%;animation:shine 5.5s linear infinite}
+#topbar i{position:relative}
+#topbar i::after{content:"";position:absolute;top:-2px;inset-inline-end:0;width:7px;height:7px;border-radius:99px;
+  background:#cfe6ff;box-shadow:0 0 12px var(--c1),0 0 30px rgba(96,165,250,.55)}
+#dots b.on{animation:dotPulse 2.2s ease-in-out infinite}
+.cue{position:absolute;inset-inline:0;bottom:clamp(6px,1.6vh,14px);display:grid;justify-items:center;gap:2px;
+  color:var(--dim);font-size:clamp(10.5px,.92vw,12.5px);pointer-events:none}
+.cue i{font-style:normal;font-size:17px;color:var(--c1);animation:cueBob 1.8s ease-in-out infinite;line-height:1}
+.cover{padding-bottom:34px}
+.end .stat4{margin-inline:auto}
+.end .stat{cursor:default}
+.stat b{font-variant-numeric:tabular-nums}
+.glassp,.serp .res,.mini,.node,.lyr,.check,.stat,.meta .m{transition:.28s var(--ease)}
+.serp .res:hover,.node:hover,.stat:hover,.lyr:hover{box-shadow:0 10px 34px -10px rgba(59,130,246,.4)}
+@media (max-width:900px){.slide{justify-content:flex-start}}
+@media print{#fx,body::after,.cue{display:none!important}.slide.on>*{animation:none!important}}
+
 </style>
 </head>
 <body>
 <div class="orb a"></div><div class="orb b"></div>
 <div id="topbar"><i id="prog"></i></div>
+<canvas id="fx" aria-hidden="true"></canvas>
 <section class="slide on" data-n="۰۱">
   <div class="cover">
     <div class="float" style="top:15%;inset-inline-start:6%">خانه · فروشگاه · بلاگ</div>
@@ -597,6 +647,32 @@ ul.pts .mut{color:var(--mut)}
 </section>
 <div class="hint">کلیدها: ‹ › جابه‌جایی · O فهرست · T متن روایت · N یادداشت · F تمام‌صفحه</div>
 
+<!-- ۱۲ ═══ پایان -->
+<section class="slide" data-n="۱۲">
+  <div class="cover end">
+    <div>
+      <span class="kicker"><span class="d"></span>پایان ارائه</span>
+      <h1><span class="hl">ممنون که همراه بودید</span></h1>
+      <p class="sub">آریاشاپ از یک بریف تا محصولی زنده — طراحی، مهندسی، سئو و کیفیت؛ با هم‌کاری هوش مصنوعی و تصمیم انسانی</p>
+      <div class="stat4" style="max-width:min(100%,660px);margin:clamp(16px,3.4vh,30px) auto 0">
+        <div class="stat"><b>۱۲۰</b><span>تست موفق E2E</span></div>
+        <div class="stat"><b>۰</b><span>وابستگی بیلد</span></div>
+        <div class="stat"><b>۱۰</b><span>صفحهٔ پنل مدیریت</span></div>
+        <div class="stat"><b>۶</b><span>تکر با AI</span></div>
+      </div>
+      <p class="sub" style="margin-top:clamp(14px,2.6vh,24px);color:#cfe6ff">سوالی هست؟ با کمال میل در خدمتم 🙋</p>
+      <div class="chips" style="margin-top:clamp(10px,2vh,18px)">
+        <span class="tagchip">تهیه و اجرا: آریین علوی</span>
+        <span class="tagchip">استاد درس: جناب آقای خوبی</span>
+        <span class="tagchip">درس: برنامه‌نویسی مبتنی بر وب</span>
+        <span class="tagchip">کد پروژه: Arya-Shop-preview</span>
+      </div>
+      <div class="cue"><span>اسلاید قبل با ‏›‏ — بازگشت به ابتدا با کلید Home</span><i>⌄</i></div>
+    </div>
+  </div>
+  <div class="credit">آریین علوی — ۱۴۰۵</div>
+</section>
+
 <div id="hud">
   <button id="prev" title="قبلی">›<span class="lbl"> قبلی</span></button>
   <span id="num"></span>
@@ -645,19 +721,21 @@ function go(i,smooth){
   [...dots.children].forEach((d,j)=>d.classList.toggle('on',j===i));
   [...idxList.children].forEach((b,j)=>b.classList.toggle('cur',j===i));
   history.replaceState(null,'','#'+(i+1));
+  animateStats(slides[i]);
   if(!ftOpen)renderNote();
 }
-const next=()=>go(cur+1),prev=()=>go(cur-1);
+const next=()=>{document.body.classList.add('seen');go(cur+1)},prev=()=>go(cur-1);
 for(let i=0;i<N;i++){const d=document.createElement('b');d.onclick=()=>go(i);dots.appendChild(d);}
-NOTES.forEach((nt,i)=>{
-  const li=nt[0];
-  const b=document.createElement('button');b.innerHTML='<b>'+fa(i+1)+'</b><i></i>';
-  b.querySelector('i').textContent=titles[i]; b.onclick=()=>{go(i);closeOv();};
+slides.forEach((sl,i)=>{
+  const b=document.createElement('button');b.innerHTML='<b></b><i></i>';
+  b.querySelector('b').textContent=fa(i+1);
+  b.querySelector('i').textContent=(NOTES[i]&&NOTES[i][0])?NOTES[i][0]:titles[i];
+  b.onclick=()=>{go(i);closeOv();};
   idxList.appendChild(b);
 });
 function renderNote(){
   if(!notesEl.classList.contains('on'))return;
-  const t=NOTES[cur]; notesEl.innerHTML='<b>یادداشت اسلاید '+fa(cur+1)+' — '+t[0]+'</b><div class="t"></div>';
+  const t=NOTES[cur]; if(!t){notesEl.innerHTML='<b>پایان — اسلایدهای ۱ تا ۱۱ روایت کامل دارند</b>';return;} notesEl.innerHTML='<b>یادداشت اسلاید '+fa(cur+1)+' — '+t[0]+'</b><div class="t"></div>';
   notesEl.querySelector('.t').textContent=t[1];
 }
 let ftOpen=false;
@@ -717,6 +795,65 @@ addEventListener('touchend',e=>{
   const sl=slides[cur];
   if(dy>0){if(sl.scrollTop<=1)prev();}else{if(sl.scrollTop+sl.clientHeight>=sl.scrollHeight-1)next();}
 },{passive:true});
+
+/* ── v2 motion engine ── */
+const RM=matchMedia('(prefers-reduced-motion:reduce)').matches;
+(function stagger(){
+ const groups={'.pts li':'.15s','.serp .res':'.2s','.node':'.2s','.stat':'.24s','.tagchip':'.3s','.lyr':'.18s','.dev':'.26s','.float':'.35s','.meta .m':'.3s','.mini':'.28s','.check>span':'.3s','.stack .lyr':'.18s'};
+ slides.forEach(sl=>{for(const k in groups){sl.querySelectorAll(k).forEach((el,i)=>{el.setAttribute('data-anim','');el.style.setProperty('--i',i);el.style.setProperty('--base',groups[k]);});}});
+})();
+const PFA={};for(let x=0;x<10;x++)PFA[FA[x]]=x;
+function animateStats(sl){
+ if(RM)return;
+ sl.querySelectorAll('.stat b').forEach(el=>{
+  const txt=el.textContent.trim();
+  if(!txt||[...txt].some(ch=>PFA[ch]===undefined)){el.textContent=el.dataset.orig||txt;return;}
+  el.dataset.orig=el.dataset.orig||txt;
+  const target=[...txt].reduce((a,ch)=>a*10+PFA[ch],0);
+  if(el._raf)cancelAnimationFrame(el._raf);
+  const t0=performance.now(),dur=850+Math.random()*300;
+  const step=t=>{const p=Math.min(1,(t-t0)/dur),e=1-Math.pow(1-p,3);
+    el.textContent=String(Math.round(target*e)).replace(/\d/g,d=>FA[+d]);
+    if(p<1){el._raf=requestAnimationFrame(step);}else{el._raf=0;el.textContent=el.dataset.orig;}};
+  el._raf=requestAnimationFrame(step);
+ });
+}
+(function spotlight(){
+ if(!matchMedia('(pointer:fine)').matches)return;
+ let q=0;addEventListener('pointermove',e=>{
+  if(q)return;q=requestAnimationFrame(()=>{q=0;
+   document.body.classList.add('spot');
+   document.body.style.setProperty('--mx',e.clientX+'px');
+   document.body.style.setProperty('--my',e.clientY+'px');});
+ },{passive:true});
+})();
+(function particles(){
+ const c=document.getElementById('fx');if(!c||RM)return;
+ const g=c.getContext('2d');const dpr=Math.min(2,window.devicePixelRatio||1);
+ let W=0,H=0,P=[];
+ function sz(){W=c.width=Math.floor(innerWidth*dpr);H=c.height=Math.floor(innerHeight*dpr);
+  c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';}
+ sz();addEventListener('resize',sz);
+ const n=innerWidth<700?26:48;
+ for(let i=0;i<n;i++)P.push({x:Math.random(),y:Math.random(),r:(Math.random()*1.5+.45)*dpr,
+  v:Math.random()*.00045+.00012,ph:Math.random()*6.28,a:Math.random()*.4+.12});
+ let raf=0;
+ function loop(t){
+  raf=requestAnimationFrame(loop);
+  g.clearRect(0,0,W,H);g.globalCompositeOperation='lighter';
+  for(const p of P){
+   p.y-=p.v; if(p.y<-.02){p.y=1.02;p.x=Math.random();}
+   const x=(p.x+Math.sin(t/2600+p.ph)*.012)*W, y=p.y*H;
+   const al=p.a*(.55+.45*Math.sin(t/1400+p.ph*2));
+   g.beginPath();g.fillStyle='rgba(125,180,255,'+al.toFixed(3)+')';
+   g.arc(x,y,p.r,0,6.29);g.fill();
+   g.beginPath();g.fillStyle='rgba(96,165,250,'+(al*.25).toFixed(3)+')';
+   g.arc(x,y,p.r*3.4,0,6.29);g.fill();
+  }
+ }
+ document.addEventListener('visibilitychange',()=>{if(document.hidden){cancelAnimationFrame(raf);raf=0;}else if(!raf)raf=requestAnimationFrame(loop);});
+ raf=requestAnimationFrame(loop);
+})();
 const h0=+location.hash.slice(1);
 go(h0>=1&&h0<=N?h0-1:0);
 </script>
