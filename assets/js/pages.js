@@ -5259,7 +5259,11 @@ window.aryBlogLoad = async function () {
       if (r && r.ok && Array.isArray(r.data)) state.blog = r.data;
     } else if (window.AryaDB && typeof AryaDB.getAll === 'function') {
       const rows = await AryaDB.getAll('blog');
-      if (Array.isArray(rows)) state.blog = rows;
+      if (Array.isArray(rows) && rows.length) state.blog = rows;
+      else if (typeof AryaDB.seedDemoBlog === 'function') {
+        const seeded = await AryaDB.seedDemoBlog();
+        if (Array.isArray(seeded) && seeded.length) state.blog = seeded;
+      }
     }
   } catch (e) { /* بی‌صدا — صفحه حالت خالی را نشان می‌دهد */ }
 };

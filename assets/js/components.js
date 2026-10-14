@@ -414,6 +414,7 @@ window.aryCatIcon = function (cat, extra) {
 
           <button onclick="navigate('home'); toggleMenu();" class="gpt5-drawer-link" type="button">خانه</button>
           <button onclick="navigate('shop'); toggleMenu();" class="gpt5-drawer-link" type="button">فروشگاه</button>
+          <button onclick="navigate('blog'); toggleMenu();" class="gpt5-drawer-link" type="button">بلاگ</button>
 
           <div class="mt-1">
             <button onclick="toggleSidebarCategories()" class="gpt5-drawer-link flex items-center justify-between" type="button">
@@ -521,6 +522,7 @@ window.aryCatIcon = function (cat, extra) {
               <ul class="space-y-3">
                 <li><button onclick="navigate('home')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">صفحه اصلی</button></li>
                 <li><button onclick="navigate('shop')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">فروشگاه</button></li>
+                <li><button onclick="navigate('blog')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">بلاگ</button></li>
                 <li><button onclick="navigate('cart')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">سبد خرید</button></li>
               </ul>
             </div>
