@@ -266,7 +266,20 @@
              .concat(prods.map(function (pr) { return upsert('products', Object.assign({ created_at: stamp }, pr)).catch(function () {}); }))
         );
       }
-      if (typeof toast === 'function') toast('حالت دمو (بدون سرور): کاتالوگ نمونه بارگذاری شد', 'info');
+      // بلاگ دمو: همان JSON مرجع؛ در نبود سرور، IndexedDB و state محلی را سید می‌کند
+      const blogs = Array.isArray(cat.blog) ? cat.blog : [];
+      if (blogs.length) {
+        const rows = blogs.map(function (b) { return Object.assign({}, b, { media: JSON.stringify(b.media || []) }); });
+        state.blog = rows;
+        if (db) {
+          const have = await getAll('blog').catch(function () { return []; });
+          if (!have.length) {
+            await Promise.all(rows.map(function (b) { return upsert('blog', b).catch(function () {}); }));
+          }
+        }
+      }
+
+      if (typeof toast === 'function') toast('حالت دمو (بدون سرور): کاتالوگ نمونه (محصولات + بلاگ) بارگذاری شد', 'info');
     } catch (e) { /* فایل نبود یا آفلاین — فروشگاه خالی می‌ماند */ }
   }
 
