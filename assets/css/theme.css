@@ -9,7 +9,7 @@ html, html[data-aria-theme="dark"] {
   color-scheme: dark;
   --ar-bg0:#0a142c; --ar-bg1:#0e1c3c;
   --ar-surface:#142649; --ar-surface2:#101f40; --ar-sink:rgba(255,255,255,.05);
-  --ar-panel:linear-gradient(180deg,#101f40 0%,#0c1730 100%);
+  --ar-panel:linear-gradient(180deg,rgba(14,28,60,.84) 0%,rgba(10,20,44,.90) 100%);
   --ar-head:linear-gradient(135deg,rgba(37,99,235,.30),rgba(14,165,233,.14));
   --ar-line:rgba(148,187,255,.14); --ar-line2:rgba(148,187,255,.26);
   --ar-ink:#f2f6ff; --ar-ink2:rgba(226,238,255,.84); --ar-ink3:rgba(210,226,250,.62); --ar-ink4:rgba(200,218,245,.42);
@@ -24,12 +24,14 @@ html, html[data-aria-theme="dark"] {
   --ar-sh1:0 1px 2px rgba(2,8,23,.35); --ar-sh2:0 10px 26px -12px rgba(2,10,40,.75); --ar-shpop:0 24px 60px -18px rgba(2,10,40,.85);
   --ar-scrim:rgba(3,10,24,.55); --ar-code:#0b1836; --ar-sel:rgba(59,130,246,.32);
   --ar-sbthumb:rgba(96,165,250,.40);
+  --ar-glass:rgba(15,29,60,.55); --ar-glass2:rgba(11,22,48,.80); --ar-glassbd:rgba(148,187,255,.16);
+  --ar-blur:blur(18px) saturate(1.55); --ar-blur-pop:blur(28px) saturate(1.65);
 }
 html[data-aria-theme="light"] {
   color-scheme: light;
   --ar-bg0:#e9f1fb; --ar-bg1:#f4f8fe;
   --ar-surface:#ffffff; --ar-surface2:#f7fafe; --ar-sink:rgba(19,52,104,.045);
-  --ar-panel:#ffffff;
+  --ar-panel:linear-gradient(180deg,rgba(255,255,255,.80),rgba(244,249,255,.90));
   --ar-head:linear-gradient(135deg,#eaf2ff,#f5f9ff);
   --ar-line:#e3ebf7; --ar-line2:#cfdff2;
   --ar-ink:#122a4e; --ar-ink2:#22406f; --ar-ink3:rgba(18,42,78,.64); --ar-ink4:rgba(18,42,78,.44);
@@ -44,6 +46,8 @@ html[data-aria-theme="light"] {
   --ar-sh1:0 1px 2px rgba(23,51,105,.07); --ar-sh2:0 10px 24px -12px rgba(23,51,105,.22); --ar-shpop:0 24px 56px -18px rgba(23,51,105,.32);
   --ar-scrim:rgba(30,58,105,.34); --ar-code:#f1f6fd; --ar-sel:rgba(59,130,246,.22);
   --ar-sbthumb:rgba(47,111,224,.35);
+  --ar-glass:rgba(255,255,255,.58); --ar-glass2:rgba(255,255,255,.78); --ar-glassbd:rgba(255,255,255,.72);
+  --ar-blur:blur(18px) saturate(1.8); --ar-blur-pop:blur(30px) saturate(1.9);
 }
 
 /* ── ۲) پایه‌ها ── */
@@ -59,26 +63,28 @@ html[data-aria-theme] *::-webkit-scrollbar-thumb { background: var(--ar-sbthumb)
 html[data-aria-theme] *::-webkit-scrollbar-thumb:hover { background-clip: padding-box; }
 html[data-aria-theme] input::placeholder, html[data-aria-theme] textarea::placeholder { color: var(--ar-ink4); }
 
-/* ── ۳) سطوح — جامد در هر دو تم (شیشه فقط هدر) ── */
+/* ── ۳) سطوح — لیکوئید گلس فعال در هر دو تم ── */
 html[data-aria-theme] .glass {
-  background: var(--ar-surface); border: 1px solid var(--ar-line); color: var(--ar-ink);
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  box-shadow: var(--ar-sh1);
+  background: var(--ar-glass); border: 1px solid var(--ar-glassbd); color: var(--ar-ink);
+  backdrop-filter: var(--ar-blur); -webkit-backdrop-filter: var(--ar-blur);
+  box-shadow: var(--ar-sh2);
+  transition: background .3s ease, border-color .3s ease, box-shadow .3s ease;
 }
 html[data-aria-theme] .glass-strong {
-  background: var(--ar-surface); border: 1px solid var(--ar-line2); color: var(--ar-ink);
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
-  box-shadow: var(--ar-sh2);
+  background: var(--ar-glass2); border: 1px solid var(--ar-line2); color: var(--ar-ink);
+  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
+  box-shadow: var(--ar-shpop);
 }
 html[data-aria-theme] .glass-dark {
-  background: var(--ar-surface2); border-color: var(--ar-line); color: var(--ar-ink);
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  background: rgba(7,14,32,.62); border-color: rgba(148,187,255,.16); color: #f2f6ff;
+  backdrop-filter: var(--ar-blur); -webkit-backdrop-filter: var(--ar-blur);
 }
-html[data-aria-theme] .card { background: var(--ar-surface); border: 1px solid var(--ar-line); }
-html[data-aria-theme] .card:hover { border-color: var(--ar-line2); box-shadow: var(--ar-sh2); }
-html[data-aria-theme] .bg-slate-900\/60, html[data-aria-theme] .bg-slate-950\/50, html[data-aria-theme] .bg-slate-950\/60 { background: var(--ar-surface); }
+html[data-aria-theme="light"] .glass-dark { color:#eef4ff; }
+html[data-aria-theme] .card { background: var(--ar-glass); border: 1px solid var(--ar-glassbd); backdrop-filter: var(--ar-blur); -webkit-backdrop-filter: var(--ar-blur); }
+html[data-aria-theme] .card:hover { border-color: var(--ar-line2); box-shadow: var(--ar-shpop); }
+html[data-aria-theme] .bg-slate-900\/60, html[data-aria-theme] .bg-slate-950\/50, html[data-aria-theme] .bg-slate-950\/60 { background: var(--ar-glass2); backdrop-filter: var(--ar-blur); -webkit-backdrop-filter: var(--ar-blur); }
 
-/* هدر — تنها لایهٔ شیشه‌ای */
+/* هدر — شیشهٔ ماتِ درخشان */
 html[data-aria-theme] header.ary-liquid {
   background: var(--ar-frost); border-bottom-color: var(--ar-frostbd);
   backdrop-filter: blur(22px) saturate(1.75) brightness(1.05); -webkit-backdrop-filter: blur(22px) saturate(1.75) brightness(1.05);
@@ -86,7 +92,6 @@ html[data-aria-theme] header.ary-liquid {
 }
 html[data-aria-theme="light"] header.ary-liquid { box-shadow: 0 12px 30px -20px rgba(23,51,105,.35); }
 html[data-aria-theme] header.ary-liquid .glass { background: var(--ar-chip); border-color: var(--ar-chipbd); box-shadow: none; }
-
 /* ── ۴) بازنگاشت ابزارک‌های Tailwind (لوپ‌شده) ── */
 html[data-aria-theme="light"] .text-white\/5 { color: rgba(18,42,78,0.06); }
 html[data-aria-theme="light"] .text-white\/10 { color: rgba(18,42,78,0.12); }
@@ -209,8 +214,8 @@ html[data-aria-theme="light"] .gradient-text { background: linear-gradient(90deg
 html[data-aria-theme] .modal-overlay { background: var(--ar-scrim); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
 html[data-aria-theme] .toast-x, html[data-aria-theme] [id^='toast-'] { }
 .toast-root, #toast-container > div {
-  background: var(--ar-surface); border: 1px solid var(--ar-line2); color: var(--ar-ink);
-  box-shadow: var(--ar-shpop); backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  background: var(--ar-glass2); border: 1px solid var(--ar-line2); color: var(--ar-ink);
+  box-shadow: var(--ar-shpop); backdrop-filter: var(--ar-blur); -webkit-backdrop-filter: var(--ar-blur);
 }
 html[data-aria-theme] .badge { color: #fff; }
 html[data-aria-theme="light"] .badge-pending, html[data-aria-theme="light"] .badge-processing { color:#fff; }
@@ -283,7 +288,8 @@ html[data-aria-theme="light"] .hover\:bg-black\/80.text-white:hover, html[data-a
 
 /* ── ۸) چت پشتیبانی ── */
 #ary-chat-panel {
-  background: var(--ar-surface2); border: 1px solid var(--ar-line2);
+  background: var(--ar-panel); border: 1px solid var(--ar-line2);
+  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
   box-shadow: var(--ar-shpop); color: var(--ar-ink);
 }
 #ary-chat-panel .glass, #ary-chat-panel .glass-strong, #ary-chat-panel .glass-dark {
@@ -311,7 +317,7 @@ html[data-aria-theme="light"] #ary-chat-panel .bg-white\/10 { background-color:#
 /* ── ۹) کشوی منو + جستجوی هدر (مصرف‌کنندهٔ مستقیم توکن) ── */
 html[data-aria-theme] .gpt5-drawer {
   background: var(--ar-panel); color: var(--ar-ink);
-  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
   border-left: 1px solid var(--ar-line); box-shadow: var(--ar-shpop);
 }
 html[data-aria-theme] .gpt5-drawer-link { color: var(--ar-ink2); }
@@ -363,6 +369,7 @@ html[data-aria-theme] #shop-filter-sidebar .shop-filter-inner { position:absolut
 #shop-filter-sidebar .af-panel {
   position:relative; display:flex; flex-direction:column; width:100%; height:100%; max-width:420px;
   background: var(--ar-panel); color: var(--ar-ink);
+  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
   border-left:1px solid var(--ar-line); box-shadow: var(--ar-shpop);
   transform: translateX(101%); transition: transform .38s cubic-bezier(.25,.85,.3,1);
   overflow-x: clip;
@@ -417,9 +424,25 @@ html[data-aria-theme="dark"] #shop-filter-sidebar .af-plimit b { color:#9cc4ff; 
 #shop-filter-sidebar .af-btn-ghost { background:var(--ar-chip); border:1px solid var(--ar-chipbd); flex:1; }
 #shop-filter-sidebar .af-btn-ghost:hover { color:var(--ar-rose); border-color:rgba(244,63,94,.45); background:var(--ar-bad-bg); }
 
-/* ── ۱۱) دکمهٔ تم (قرصِ وضعیت‌دار) — هر دو تم ── */
+/* ── ۱۱) دکمهٔ تم — آیکون خورشید/ماه با مورفِ انیمیشنی ── */
 html[data-aria-theme] .ary-theme-btn { background: var(--ar-chip); border: 1px solid var(--ar-chipbd); color: var(--ar-ink2); }
 html[data-aria-theme] .ary-theme-btn:hover { background: var(--ar-hover); border-color: var(--ar-line2); }
+.ary-theme-btn { position: relative; overflow: hidden; display: inline-grid !important; place-items: center; }
+.ary-theme-btn > * {
+  grid-area: 1 / 1; display: inline-flex !important; align-items: center; justify-content: center;
+  transition: transform .55s cubic-bezier(.34,1.4,.4,1), opacity .3s ease, filter .3s ease, color .3s ease;
+}
+html[data-aria-theme="dark"]  .ary-theme-btn .ico-sun  { opacity:0; transform: translateY(140%) rotate(120deg) scale(.4); filter: blur(2px); }
+html[data-aria-theme="dark"]  .ary-theme-btn .ico-moon { opacity:1; transform: none; }
+html[data-aria-theme="light"] .ary-theme-btn .ico-moon { opacity:0; transform: translateY(-140%) rotate(-120deg) scale(.4); filter: blur(2px); }
+html[data-aria-theme="light"] .ary-theme-btn .ico-sun  { opacity:1; transform: none; color:#f59e0b; }
+.ary-theme-btn:active { transform: scale(.9); }
+.ary-theme-btn::after {
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none;
+  background: radial-gradient(circle at 50% 120%, rgba(245,158,11,.35), transparent 60%);
+  opacity:0; transition: opacity .5s ease;
+}
+html[data-aria-theme="light"] .ary-theme-btn::after { opacity:1; }
 
 /* ── ۱۲) ویزارد نصب — هم‌تن با توکن ── */
 html[data-aria-theme] .sw-card { background: var(--ar-surface2); color: var(--ar-ink); border-color: var(--ar-line2); }
@@ -470,3 +493,80 @@ html[data-aria-theme] { --sds-focus-ring: 0 0 0 2px var(--ar-surface), 0 0 0 4px
   .ary-theme-btn, .ary-float-x, #mobileMenu .gpt5-drawer-link { transition: none; transform: none; }
   #shop-filter-sidebar .af-panel { transition: none; }
 }
+/* ── ۱۶) شیت موبایل ادمین — هم‌تن با تم (رفعِ دارک‌ماندهٔ لایت) ── */
+html[data-aria-theme] .admin-sheet {
+  background: var(--ar-panel);
+  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
+  border-top: 1px solid var(--ar-line2); box-shadow: 0 -18px 46px rgba(2,10,40,.45); color: var(--ar-ink);
+}
+html[data-aria-theme="light"] .admin-sheet { box-shadow: 0 -18px 46px -10px rgba(23,51,105,.35); }
+html[data-aria-theme] .admin-sheet-handle { background: var(--ar-line2); }
+html[data-aria-theme] .admin-sheet-toggle-icon { color: var(--ar-ink3); }
+html[data-aria-theme] .admin-sheet-tab-btn { background: var(--ar-chip); border: 1px solid var(--ar-chipbd); color: var(--ar-ink2); }
+html[data-aria-theme] .admin-sheet-tab-btn:hover { background: var(--ar-hover); }
+html[data-aria-theme] .admin-sheet-tab-btn.active {
+  background: linear-gradient(135deg, var(--ar-accent2), var(--ar-deep)); color:#fff; border-color: transparent;
+  box-shadow: 0 10px 22px -10px rgba(37,99,235,.65);
+}
+html[data-aria-theme] .admin-sheet-tab-btn.active span, html[data-aria-theme] .admin-sheet-tab-btn.active .tab-icon { color:#fff; }
+html[data-aria-theme] .admin-sheet-tab-badge { background: rgba(255,255,255,.26); color:#fff; }
+html[data-aria-theme] .admin-sheet-trigger { background: var(--ar-glass2); border: 1px solid var(--ar-line2); color: var(--ar-ink); backdrop-filter: var(--ar-blur); -webkit-backdrop-filter: var(--ar-blur); }
+
+/* ── ۱۷) پیش‌نمایش داخلی سایت در ادمین (جایگزین تب مرورگر) ── */
+#ary-admin-preview { position: fixed; inset: 0; z-index: 90; display: none; }
+#ary-admin-preview.open { display: block; }
+#ary-admin-preview .ap-scrim { position: absolute; inset: 0; background: var(--ar-scrim); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); }
+#ary-admin-preview .ap-frame {
+  position: absolute; inset: 3% 3% 0 3%; display: flex; flex-direction: column; overflow: hidden;
+  background: var(--ar-surface); border: 1px solid var(--ar-line2); border-bottom: 0;
+  border-radius: 18px 18px 0 0; box-shadow: var(--ar-shpop);
+}
+@media (max-width:640px) { #ary-admin-preview .ap-frame { inset: 0; border-radius: 0; border: 0; } }
+#ary-admin-preview .ap-bar {
+  flex: none; display: flex; align-items: center; gap: .5rem; padding: .5rem .75rem;
+  background: var(--ar-head); border-bottom: 1px solid var(--ar-line); color: var(--ar-ink);
+}
+#ary-admin-preview .ap-title { font-weight: 900; font-size: .82rem; margin-inline-end: auto; display: flex; align-items: center; gap: .45rem; }
+#ary-admin-preview .ap-title::before { content: ""; width: .6rem; height: .6rem; border-radius: 50%; background: var(--ar-em); box-shadow: 0 0 0 3px var(--ar-good-bg); }
+#ary-admin-preview .ap-btn {
+  display: inline-flex; align-items: center; gap: .35rem; border-radius: 11px; padding: .38rem .72rem;
+  font-size: .74rem; font-weight: 800; cursor: pointer; border: 1px solid var(--ar-chipbd);
+  background: var(--ar-chip); color: var(--ar-ink2); transition: background .15s ease, color .15s ease, transform .1s ease;
+}
+#ary-admin-preview .ap-btn:hover { background: var(--ar-hover); color: var(--ar-ink); }
+#ary-admin-preview .ap-btn:active { transform: scale(.95); }
+#ary-admin-preview .ap-btn-danger:hover { background: var(--ar-bad-bg); border-color: rgba(244,63,94,.4); color: var(--ar-rose); }
+#ary-admin-preview iframe { flex: 1; width: 100%; border: 0; background: var(--ar-bg0); }
+#ary-admin-preview .ap-load { position: absolute; inset: 44px 0 0 0; display: none; place-items: center; color: var(--ar-ink3); font-size: .8rem; background: var(--ar-surface); z-index: 2; }
+#ary-admin-preview.loading .ap-load { display: grid; }
+@media (prefers-reduced-motion: reduce) { .ary-theme-btn > * { transition: opacity .12s linear; transform:none !important; filter:none; } }
+/* ── ۱۸) تاپ‌بار و برند ادمین ── */
+.admin-logo-tile {
+  width: 2.6rem; height: 2.6rem; border-radius: 14px; flex: none;
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  background: linear-gradient(135deg, var(--ar-accent2), var(--ar-sky));
+  box-shadow: 0 12px 26px -10px rgba(37,99,235,.65);
+}
+.admin-topbar {
+  position: sticky; top: 0; z-index: 35;
+  display: none; align-items: center; gap: .6rem;
+  margin: -2rem -2rem 1.4rem; padding: .6rem 1.4rem;
+  background: var(--ar-glass2); backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
+  border-bottom: 1px solid var(--ar-line);
+}
+@media (min-width:1024px) { .admin-topbar { display: flex; } }
+.admin-topbar-title { display: flex; align-items: center; gap: .5rem; margin-inline-end: auto; min-width: 0; }
+.admin-topbar-crumb { font-weight: 900; font-size: .92rem; color: var(--ar-ink); }
+.admin-topbar-sep { color: var(--ar-ink4); font-size: .8rem; }
+.admin-topbar-store { color: var(--ar-ink3); font-size: .74rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.admin-topbar-acts { display: flex; align-items: center; gap: .45rem; }
+.admin-topbar-btn {
+  display: inline-flex; align-items: center; gap: .4rem; cursor: pointer;
+  border-radius: 12px; padding: .42rem .8rem; font-size: .76rem; font-weight: 800;
+  border: 1px solid var(--ar-chipbd); background: var(--ar-chip); color: var(--ar-ink2);
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
+}
+.admin-topbar-btn:hover { background: var(--ar-hover); color: var(--ar-ink); }
+.admin-topbar-btn:active { transform: scale(.96); }
+.admin-topbar-logout:hover { background: var(--ar-bad-bg); border-color: rgba(244,63,94,.45); color: var(--ar-rose); }
+

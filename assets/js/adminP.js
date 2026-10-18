@@ -871,12 +871,12 @@ function renderAdminPanel() {
     <div class="flex flex-col lg:flex-row min-h-screen">
       <!-- Sidebar (Desktop) -->
       <aside class="hidden lg:flex w-72 glass-dark border-l border-white/5 flex-col fixed right-0 top-0 h-screen overflow-y-auto">
-        <div class="p-6 border-b border-white/5">
+        <div class="p-5 border-b border-white/5">
           <div class="flex items-center gap-3">
-            <span class="text-3xl">⚙️</span>
+            <span class="admin-logo-tile" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5"><path d="M3 9.5 12 3l9 6.5V21H3z"/><path d="M9 21v-7h6v7"/></svg></span>
             <div class="flex-1 min-w-0">
-              <h1 class="font-black text-lg">پنل مدیریت</h1>
-              <p class="text-xs text-white/60">مدیریت فروشگاه</p>
+              <h1 class="font-black text-[.95rem] truncate">${(window.SITE_CONFIG && SITE_CONFIG.site_name) || 'فروشگاه آرین علوی'}</h1>
+              <p class="text-[.68rem] text-white/55 mt-0.5">پنل مدیریت — نسخه ${ (window.SITE_CONFIG && SITE_CONFIG.version) || '۱.۰' }</p>
             </div>
             <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
           </div>
@@ -908,7 +908,7 @@ function renderAdminPanel() {
             .join('')}
         </nav>
         <div class="p-4 border-t border-white/5 space-y-2">
-          <button onclick="window.open('index.html', '_blank')" class="w-full btn-ghost py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium" type="button">${typeof aryIcon === 'function' ? aryIcon('home', 'w-4 h-4') : ''} مشاهده سایت (تب جدید)</button>
+          <button onclick="AryaAdminPreview.open()" class="w-full btn-ghost py-3 rounded-xl flex items-center justify-center gap-2 text-sm font-medium" type="button">${typeof aryIcon === 'function' ? aryIcon('eye', 'w-4 h-4') : ''} پیش‌نمایش سایت در پنل</button>
           <button onclick="state.adminTab='database'; render()" class="w-full bg-emerald-500/10 text-emerald-400 py-3 rounded-xl hover:bg-emerald-500/20 flex items-center justify-center gap-2 text-sm font-medium transition-all" type="button">${typeof aryIcon === 'function' ? aryIcon('database', 'w-4 h-4') : ''} دیتابیس</button>
           <button onclick="adminLogout()" class="w-full bg-rose-500/10 text-rose-400 py-3 rounded-xl hover:bg-rose-500/20 flex items-center justify-center gap-2 text-sm font-medium transition-all" type="button">${typeof aryIcon === 'function' ? aryIcon('logout', 'w-4 h-4') : ''} خروج</button>
         </div>
@@ -921,9 +921,9 @@ function renderAdminPanel() {
             <span class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-5 h-5') : '⚙️'}</span>
             <h1 class="font-bold truncate">پنل مدیریت</h1>
           </div>
-          <div class="flex gap-2">
-            XXXTBXXX
-            <button onclick="window.open('index.html', '_blank')" class="p-2 glass rounded-xl text-sm" type="button" title="مشاهده سایت در تب جدید">${typeof aryIcon === 'function' ? aryIcon('home', 'w-4 h-4') : '🏠'}</button>
+          <div class="flex gap-2 items-center">
+            <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
+            <button onclick="AryaAdminPreview.open()" class="p-2 glass rounded-xl text-sm" type="button" title="پیش‌نمایش سایت در پنل" aria-label="پیش‌نمایش سایت">${typeof aryIcon === 'function' ? aryIcon('eye', 'w-4 h-4') : '👁'}</button>
             <button onclick="adminLogout()" class="p-2 glass rounded-xl text-rose-400 text-sm" type="button" title="خروج از پنل">${typeof aryIcon === 'function' ? aryIcon('logout', 'w-4 h-4') : '🚪'}</button>
           </div>
         </div>
@@ -931,6 +931,18 @@ function renderAdminPanel() {
 
       <!-- Main Content -->
       <main class="flex-1 p-4 lg:p-8 overflow-auto overflow-x-hidden pb-24 lg:pb-8 lg:mr-72 mr-0">
+        <header class="admin-topbar">
+          <div class="admin-topbar-title">
+            <span class="admin-topbar-crumb">${(tabs.find(t=>t.id===state.adminTab)||{}).label || 'داشبورد'}</span>
+            <span class="admin-topbar-sep">/</span>
+            <span class="admin-topbar-store">${(window.SITE_CONFIG && SITE_CONFIG.site_name) || 'آرین علوی'}</span>
+          </div>
+          <div class="admin-topbar-acts">
+            <button type="button" class="admin-topbar-btn" onclick="AryaAdminPreview.open()">${typeof aryIcon === 'function' ? aryIcon('eye','w-4 h-4') : ''}<span>پیش‌نمایش سایت</span></button>
+            <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
+            <button type="button" class="admin-topbar-btn admin-topbar-logout" onclick="adminLogout()">${typeof aryIcon === 'function' ? aryIcon('logout','w-4 h-4') : ''}<span>خروج</span></button>
+          </div>
+        </header>
         ${state.adminTab === 'dashboard' ? (typeof renderAdminDashboard === 'function' ? renderAdminDashboard() : '') : ''}
         ${state.adminTab === 'products' ? (typeof renderAdminProductsEditor === 'function' ? renderAdminProductsEditor() : '') : ''}
         ${state.adminTab === 'orders' ? renderAdminOrdersSafe() : ''}
@@ -5034,3 +5046,48 @@ window.deleteAdminUserConfirm = deleteAdminUserConfirm;
     }
   }, 15 * 1000);
 })();
+
+// ════════════════════════════════════════════════════════════════
+// ARYA ADMIN PREVIEW — پیش‌نمایش زندهٔ سایت داخل پنل (بدون تب/پاپ‌آپ مرورگر)
+// ════════════════════════════════════════════════════════════════
+const AryaAdminPreview = (function () {
+  var root = null, frame = null;
+  function ensure() {
+    if (root) return root;
+    root = document.createElement('div');
+    root.id = 'ary-admin-preview';
+    root.setAttribute('aria-hidden', 'true');
+    root.innerHTML = [
+      '<div class="ap-scrim" data-ap-close></div>',
+      '<div class="ap-frame" role="dialog" aria-modal="true" aria-label="پیش‌نمایش سایت">',
+      '  <div class="ap-bar">',
+      '    <span class="ap-title">پیش‌نمایش زندهٔ سایت</span>',
+      '    <button type="button" class="ap-btn" data-ap-reload title="بارگذاری مجدد">⟳</button>',
+      '    <button type="button" class="ap-btn ap-btn-danger" data-ap-close title="بستن (Esc)">✕ بستن</button>',
+      '  </div>',
+      '  <div class="ap-load">در حال بارگذاری سایت…</div>',
+      '  <iframe title="پیش‌نمایش فروشگاه" src="about:blank"></iframe>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(root);
+    frame = root.querySelector('iframe');
+    root.addEventListener('click', function (e) { if (e.target.closest('[data-ap-close]')) close(); if (e.target.closest('[data-ap-reload]')) reload(); });
+    frame.addEventListener('load', function () { if (frame.src && frame.src !== 'about:blank') root.classList.remove('loading'); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && root.classList.contains('open')) close(); });
+    return root;
+  }
+  function syncTheme() { try { if (frame && frame.contentDocument && frame.contentDocument.documentElement) frame.contentDocument.documentElement.setAttribute('data-aria-theme', document.documentElement.getAttribute('data-aria-theme') || 'dark'); } catch (e) {} }
+  function reload() { ensure(); root.classList.add('loading'); try { frame.contentWindow.location.reload(); } catch (e) { frame.src = 'index.html?ap=' + Date.now(); } setTimeout(syncTheme, 600); }
+  function open() {
+    ensure();
+    root.classList.add('open'); root.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    if (!frame.src || frame.src.endsWith('about:blank')) { root.classList.add('loading'); frame.src = 'index.html' + (window.__ARY_V ? '?v=' + window.__ARY_V : ''); }
+    setTimeout(syncTheme, 700); setTimeout(syncTheme, 1800);
+    if (window.toast) toast('پیش‌نمایش سایت باز شد — با Esc یا ✕ بسته می‌شود', 'info', 2600);
+  }
+  function close() { if (!root) return; root.classList.remove('open'); root.setAttribute('aria-hidden', 'true'); document.body.style.overflow = ''; }
+  return { open: open, close: close };
+})();
+window.AryaAdminPreview = AryaAdminPreview;
+
