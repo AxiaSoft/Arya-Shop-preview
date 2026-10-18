@@ -608,8 +608,23 @@ window.AryaSupportChat = (function () {
     if (!root.classList.contains('ary-chat-open')) { root.style.display = 'none'; root.classList.remove('ary-chat-closing'); return; }
     root.classList.remove('ary-chat-open');
     root.classList.add('ary-chat-closing');
-    setTimeout(() => { if (root) { root.style.display = 'none'; root.classList.remove('ary-chat-closing'); } }, 350);
+    setTimeout(() => { if (root) { root.style.display = 'none'; root.classList.remove('ary-chat-closing'); } }, 560);
   }
+  /* موبایل: با اسکرول صفحه یا کلیک بیرون، پنل خودش را می‌بندد */
+  function aryIsPhone() { try { return window.matchMedia && matchMedia('(max-width: 639px)').matches; } catch (e) { return false; } }
+  document.addEventListener('pointerdown', (e) => {
+    if (!isOpen || !root || !aryIsPhone()) return;
+    const t = e.target;
+    if (root.contains(t)) return;
+    if (t && t.closest && t.closest('#arya-support-fab')) return;
+    close();
+  }, true);
+  document.addEventListener('scroll', (e) => {
+    if (!isOpen || !root || !aryIsPhone()) return;
+    const t = e.target;
+    if (t && t.nodeType === 1 && root.contains(t)) return; // اسکرول داخل گفتگو نبندد
+    close();
+  }, { capture: true, passive: true });
   function updateBadge() {
     const fab = document.getElementById('arya-support-fab');
     if (!fab) return;

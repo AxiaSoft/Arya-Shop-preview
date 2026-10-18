@@ -273,3 +273,37 @@ html[data-aria-theme="light"] .admin-table tbody td { color: #24406e; }
 @media (prefers-reduced-motion: reduce) {
   .ary-theme-btn, .ary-theme-btn:active { transition: none; transform: none; }
 }
+
+/* ───────── ۷) نوار جستجو: همان انیمیشن دایره‌وارِ پنل پشتیبانی ─────────
+   مبدأ دایره از موقعیت واقعی دکمهٔ ذره‌بین محاسبه و به‌عنوان پراپرتی ست می‌شود؛
+   fallback روی گوشهٔ بالای چپ (RTL) تنظیم شده. */
+.gpt5-search-shell { --ary-src-x: 90%; --ary-src-y: 100%; }
+.gpt5-search-shell.open {
+  will-change: clip-path, opacity;
+  animation: arySearchOrbIn .66s cubic-bezier(.22,.8,.28,1) both;
+}
+.gpt5-search-shell.closing {
+  opacity: 1; transform: translateY(8px); pointer-events: none;
+  will-change: clip-path, opacity;
+  animation: arySearchOrbOut .5s cubic-bezier(.6,.05,.75,.25) both;
+}
+@keyframes arySearchOrbIn {
+  0%   { clip-path: circle(10px at var(--ary-src-x) var(--ary-src-y)); opacity: .3; }
+  55%  { opacity: 1; }
+  100% { clip-path: circle(145% at var(--ary-src-x) var(--ary-src-y)); opacity: 1; }
+}
+@keyframes arySearchOrbOut {
+  0%   { clip-path: circle(145% at var(--ary-src-x) var(--ary-src-y)); opacity: 1; }
+  100% { clip-path: circle(10px at var(--ary-src-x) var(--ary-src-y)); opacity: .12; }
+}
+@media (max-width: 639px) {
+  @keyframes arySearchOrbIn {
+    0%   { clip-path: circle(10px at var(--ary-src-x) var(--ary-src-y)); opacity: .3; }
+    55%  { opacity: 1; }
+    100% { clip-path: circle(165% at var(--ary-src-x) var(--ary-src-y)); opacity: 1; }
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gpt5-search-shell.open { animation: aryChatPop .25s ease both; }
+  .gpt5-search-shell.closing { animation: none; }
+}

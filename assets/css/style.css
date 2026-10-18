@@ -1083,8 +1083,8 @@ button,a,input,select,textarea{transition-timing-function:cubic-bezier(.2,.7,.3,
   55%{opacity:1}100%{clip-path:circle(150% at 55% 42%);opacity:1}}
 @keyframes aryChatOrbOut{0%{clip-path:circle(150% at 55% 42%);opacity:1}
   100%{clip-path:circle(12px at calc(100% - 34px) calc(100% + 62px));opacity:.15}}
-.ary-chat-open{animation:aryChatOrbIn .52s cubic-bezier(.25,.85,.25,1) both}
-.ary-chat-closing{animation:aryChatOrbOut .34s cubic-bezier(.6,.05,.75,.25) both;pointer-events:none}
+.ary-chat-open{animation:aryChatOrbIn .68s cubic-bezier(.22,.8,.28,1) both}
+.ary-chat-closing{animation:aryChatOrbOut .52s cubic-bezier(.6,.05,.75,.25) both;pointer-events:none}
 #ary-chat-panel .ary-chat-idbar{display:flex;align-items:center;justify-content:space-between;gap:8px;
   padding:.35rem .9rem;font-size:10.5px;color:#bfdbfe;background:rgba(30,64,140,.45);border-bottom:1px solid rgba(147,197,253,.16)}
 #ary-chat-panel .ary-chat-idbar button{color:#93c5fd;text-decoration:underline;cursor:pointer}

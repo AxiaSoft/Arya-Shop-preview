@@ -278,19 +278,61 @@ window.aryCatIcon = function (cat, extra) {
   }
 
   // فقط کلاس نوار سرچ را عوض می‌کند، بدون render
-  function toggleSearchBar() {
+  function toggleSearchBar(force) {
     const shell = document.querySelector('.gpt5-search-shell');
     const btn = document.getElementById('searchToggleBtn');
     if (!shell) return;
-    shell.classList.toggle('open');
-    if (btn) btn.innerHTML = shell.classList.contains('open') ? '✕' : aryIcon('search','w-5 h-5');
+    let open = !shell.classList.contains('open');
+    if (force === true || force === false) open = force;
+    if (open === shell.classList.contains('open') && !shell.classList.contains('closing') && force !== undefined) return;
+    if (btn) btn.innerHTML = open ? '✕' : aryIcon('search','w-5 h-5');
+    if (open) {
+      try {
+        if (btn) {
+          const r = btn.getBoundingClientRect();
+          const sr = shell.getBoundingClientRect();
+          shell.style.setProperty('--ary-src-x', (r.left + r.width / 2 - sr.left) + 'px');
+          shell.style.setProperty('--ary-src-y', (r.top + r.height / 2 - sr.top) + 'px');
+        }
+      } catch (e) {}
+      shell.classList.remove('closing');
+      shell.classList.add('open');
+      setTimeout(function () {
+        if (shell.classList.contains('open')) {
+          const inp = document.getElementById('header-search');
+          if (inp) { try { inp.focus(); } catch (e) {} }
+        }
+      }, 380);
+    } else {
+      if (!shell.classList.contains('open') && !shell.classList.contains('closing')) return;
+      shell.classList.remove('open');
+      shell.classList.add('closing');
+      setTimeout(function () { shell.classList.remove('closing'); }, 540);
+    }
   }
+  function arySearchPhone() { try { return window.matchMedia && matchMedia('(max-width: 639px)').matches; } catch (e) { return false; } }
+  document.addEventListener('pointerdown', function (e) {
+    const shell = document.querySelector('.gpt5-search-shell');
+    if (!shell || !shell.classList.contains('open') || !arySearchPhone()) return;
+    const t = e.target;
+    if (shell.contains(t)) return;
+    if (t && t.closest && t.closest('#searchToggleBtn, [onclick*="toggleSearchBar"]')) return;
+    toggleSearchBar(false);
+  }, true);
+  document.addEventListener('scroll', function (e) {
+    const shell = document.querySelector('.gpt5-search-shell');
+    if (!shell || !shell.classList.contains('open') || !arySearchPhone()) return;
+    const t = e.target;
+    if (t && t.nodeType === 1 && shell.contains(t)) return;
+    toggleSearchBar(false);
+  }, { capture: true, passive: true });
 
   function applySearch() {
     const input = document.getElementById('header-search');
     if (!input) return;
     state.productFilter.search = input.value || '';
     navigate('shop');
+    try { toggleSearchBar(false); } catch (e) {}
   }
 
   function handleSearchKey(e) {
