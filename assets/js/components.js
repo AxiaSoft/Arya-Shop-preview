@@ -80,22 +80,19 @@ window.aryCatIcon = function (cat, extra) {
     if (document.getElementById('gpt5-header-styles')) return;
     const css = `
       .gpt5-drawer {
-        background:
-          radial-gradient(900px 500px at 95% 5%, rgba(86,125,255,0.22) 0%, rgba(0,0,0,0) 40%),
-          radial-gradient(700px 500px at 10% 95%, rgba(0,210,255,0.16) 0%, rgba(0,0,0,0) 45%),
-          linear-gradient(180deg, rgba(16,18,24,0.92) 0%, rgba(16,18,24,0.88) 55%, rgba(16,18,24,0.95) 100%);
-        backdrop-filter: blur(26px) saturate(160%);
-        border-left: 1px solid rgba(255,255,255,0.12);
-        box-shadow: -14px 0 36px rgba(0,0,0,0.45);
-        color:#fff;
+        background: var(--ar-panel, #0e1c3c);
+        backdrop-filter: none;
+        border-left: 1px solid var(--ar-line, rgba(148,187,255,.14));
+        box-shadow: var(--ar-shpop, -14px 0 36px rgba(0,0,0,0.45));
+        color: var(--ar-ink, #fff);
       }
       .gpt5-drawer-link {
-        width:100%; text-align:right; color:rgba(255,255,255,0.95);
+        width:100%; text-align:right; color:var(--ar-ink2, rgba(255,255,255,.95));
         padding:10px 12px; border-radius:12px; border:1px solid transparent;
         transition: background 160ms ease, border-color 160ms ease;
       }
-      .gpt5-drawer-link:hover { background: rgba(255,255,255,0.10); }
-      .gpt5-drawer-link:active { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.14); }
+      .gpt5-drawer-link:hover { background: var(--ar-hover, rgba(255,255,255,0.10)); }
+      .gpt5-drawer-link:active { background: var(--ar-active, rgba(255,255,255,0.18)); border-color: var(--ar-line2); }
 
       .gpt5-dd {
         overflow:hidden;
@@ -110,16 +107,17 @@ window.aryCatIcon = function (cat, extra) {
         margin-top:6px;
       }
       .gpt5-dd-inner {
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--ar-line, rgba(255,255,255,0.12));
+        background: var(--ar-surface, rgba(255,255,255,0.06));
         border-radius: 14px; padding: 6px;
+        box-shadow: var(--ar-sh2, none);
       }
       .gpt5-dd-item {
-        width:100%; text-align:right; color:rgba(255,255,255,0.92);
+        width:100%; text-align:right; color:var(--ar-ink2, rgba(255,255,255,0.92));
         padding:9px 10px; border-radius:10px; transition: background 160ms ease;
       }
-      .gpt5-dd-item:hover { background: rgba(255,255,255,0.10); }
-      .gpt5-dd-item:active { background: rgba(255,255,255,0.18); }
+      .gpt5-dd-item:hover { background: var(--ar-hover, rgba(255,255,255,0.10)); }
+      .gpt5-dd-item:active { background: var(--ar-active, rgba(255,255,255,0.18)); }
 
       /* SEARCH FLOATING BAR */
       .gpt5-search-wrap {
@@ -148,11 +146,11 @@ window.aryCatIcon = function (cat, extra) {
         pointer-events: auto;
       }
       .gpt5-search {
-        background: rgba(20,20,24,0.9);
-        border: 1px solid rgba(255,255,255,0.14);
-        backdrop-filter: blur(20px) saturate(140%);
-        box-shadow: 0 18px 40px rgba(0,0,0,0.45);
-        color: #fff;
+        background: var(--ar-surface, rgba(20,20,24,0.9));
+        border: 1px solid var(--ar-line2, rgba(255,255,255,0.14));
+        backdrop-filter: none;
+        box-shadow: var(--ar-shpop, 0 18px 40px rgba(0,0,0,0.45));
+        color: var(--ar-ink, #fff);
         border-radius: 18px;
         padding: 10px 12px;
         width: 100%;
@@ -163,9 +161,9 @@ window.aryCatIcon = function (cat, extra) {
       }
       .gpt5-search-input {
         width:100%;
-        color:#fff;
-        background: rgba(255,255,255,0.08);
-        border:1px solid rgba(255,255,255,0.14);
+        color: var(--ar-ink, #fff);
+        background: var(--ar-input, rgba(255,255,255,0.08));
+        border:1px solid var(--ar-inputbd, rgba(255,255,255,0.14));
         border-radius:12px;
         padding:12px 46px 12px 104px;
         outline:none;
