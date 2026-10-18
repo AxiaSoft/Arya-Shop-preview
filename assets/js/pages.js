@@ -1772,6 +1772,11 @@ function renderShopPage() {
           </div>
         </div>
       </div>
+
+      <div id="shop-products-container">
+        ${renderShopProductsOnly()}
+      </div>
+    </main>
   `;
 
   setTimeout(() => {

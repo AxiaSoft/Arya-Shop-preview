@@ -316,6 +316,8 @@ html[data-aria-theme] #shop-filter-sidebar {
   transform: none !important; opacity: 1 !important;
   transition: none;
 }
+  pointer-events: none; visibility: hidden;
+
 html[data-aria-theme] #shop-filter-sidebar .shop-filter-inner {
   position: absolute; top: 0; right: 0; bottom: 0; height: auto; overflow: visible;
 }
@@ -339,6 +341,7 @@ html[data-aria-theme="light"] #shop-filter-sidebar .af-backdrop { background: rg
   overflow: hidden;
 }
 #shop-filter-sidebar.open .af-panel { transform: translateX(0); }
+#shop-filter-sidebar.open { pointer-events: auto; visibility: visible; }
 @media (min-width: 640px) {
   #shop-filter-sidebar .af-panel { border-radius: 26px 0 0 26px; }
 }
