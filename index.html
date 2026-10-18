@@ -1,6 +1,22 @@
 <!doctype html>
 <html lang="fa" dir="rtl" class="h-full">
 <head>
+<script>
+(function(){try{
+  var K="arya_theme",t=null;
+  try{t=localStorage.getItem(K)}catch(e){}
+  var mq=window.matchMedia?matchMedia("(prefers-color-scheme: light)"):null;
+  var eff=t||(mq&&mq.matches?"light":"dark");
+  document.documentElement.setAttribute("data-aria-theme",eff);
+  window.AryaTheme={
+    get:function(){return eff},
+    apply:function(){document.documentElement.setAttribute("data-aria-theme",eff);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=eff==="light"?"#eef4fd":"#0b1630";document.dispatchEvent(new CustomEvent("arya:theme",{detail:eff}))},
+    toggle:function(){eff=eff==="light"?"dark":"light";try{localStorage.setItem(K,eff)}catch(e){}this.apply()},
+    reset:function(){try{localStorage.removeItem(K)}catch(e){}eff=(mq&&mq.matches)?"light":"dark";this.apply()}
+  };
+  if(mq&&mq.addEventListener)mq.addEventListener("change",function(e){if(!localStorage.getItem(K)){eff=e.matches?"light":"dark";document.documentElement.setAttribute("data-aria-theme",eff)}});
+}catch(e){}})();
+</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>وب سایت فروشگاهی آریا</title>
@@ -41,193 +57,200 @@
 <body class="bg-main text-white overflow-auto">
   <!-- صفحه اتصال دیتابیس (فقط وقتی Db.php در دسترس باشد ولی هنوز پیکربندی نشده باشد نمایش داده می‌شود) -->
   <div id="db-setup-screen" style="display:none; min-height:100vh; align-items:flex-start; justify-content:center; padding:1.5rem 1rem; overflow:auto;">
-    <div style="width:100%; max-width:560px;">
-      <div style="text-align:center; margin-bottom:1.5rem;">
-        <div style="width:80px;height:80px;border-radius:24px;background:linear-gradient(135deg,#2a8dff,#005aff);display:flex;align-items:center;justify-content:center;font-size:2.5rem;margin:0 auto 1rem;box-shadow:0 20px 40px rgba(0,90,255,0.4)">🗄️</div>
-        <h1 style="font-size:1.5rem;font-weight:900;margin-bottom:.25rem">راه‌اندازی سایت آریا</h1>
-        <p style="color:rgba(255,255,255,0.5);font-size:.85rem">انتخاب موتور دیتابیس، اتصال و ساخت جداول — در چند دقیقه</p>
-      </div>
+  <div class="sw-card">
+    <div class="sw-hero">
+      <div class="sw-logo">🗄️</div>
+      <h1>راه‌اندازی سایت آریا</h1>
+      <p>انتخاب موتور دیتابیس، اتصال و ساخت جداول — در چند دقیقه</p>
+    </div>
 
-      <div style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:1.75rem">
-        <form id="db-setup-form" onsubmit="handleDbSetupSubmit(event)" style="display:flex;flex-direction:column;gap:1rem">
+    <form id="db-setup-form" onsubmit="handleDbSetupSubmit(event)" class="sw-form">
 
-          <!-- پنل هاستینگ (اختیاری) -->
-          <details id="panel-card" style="border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:.75rem 1rem;background:rgba(0,0,0,.15)">
-            <summary style="cursor:pointer;font-weight:700;font-size:.9rem">🛠️ پنل هاستینگ داری؟ (cPanel / DirectAdmin / Plesk) — ساخت خودکار دیتابیس</summary>
-            <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:1rem">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-                <div>
-                  <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">نوع پنل</label>
-                  <select name="panel_type" class="input-style" dir="ltr" style="width:100%" onchange="document.getElementById('panel_plesk_domain_row').style.display=this.value==='plesk'?'block':'none'">
-                    <option value="none">بدون پنل (دستی)</option>
-                    <option value="cpanel">cPanel / WHM</option>
-                    <option value="directadmin">DirectAdmin</option>
-                    <option value="plesk">Plesk</option>
-                  </select>
-                </div>
-                <div>
-                  <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">آدرس پنل (Host)</label>
-                  <input name="panel_host" class="input-style" dir="ltr" placeholder="srv123.main-hosting.eu">
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-                <div>
-                  <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">پورت (پیش‌فرض خودکار)</label>
-                  <input name="panel_port" class="input-style" dir="ltr" placeholder="2083 / 2222 / 8443">
-                </div>
-                <div>
-                  <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">نام کاربری پنل</label>
-                  <input name="panel_user" class="input-style" dir="ltr" autocomplete="off">
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-                <div>
-                  <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">رمز پنل (یا Login Key در DA)</label>
-                  <input name="panel_pass" type="password" class="input-style" dir="ltr" autocomplete="new-password">
-                </div>
-                <div>
-                  <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">API Token (اختیاری — cPanel/Plesk)</label>
-                  <input name="panel_token" type="password" class="input-style" dir="ltr" autocomplete="off">
-                </div>
-              </div>
-              <div id="panel_plesk_domain_row" style="display:none">
-                <label style="display:block;font-size:.8rem;color:rgba(255,255,255,.6);margin-bottom:.35rem">دامنه‌ی سایت در Plesk</label>
-                <input name="panel_domain" class="input-style" dir="ltr" placeholder="example.com">
-              </div>
-              <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:rgba(255,255,255,.55)">
-                <input type="checkbox" name="panel_insecure"> حذف بررسی گواهی SSL (فقط برای پنل‌های با گواهی self-signed)
-              </label>
-              <div style="display:flex;gap:.75rem">
-                <button type="button" onclick="aryPanelProbe(this)" style="flex:1;padding:10px;border-radius:10px;background:rgba(42,141,255,.15);border:1px solid rgba(42,141,255,.4);color:#93c5fd;font-weight:700;cursor:pointer;font-size:.85rem">تست اتصال پنل</button>
-                <button type="button" onclick="aryPanelProvision(this)" style="flex:1;padding:10px;border-radius:10px;background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.4);color:#6ee7b7;font-weight:700;cursor:pointer;font-size:.85rem">ساخت خودکار دیتابیس + پرکردن فرم</button>
-              </div>
-              <div id="panel-status" style="display:none;font-size:.8rem;border-radius:10px;padding:.6rem .8rem"></div>
-            </div>
-          </details>
-
-          <!-- موتور دیتابیس -->
-          <div>
-            <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">موتور دیتابیس</label>
-            <select name="driver" class="input-style" dir="ltr" style="width:100%" onchange="arySetupDriverChange(this.value)">
-              <option value="mysql">MySQL / MariaDB (پیش‌فرض هاست‌های ایرانی)</option>
-              <option value="pgsql">PostgreSQL</option>
-              <option value="sqlite">SQLite (فایل محلی — تست و استجینگ)</option>
-              <option value="supabase">Supabase — Postgres ابری (TLS اجباری)</option>
-              <option value="sqlsrv">SQL Server (pdo_sqlsrv)</option>
-            </select>
+      <!-- راهنمای سریع XAMPP / phpMyAdmin -->
+      <details id="xampp-card" class="sw-details">
+        <summary>🍷 XAMPP / phpMyAdmin — راهنمای سریع + پیش‌پرکردن فرم</summary>
+        <div class="sw-pad">
+          <ol class="sw-ol">
+            <li>در <b>XAMPP Control Panel</b> فقط <b dir="ltr">MySQL</b> و <b dir="ltr">Apache</b> را Start کنید.</li>
+            <li>در <a href="http://localhost/phpmyadmin" target="_blank" rel="noopener"><b dir="ltr">phpMyAdmin</b></a> روی <b dir="ltr">New</b> بزنید و دیتابیس <b dir="ltr">arya_shop</b> با هم‌ترازی <b dir="ltr">utf8mb4_unicode_ci</b> بسازید — ساخت جدول لازم نیست؛ خودِ سایت جداول را می‌سازد.</li>
+            <li>دکمهٔ «پیش‌پرکردن فرم» را بزنید؛ اگر برای <b dir="ltr">root</b> رمز گذاشته‌اید، همان را وارد کنید و «اتصال و راه‌اندازی».</li>
+          </ol>
+          <div class="sw-btnrow">
+            <button type="button" class="sw-btn sw-btn-ok" onclick="aryXamppPreset()">پیش‌پرکردن فرم (XAMPP)</button>
+            <button type="button" class="sw-btn" onclick="window.open('http://localhost/phpmyadmin','_blank')">بازکردن phpMyAdmin</button>
           </div>
+        </div>
+      </details>
 
-          <div id="db-server-fields" style="display:flex;flex-direction:column;gap:1rem">
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:.75rem">
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">میزبان (Host)</label>
-                <input name="host" class="input-style" dir="ltr" placeholder="localhost" value="localhost">
-              </div>
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">پورت</label>
-                <input name="port" class="input-style" dir="ltr" placeholder="3306">
-              </div>
+      <!-- پنل هاستینگ (اختیاری) -->
+      <details id="panel-card" class="sw-details">
+        <summary>🛠️ پنل هاستینگ (cPanel / DirectAdmin / Plesk) — ساخت خودکار دیتابیس</summary>
+        <div class="sw-pad">
+          <div class="sw-row2">
+            <div>
+              <label class="sw-label">نوع پنل</label>
+              <select name="panel_type" class="input-style" dir="ltr" style="width:100%" onchange="document.getElementById('panel_plesk_domain_row').style.display=this.value==='plesk'?'block':'none'">
+                <option value="none">بدون پنل (دستی)</option>
+                <option value="cpanel">cPanel / WHM</option>
+                <option value="directadmin">DirectAdmin</option>
+                <option value="plesk">Plesk</option>
+              </select>
             </div>
             <div>
-              <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">نام دیتابیس</label>
-              <input name="dbname" class="input-style" dir="ltr" placeholder="arya_store" value="arya_store">
-            </div>
-            <div id="pg_schema_row" style="display:none">
-              <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">اسکیمای PostgreSQL</label>
-              <input name="db_schema" class="input-style" dir="ltr" placeholder="public" value="public">
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">نام کاربری</label>
-                <input name="dbuser" class="input-style" dir="ltr" autocomplete="off">
-              </div>
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">رمز عبور</label>
-                <input name="dbpass" type="password" class="input-style" dir="ltr" placeholder="(در صورت وجود)" autocomplete="new-password">
-              </div>
+              <label class="sw-label">آدرس پنل (Host)</label>
+              <input name="panel_host" class="input-style" dir="ltr" placeholder="srv123.main-hosting.eu">
             </div>
           </div>
-
-          <div id="db-supabase-fields" style="display:none;flex-direction:column;gap:.75rem">
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:.75rem">
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">Project Ref (از کنسول Supabase)</label>
-                <input name="project_ref" class="input-style" dir="ltr" placeholder="abcdefghijklmnop" autocomplete="off" spellcheck="false">
-              </div>
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">نوع اتصال</label>
-                <select name="pool_mode" class="input-style" dir="ltr" onchange="var r=document.getElementById('supa_region_row'); if(r) r.style.display=(this.value==='pooler'?'block':'none')">
-                  <option value="direct">Direct — 5432 (DDL و اپ)</option>
-                  <option value="pooler">Pooler — 6543 (اپ پرترافیک)</option>
-                </select>
-              </div>
+          <div class="sw-row2">
+            <div>
+              <label class="sw-label">پورت (پیش‌فرض خودکار)</label>
+              <input name="panel_port" class="input-style" dir="ltr" placeholder="2083 / 2222 / 8443">
             </div>
-            <div id="supa_region_row" style="display:none">
-              <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">Region استخر (از Connection string در کنسول)</label>
-              <input name="region" class="input-style" dir="ltr" placeholder="ap-southeast-1" autocomplete="off" spellcheck="false">
+            <div>
+              <label class="sw-label">نام کاربری پنل</label>
+              <input name="panel_user" class="input-style" dir="ltr" autocomplete="off">
             </div>
-            <div style="display:grid;grid-template-columns:1fr 2fr;gap:.75rem">
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">SSL Mode</label>
-                <select name="sslmode" class="input-style" dir="ltr">
-                  <option value="">require (پیش‌فرض)</option>
-                  <option value="verify-ca">verify-ca</option>
-                  <option value="verify-full">verify-full</option>
-                </select>
-              </div>
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">مسیر فایل CA (فقط برای verify-*)</label>
-                <input name="sslrootcert" class="input-style" dir="ltr" placeholder="/home/USER/supabase-root-cert.pem" autocomplete="off" spellcheck="false">
-              </div>
-            </div>
-            <p style="font-size:.72rem;color:rgba(255,255,255,.45);line-height:1.7">میزبان و نام کاربری خودکار ساخته می‌شوند: <span dir="ltr">db.REF.supabase.co:5432</span> با کاربر <span dir="ltr">postgres</span> (Direct) یا <span dir="ltr">aws-0-REGION.pooler.supabase.com:6543</span> با کاربر <span dir="ltr">postgres.REF</span> (Pooler). فیلدهای پیشرفته (Host/Port/User) را فقط برای Self-host یا دامنه دلخواه پر کنید. رمز = Database password در Settings → Database. دیتابیس <span dir="ltr">postgres</span> از قبل وجود دارد و جداول در اسکیمای public ساخته می‌شوند.</p>
           </div>
-
-          <div id="db-sqlite-fields" style="display:none">
-            <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">مسیر فایل SQLite (اختیاری)</label>
-            <input name="sqlite_path" class="input-style" dir="ltr" placeholder="storage/arya_store.sqlite">
-            <p style="font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.4rem">پیش‌فرض: <span dir="ltr">storage/arya_store.sqlite</span> داخل پوشه‌ی سایت</p>
-          </div>
-
-          <!-- حساب مدیر -->
-          <div style="border-top:1px solid rgba(255,255,255,.1);padding-top:1rem">
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">ایمیل مدیر پنل</label>
-                <input name="admin_email" class="input-style" dir="ltr" type="email" placeholder="admin@yoursite.ir" required>
-              </div>
-              <div>
-                <label style="display:block;font-size:.85rem;color:rgba(255,255,255,.7);margin-bottom:.5rem">رمز مدیر (خالی = تصادفی و یک‌نمایش)</label>
-                <input name="admin_pass" type="password" class="input-style" dir="ltr" autocomplete="new-password" placeholder="حداقل ۸ کاراکتر + حرف بزرگ + رقم">
-              </div>
+          <div class="sw-row2">
+            <div>
+              <label class="sw-label">رمز پنل (یا Login Key در DA)</label>
+              <input name="panel_pass" type="password" class="input-style" dir="ltr" autocomplete="new-password">
             </div>
-            <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.75rem">
-              <input type="checkbox" name="demo_mode"> حالت نمایشی (DEMO_MODE) — کدهای تایید OTP در پاسخ API برگردانده می‌شوند؛ فقط روی تست!
-            </label>
-            <label style="display:flex;align-items:center;gap:.5rem;font-size:.78rem;color:rgba(255,255,255,.55);margin-top:.35rem">
-              <input type="checkbox" name="demo_seed" checked> ساخت کاتالوگ نمونه — ۶ محصول + ۵ دسته‌بندی (با تصویر و ویدیو) داخل دیتابیس درج می‌شود؛ بعداً از پنل قابل ویرایش/حذف است
-            </label>
+            <div>
+              <label class="sw-label">API Token (اختیاری — cPanel/Plesk)</label>
+              <input name="panel_token" type="password" class="input-style" dir="ltr" autocomplete="off">
+            </div>
           </div>
+          <div id="panel_plesk_domain_row" style="display:none">
+            <label class="sw-label">دامنه‌ی سایت در Plesk</label>
+            <input name="panel_domain" class="input-style" dir="ltr" placeholder="example.com">
+          </div>
+          <label class="sw-check"><input type="checkbox" name="panel_insecure"> حذف بررسی گواهی SSL (فقط برای پنل‌های با گواهی self-signed)</label>
+          <div class="sw-row2">
+            <button type="button" class="sw-btn" onclick="aryPanelProbe(this)">تست اتصال پنل</button>
+            <button type="button" class="sw-btn sw-btn-ok" onclick="aryPanelProvision(this)">ساخت خودکار دیتابیس + پرکردن فرم</button>
+          </div>
+          <div id="panel-status" class="sw-status" style="display:none"></div>
+        </div>
+      </details>
 
-          <div id="db-setup-error" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:.75rem 1rem;color:#fca5a5;font-size:.85rem"></div>
-          <div id="db-setup-success" style="display:none;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:.75rem 1rem;color:#6ee7b7;font-size:.83rem;line-height:2"></div>
-          <button id="db-setup-submit-btn" type="submit" class="btn-primary" style="padding:14px;border-radius:12px;font-weight:700;">اتصال و راه‌اندازی</button>
-        </form>
-        <p style="text-align:center;color:rgba(255,255,255,.35);font-size:.72rem;margin-top:1rem">
-          اطلاعات دیتابیس را از پنل هاست یا phpMyAdmin بگیرید. بعد از اتصال، جداول و یک حساب مدیر ساخته می‌شود.
-          رمزهای عبور در هیچ جایی ذخیره یا لاگ نمی‌شوند.
-        </p>
-        <p style="text-align:center;margin-top:.75rem">
-          <button type="button" onclick="window.__aryaSkipSetup&&window.__aryaSkipSetup()"
-            style="background:none;border:none;color:rgba(255,255,255,.45);font-size:.75rem;text-decoration:underline;cursor:pointer;font-family:inherit">
-            فعلاً نمی‌خواهم متصل کنم — مشاهده سایت در حالت نمایشی (محلی)
-          </button>
-        </p>
-      </div>
-    </div>
+      <!-- موتور دیتابیس -->
+      <section class="sw-sec">
+        <h2><i>۱</i> موتور دیتابیس <small>MySQL، PostgreSQL، SQLite، Supabase، SQL Server</small></h2>
+        <div>
+          <label class="sw-label">درایور</label>
+          <select name="driver" class="input-style" dir="ltr" style="width:100%" onchange="arySetupDriverChange(this.value)">
+            <option value="mysql">MySQL / MariaDB (پیش‌فرض هاست‌های ایرانی)</option>
+            <option value="pgsql">PostgreSQL</option>
+            <option value="sqlite">SQLite (فایل محلی — تست و استجینگ)</option>
+            <option value="supabase">Supabase — Postgres ابری (TLS اجباری)</option>
+            <option value="sqlsrv">SQL Server (pdo_sqlsrv)</option>
+          </select>
+        </div>
+
+        <div id="db-server-fields" style="display:flex;flex-direction:column;gap:1rem">
+          <div class="sw-row2" style="grid-template-columns:2fr 1fr">
+            <div>
+              <label class="sw-label">میزبان (Host)</label>
+              <input name="host" class="input-style" dir="ltr" placeholder="localhost" value="localhost">
+            </div>
+            <div>
+              <label class="sw-label">پورت</label>
+              <input name="port" class="input-style" dir="ltr" placeholder="3306">
+            </div>
+          </div>
+          <div>
+            <label class="sw-label">نام دیتابیس</label>
+            <input name="dbname" class="input-style" dir="ltr" placeholder="arya_store" value="arya_store">
+          </div>
+          <div id="pg_schema_row" style="display:none">
+            <label class="sw-label">اسکیمای PostgreSQL</label>
+            <input name="db_schema" class="input-style" dir="ltr" placeholder="public" value="public">
+          </div>
+          <div class="sw-row2">
+            <div>
+              <label class="sw-label">نام کاربری</label>
+              <input name="dbuser" class="input-style" dir="ltr" autocomplete="off">
+            </div>
+            <div>
+              <label class="sw-label">رمز عبور</label>
+              <input name="dbpass" type="password" class="input-style" dir="ltr" placeholder="(در صورت وجود)" autocomplete="new-password">
+            </div>
+          </div>
+        </div>
+
+        <div id="db-supabase-fields" style="display:none;flex-direction:column;gap:.75rem">
+          <div class="sw-row2" style="grid-template-columns:2fr 1fr">
+            <div>
+              <label class="sw-label">Project Ref (از کنسول Supabase)</label>
+              <input name="project_ref" class="input-style" dir="ltr" placeholder="abcdefghijklmnop" autocomplete="off" spellcheck="false">
+            </div>
+            <div>
+              <label class="sw-label">نوع اتصال</label>
+              <select name="pool_mode" class="input-style" dir="ltr" onchange="var r=document.getElementById('supa_region_row'); if(r) r.style.display=(this.value==='pooler'?'block':'none')">
+                <option value="direct">Direct — 5432 (DDL و اپ)</option>
+                <option value="pooler">Pooler — 6543 (اپ پرترافیک)</option>
+              </select>
+            </div>
+          </div>
+          <div id="supa_region_row" style="display:none">
+            <label class="sw-label">Region استخر (از Connection string در کنسول)</label>
+            <input name="region" class="input-style" dir="ltr" placeholder="ap-southeast-1" autocomplete="off" spellcheck="false">
+          </div>
+          <div class="sw-row2" style="grid-template-columns:1fr 2fr">
+            <div>
+              <label class="sw-label">SSL Mode</label>
+              <select name="sslmode" class="input-style" dir="ltr">
+                <option value="">require (پیش‌فرض)</option>
+                <option value="verify-ca">verify-ca</option>
+                <option value="verify-full">verify-full</option>
+              </select>
+            </div>
+            <div>
+              <label class="sw-label">مسیر فایل CA (فقط برای verify-*)</label>
+              <input name="sslrootcert" class="input-style" dir="ltr" placeholder="/home/USER/supabase-root-cert.pem" autocomplete="off" spellcheck="false">
+            </div>
+          </div>
+          <p class="sw-note">میزبان و نام کاربری خودکار ساخته می‌شوند: <span dir="ltr">db.REF.supabase.co:5432</span> با کاربر <span dir="ltr">postgres</span> (Direct) یا <span dir="ltr">aws-0-REGION.pooler.supabase.com:6543</span> با کاربر <span dir="ltr">postgres.REF</span> (Pooler). فیلدهای پیشرفته (Host/Port/User) را فقط برای Self-host یا دامنه دلخواه پر کنید. رمز = Database password در Settings → Database. دیتابیس <span dir="ltr">postgres</span> از قبل وجود دارد و جداول در اسکیمای public ساخته می‌شوند.</p>
+        </div>
+
+        <div id="db-sqlite-fields" style="display:none">
+          <label class="sw-label">مسیر فایل SQLite (اختیاری)</label>
+          <input name="sqlite_path" class="input-style" dir="ltr" placeholder="storage/arya_store.sqlite">
+          <p class="sw-note" style="margin-top:.4rem">پیش‌فرض: <span dir="ltr">storage/arya_store.sqlite</span> داخل پوشه‌ی سایت</p>
+        </div>
+      </section>
+
+      <!-- حساب مدیر -->
+      <section class="sw-sec">
+        <h2><i>۲</i> حساب مدیر و گزینه‌ها</h2>
+        <div class="sw-row2">
+          <div>
+            <label class="sw-label">ایمیل مدیر پنل</label>
+            <input name="admin_email" class="input-style" dir="ltr" type="email" placeholder="admin@yoursite.ir" required>
+          </div>
+          <div>
+            <label class="sw-label">رمز مدیر (خالی = تصادفی و یک‌نمایش)</label>
+            <input name="admin_pass" type="password" class="input-style" dir="ltr" autocomplete="new-password" placeholder="حداقل ۸ کاراکتر + حرف بزرگ + رقم">
+          </div>
+        </div>
+        <label class="sw-check"><input type="checkbox" name="demo_mode"> حالت نمایشی (DEMO_MODE) — کدهای تایید OTP در پاسخ API برگردانده می‌شوند؛ فقط روی تست!</label>
+        <label class="sw-check"><input type="checkbox" name="demo_seed" checked> ساخت کاتالوگ نمونه — ۶ محصول، ۵ دسته‌بندی و مقالات بلاگ داخل دیتابیس درج می‌شود؛ بعداً از پنل قابل ویرایش/حذف است</label>
+      </section>
+
+      <div id="db-setup-error" style="display:none;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:10px;padding:.75rem 1rem;color:#fca5a5;font-size:.85rem"></div>
+      <div id="db-setup-success" style="display:none;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:10px;padding:.75rem 1rem;color:#6ee7b7;font-size:.83rem;line-height:2"></div>
+      <button id="db-setup-submit-btn" type="submit" class="btn-primary sw-submit">اتصال و راه‌اندازی</button>
+      <p class="sw-foot">اطلاعات دیتابیس را از پنل هاست یا phpMyAdmin بگیرید. بعد از اتصال، جداول و یک حساب مدیر ساخته می‌شود. رمزهای عبور در هیچ جایی ذخیره یا لاگ نمی‌شوند.</p>
+      <p class="sw-skip">
+        <button type="button" onclick="window.__aryaSkipSetup&&window.__aryaSkipSetup()">فعلاً نمی‌خواهم متصل کنم — مشاهده سایت در حالت نمایشی (محلی)</button>
+      </p>
+    </form>
   </div>
+</div>
 
-  <div id="app" class="min-h-screen w-full"></div>
+  
+<div id="app" class="min-h-screen w-full"></div>
   
   <div id="toast-container" class="fixed top-4 left-4 right-4 md:left-auto md:right-6 md:w-96 z-[200] flex flex-col gap-3 pointer-events-none"></div>
   
@@ -270,7 +293,7 @@
     if (typeof renderHeader === 'undefined') {
       window.renderHeader = function() {
         return `
-          <header class="glass-dark sticky top-0 z-50 border-b border-white/5">
+          <header class="glass-dark ary-liquid sticky top-0 z-50 border-b border-white/5">
             <div class="max-w-7xl mx-auto px-4 lg:px-8">
               <div class="flex items-center justify-between h-16 lg:h-20">
                 <button onclick="goTo('home')" class="flex items-center gap-3" type="button">
@@ -278,6 +301,7 @@
                   <span class="font-black text-lg gradient-text">${config?.store_name || 'فروشگاه'}</span>
                 </button>
                 <div class="flex items-center gap-2">
+                  <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><span class="ico-sun" style="display:inline-flex">☀</span><span class="ico-moon">☾</span></button>
                   <button onclick="goTo('shop')" class="text-white/80 hover:text-white text-sm font-medium transition-colors px-3 py-2 rounded-xl glass" type="button">فروشگاه</button>
                   <button onclick="goTo('blog')" class="text-white/80 hover:text-white text-sm font-medium transition-colors px-3 py-2 rounded-xl glass" type="button">بلاگ</button>
                   <button onclick="goTo('cart')" class="relative p-2.5 glass rounded-xl hover:bg-white/10" type="button">🛒</button>
@@ -388,6 +412,18 @@
     };
 
 
+        window.aryXamppPreset = function () {
+      try {
+        var fm=document.getElementById('db-setup-form'); if(!fm) return;
+        var set=function(n,v){var el=fm.elements[n]; if(el) el.value=v;};
+        set('driver','mysql'); if(window.arySetupDriverChange) arySetupDriverChange('mysql');
+        set('host','127.0.0.1'); set('port','3306'); set('dbname','arya_shop'); set('dbuser','root'); set('dbpass','');
+        var st=document.getElementById('panel-status');
+        if(st){st.style.display='block';st.style.background='rgba(16,185,129,.12)';st.style.color='#6ee7b7';st.textContent='پیش‌فرض XAMPP ست شد — فقط مطمئن شوید دیتابیس arya_shop در phpMyAdmin ساخته شده است.';}
+        var el=fm.elements['demo_seed']; if(el) el.checked=true;
+      } catch (e) {}
+    };
+    
     function showDbSetupScreen() {
       const setupEl = document.getElementById('db-setup-screen');
       const appEl = document.getElementById('app');

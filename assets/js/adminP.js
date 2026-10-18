@@ -1080,29 +1080,29 @@ function renderAdminShopSettings() {
   const esc = (v) => escapeHtml(String(v ?? ''));
   const rows = cfg.shipping_options.map((o, i) => `
     <div class="glass rounded-xl p-3.5 grid grid-cols-2 lg:grid-cols-12 gap-2.5 items-end">
-      <div class="lg:col-span-3">
+      <div class="col-span-2 md:col-span-4 lg:col-span-3">
         <label class="block text-[10px] text-white/50 mb-1">نام گزینه</label>
         <input id="shop-o${i}-label" class="input-style w-full text-sm" value="${esc(o.label)}" placeholder="مثلاً ارسال عادی">
       </div>
-      <div class="lg:col-span-1">
+      <div class="col-span-1 md:col-span-2 lg:col-span-1">
         <label class="block text-[10px] text-white/50 mb-1">حداقل روز</label>
         <input id="shop-o${i}-min" type="number" min="0" max="45" class="input-style w-full text-sm" value="${o.min_days}">
       </div>
-      <div class="lg:col-span-1">
+      <div class="col-span-1 md:col-span-2 lg:col-span-1">
         <label class="block text-[10px] text-white/50 mb-1">حداکثر روز</label>
         <input id="shop-o${i}-max" type="number" min="0" max="60" class="input-style w-full text-sm" value="${o.max_days}">
       </div>
-      <div class="lg:col-span-2">
+      <div class="col-span-2 md:col-span-2 lg:col-span-2">
         <label class="block text-[10px] text-white/50 mb-1">هزینه اضافه — تومان</label>
         <input id="shop-o${i}-extra" type="number" min="0" step="1000" class="input-style w-full text-sm" value="${o.extra_cost}">
       </div>
-      <label class="lg:col-span-2 inline-flex items-center gap-2 text-xs cursor-pointer pb-2">
+      <label class="md:col-span-2 lg:col-span-1 inline-flex items-center gap-2 text-xs cursor-pointer pb-2">
         <input id="shop-o${i}-active" type="checkbox" ${o.active ? 'checked' : ''} class="accent-blue-500 w-4 h-4"><span>فعال</span>
       </label>
-      <label class="lg:col-span-2 inline-flex items-center gap-2 text-xs cursor-pointer pb-2">
+      <label class="md:col-span-3 lg:col-span-2 inline-flex items-center gap-2 text-xs cursor-pointer pb-2">
         <input type="radio" name="shop-default" value="${i}" ${o.is_default ? 'checked' : ''} class="accent-blue-500"><span>پیش‌فرض</span>
       </label>
-      <div class="lg:col-span-1 flex justify-end pb-1">
+      <div class="md:col-span-1 flex justify-end pb-1">
         <button type="button" class="text-[11px] px-2.5 py-1.5 rounded-lg bg-rose-500/10 text-rose-300 hover:bg-rose-500/20 border border-rose-500/20 transition" onclick="aryAdminShopEdit('del', ${i})" title="حذف گزینه">حذف</button>
       </div>
       <input type="hidden" id="shop-o${i}-id" value="${esc(o.id)}">
@@ -1111,7 +1111,7 @@ function renderAdminShopSettings() {
   return `
     <div class="animate-fade max-w-4xl">
       <div class="flex items-center justify-between gap-3 mb-5">
-        <h1 class="text-2xl font-black flex items-center gap-2.5"><span class="inline-flex text-blue-300">${ai('truck','w-6 h-6')}</span> زمان ارسال و مبدأ نقشه</h1>
+        <h1 class="text-xl lg:text-2xl font-black flex items-center gap-2.5 flex-wrap"><span class="inline-flex text-blue-300">${ai('truck','w-6 h-6')}</span> زمان ارسال و مبدأ نقشه</h1>
         <button type="button" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold inline-flex items-center gap-2" onclick="aryAdminShopSave()">${ai('check','w-4 h-4')} ذخیره تنظیمات</button>
       </div>
 
@@ -4326,7 +4326,7 @@ function renderAdminDatabasePage() {
         <div class="font-bold mb-2 flex items-center gap-2"><span>🔗</span><span>وضعیت سرور و دیتابیس</span></div>
         <div id="sys-status-box" class="text-xs text-white/60">در حال دریافت…</div>
         <p class="text-[11px] text-white/40 mt-2 leading-relaxed">
-          اتصال از طریق ویزارد نصب صفحه اصلی انجام می‌شود (MySQL/MariaDB، PostgreSQL، SQLite، SQL Server)
+          اتصال از طریق ویزارد نصب صفحه اصلی انجام می‌شود (MySQL/MariaDB، PostgreSQL، SQLite، SQL Server — و راهنمای سریع XAMPP/phpMyAdmin)
           و پشتیبانی از پنل‌های cPanel/DirectAdmin/Plesk برای ساخت خودکار دیتابیس.
           نمونه تنظیمات دستی: <code class="text-blue-300">config.sample.php</code>
         </p>

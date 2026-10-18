@@ -1054,3 +1054,166 @@ form select option {
 .ary-hscroll.dragging img,.ary-hscroll.dragging video{pointer-events:none}
 /* هرسafety: شناور پشتیبانی هرگز در پنل ادمین ظاهر نشود */
 body:has(#admin-panel-screen) #arya-support-fab,body:has(#admin-panel-screen) #ary-chat-panel{display:none!important}
+
+/* ═══════════════════════════════════════════════════════════════*/
+/* v2 REDESIGN — surfaces solids, liquid header, light theme, motion */
+/* ═══════════════════════════════════════════════════════════════*/
+:root{--ink0:#0d1b34;--sw-lab:rgba(255,255,255,.68);--sw-note:rgba(255,255,255,.45);--cardline:rgba(255,255,255,.08)}
+
+/* 1) کانتینرها: شیشه → سطح جامدِ لایه‌ای (هدر استثناست) */
+.glass{background:rgba(13,24,48,.8);backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid var(--cardline);box-shadow:0 14px 40px -22px rgba(2,10,40,.85)}
+.glass-strong{background:rgba(10,19,40,.94);backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid rgba(255,255,255,.1);box-shadow:0 22px 60px -24px rgba(2,10,40,.9)}
+.glass-dark{background:rgba(6,12,28,.9);backdrop-filter:none;-webkit-backdrop-filter:none}
+/* هدر — لیکوید گلس حفظ می‌شود */
+header.ary-liquid{background:linear-gradient(180deg,rgba(8,16,38,.8),rgba(8,16,38,.52));
+  backdrop-filter:blur(22px) saturate(1.75) brightness(1.06);-webkit-backdrop-filter:blur(22px) saturate(1.75) brightness(1.06);
+  border-bottom:1px solid rgba(147,197,253,.16);box-shadow:0 12px 42px -18px rgba(2,10,40,.85)}
+
+/* 2) پالیش عمومی */
+::selection{background:rgba(59,130,246,.5);color:#fff}
+:focus-visible{outline:2px solid #60a5fa;outline-offset:2px;border-radius:6px}
+button,a,input,select,textarea{transition-timing-function:cubic-bezier(.2,.7,.3,1)}
+.glass,.glass-strong{transition:background .35s ease,border-color .35s ease,box-shadow .35s ease,transform .35s ease}
+.card:hover{border-color:rgba(96,165,250,.3)}
+
+/* 3) حرکت پنجره چت — بازشدن دایره‌ای از گوشه (سمت دکمه) و بسته شدن همان‌جا */
+#ary-chat-panel .glass-strong,#ary-chat-panel.glass-strong{background:rgba(13,24,48,.97)}
+#ary-chat-panel{transform-origin:bottom right}
+@keyframes aryChatOrbIn{0%{clip-path:circle(12px at calc(100% - 34px) calc(100% + 62px));opacity:.4}
+  55%{opacity:1}100%{clip-path:circle(150% at 55% 42%);opacity:1}}
+@keyframes aryChatOrbOut{0%{clip-path:circle(150% at 55% 42%);opacity:1}
+  100%{clip-path:circle(12px at calc(100% - 34px) calc(100% + 62px));opacity:.15}}
+.ary-chat-open{animation:aryChatOrbIn .52s cubic-bezier(.25,.85,.25,1) both}
+.ary-chat-closing{animation:aryChatOrbOut .34s cubic-bezier(.6,.05,.75,.25) both;pointer-events:none}
+#ary-chat-panel .ary-chat-idbar{display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:.35rem .9rem;font-size:10.5px;color:#bfdbfe;background:rgba(30,64,140,.45);border-bottom:1px solid rgba(147,197,253,.16)}
+#ary-chat-panel .ary-chat-idbar button{color:#93c5fd;text-decoration:underline;cursor:pointer}
+@media (max-width:639px){#ary-chat-panel{transform-origin:bottom right}
+  @keyframes aryChatOrbIn{0%{clip-path:circle(12px at calc(100% - 28px) calc(100% + 34px));opacity:.4}55%{opacity:1}100%{clip-path:circle(160% at 50% 42%);opacity:1}}
+  @keyframes aryChatOrbOut{0%{clip-path:circle(160% at 50% 42%);opacity:1}100%{clip-path:circle(12px at calc(100% - 28px) calc(100% + 34px));opacity:.15}}}
+@media (prefers-reduced-motion:reduce){.ary-chat-open{animation:aryChatPop .25s ease both}.ary-chat-closing{animation:none}}
+
+/* 4) کلید تم */
+.ary-theme-btn{display:inline-flex;align-items:center;justify-content:center;width:2.35rem;height:2.35rem;border-radius:12px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);color:#dbeafe;cursor:pointer;transition:.25s}
+.ary-theme-btn:hover{background:rgba(59,130,246,.22);transform:translateY(-1px)}
+.ary-theme-btn .ico-moon{display:none}
+html[data-aria-theme="light"] .ary-theme-btn{background:rgba(29,78,216,.08);border-color:rgba(29,78,216,.2);color:#1e3a8a}
+html[data-aria-theme="light"] .ary-theme-btn .ico-sun{display:none}
+html[data-aria-theme="light"] .ary-theme-btn .ico-moon{display:inline-flex}
+
+/* 5) تم روشن — سطح پایه و ریمپ ابزارکی‌ها */
+html[data-aria-theme="light"] body{color:var(--ink0)}
+html[data-aria-theme="light"] .bg-main{background:linear-gradient(155deg,#eef4fd 0%,#e2ecfa 38%,#edf4fe 68%,#e6effc 100%);background-attachment:fixed}
+html[data-aria-theme="light"] .glass,html[data-aria-theme="light"] .glass-dark{background:rgba(255,255,255,.96);border-color:rgba(21,54,107,.1);box-shadow:0 12px 34px -20px rgba(15,55,120,.25)}
+html[data-aria-theme="light"] .glass-strong{background:#fff;border-color:rgba(21,54,107,.12);box-shadow:0 24px 56px -24px rgba(15,55,120,.35)}
+html[data-aria-theme="light"] header.ary-liquid{background:linear-gradient(180deg,rgba(255,255,255,.9),rgba(243,248,255,.72));border-bottom-color:rgba(37,99,235,.14);box-shadow:0 12px 34px -22px rgba(15,55,120,.4)}
+html[data-aria-theme="light"] .input-style{background:#fff;color:var(--ink0);border-color:rgba(21,54,107,.2)}
+html[data-aria-theme="light"] .input-style::placeholder{color:rgba(12,28,58,.38)}
+html[data-aria-theme="light"] .input-style:hover{border-color:rgba(37,99,235,.45)}
+html[data-aria-theme="light"] .input-style:focus{box-shadow:0 0 0 4px rgba(59,130,246,.16);border-color:#2563eb}
+html[data-aria-theme="light"] .btn-ghost{background:rgba(29,78,216,.07);border-color:rgba(29,78,216,.18);color:#1e4fa8}
+html[data-aria-theme="light"] .btn-ghost:hover{background:rgba(29,78,216,.13)}
+html[data-aria-theme="light"] .gradient-text{background:linear-gradient(135deg,#1d4ed8,#0284c7);-webkit-background-clip:text;background-clip:text;color:transparent}
+html[data-aria-theme="light"] ::-webkit-scrollbar-track{background:rgba(15,45,95,.06)}
+html[data-aria-theme="light"] .ary-chat-bubble-sup{background:#eef4fb;border-color:rgba(21,54,107,.1)}
+html[data-aria-theme="light"] #ary-chat-panel .glass-strong,html[data-aria-theme="light"] #ary-chat-panel.glass-strong{background:rgba(255,255,255,.98);border-color:rgba(21,54,107,.16);box-shadow:0 24px 60px rgba(15,55,120,.25)}
+html[data-aria-theme="light"] #ary-chat-panel .ary-chat-idbar{background:rgba(37,99,235,.08);color:#1e4fa8;border-bottom-color:rgba(37,99,235,.15)}
+html[data-aria-theme="light"] #ary-chat-panel .ary-chat-idbar button{color:#1d4ed8}
+html[data-aria-theme="light"] .text-white{color:var(--ink0)}
+
+html[data-aria-theme="light"] .text-white\/95{color:rgba(12,28,58,0.95)}
+    html[data-aria-theme="light"] .text-white\/90{color:rgba(12,28,58,0.90)}
+    html[data-aria-theme="light"] .text-white\/85{color:rgba(12,28,58,0.85)}
+    html[data-aria-theme="light"] .text-white\/80{color:rgba(12,28,58,0.80)}
+    html[data-aria-theme="light"] .text-white\/75{color:rgba(12,28,58,0.75)}
+    html[data-aria-theme="light"] .text-white\/70{color:rgba(12,28,58,0.70)}
+    html[data-aria-theme="light"] .text-white\/65{color:rgba(12,28,58,0.65)}
+    html[data-aria-theme="light"] .text-white\/60{color:rgba(12,28,58,0.60)}
+    html[data-aria-theme="light"] .text-white\/55{color:rgba(12,28,58,0.55)}
+    html[data-aria-theme="light"] .text-white\/50{color:rgba(12,28,58,0.50)}
+    html[data-aria-theme="light"] .text-white\/45{color:rgba(12,28,58,0.45)}
+    html[data-aria-theme="light"] .text-white\/40{color:rgba(12,28,58,0.40)}
+    html[data-aria-theme="light"] .text-white\/35{color:rgba(12,28,58,0.35)}
+    html[data-aria-theme="light"] .text-white\/30{color:rgba(12,28,58,0.30)}
+    html[data-aria-theme="light"] .text-white\/25{color:rgba(12,28,58,0.25)}
+    html[data-aria-theme="light"] .text-white\/20{color:rgba(12,28,58,0.20)}
+    html[data-aria-theme="light"] .text-white\/15{color:rgba(12,28,58,0.15)}
+    html[data-aria-theme="light"] .text-white\/10{color:rgba(12,28,58,0.10)}
+    html[data-aria-theme="light"] .text-white\/5{color:rgba(12,28,58,0.05)}
+    
+html[data-aria-theme="light"] .bg-white\/3{background-color:rgba(15,45,95,0.04)}
+    html[data-aria-theme="light"] .bg-white\/5{background-color:rgba(15,45,95,0.06)}
+    html[data-aria-theme="light"] .bg-white\/8{background-color:rgba(15,45,95,0.10)}
+    html[data-aria-theme="light"] .bg-white\/10{background-color:rgba(15,45,95,0.12)}
+    html[data-aria-theme="light"] .bg-white\/12{background-color:rgba(15,45,95,0.14)}
+    html[data-aria-theme="light"] .bg-white\/15{background-color:rgba(15,45,95,0.18)}
+    html[data-aria-theme="light"] .bg-white\/20{background-color:rgba(15,45,95,0.24)}
+    html[data-aria-theme="light"] .bg-white\/25{background-color:rgba(15,45,95,0.30)}
+    
+html[data-aria-theme="light"] .bg-black\/20{background-color:rgba(15,45,95,0.12)}
+    html[data-aria-theme="light"] .bg-black\/25{background-color:rgba(15,45,95,0.15)}
+    html[data-aria-theme="light"] .bg-black\/30{background-color:rgba(15,45,95,0.18)}
+    html[data-aria-theme="light"] .bg-black\/35{background-color:rgba(15,45,95,0.21)}
+    html[data-aria-theme="light"] .bg-black\/40{background-color:rgba(15,45,95,0.24)}
+    html[data-aria-theme="light"] .bg-black\/45{background-color:rgba(15,45,95,0.27)}
+    html[data-aria-theme="light"] .bg-black\/50{background-color:rgba(15,45,95,0.30)}
+    html[data-aria-theme="light"] .bg-black\/60{background-color:rgba(15,45,95,0.36)}
+    html[data-aria-theme="light"] .bg-black\/70{background-color:rgba(15,45,95,0.42)}
+    html[data-aria-theme="light"] .bg-black\/80{background-color:rgba(15,45,95,0.48)}
+    html[data-aria-theme="light"] .bg-black\/90{background-color:rgba(15,45,95,0.54)}
+    html[data-aria-theme="light"] .bg-black\/95{background-color:rgba(15,45,95,0.57)}
+    
+html[data-aria-theme="light"] .border-white\/5{border-color:rgba(15,45,95,0.10)}
+    html[data-aria-theme="light"] .border-white\/8{border-color:rgba(15,45,95,0.16)}
+    html[data-aria-theme="light"] .border-white\/10{border-color:rgba(15,45,95,0.20)}
+    html[data-aria-theme="light"] .border-white\/12{border-color:rgba(15,45,95,0.24)}
+    html[data-aria-theme="light"] .border-white\/15{border-color:rgba(15,45,95,0.30)}
+    html[data-aria-theme="light"] .border-white\/20{border-color:rgba(15,45,95,0.40)}
+    html[data-aria-theme="light"] .border-white\/25{border-color:rgba(15,45,95,0.50)}
+    
+html[data-aria-theme="light"] .bg-white\/8{background-color:rgba(15,45,95,.08)}
+html[data-aria-theme="light"] body{background:#eef4fd}
+html[data-aria-theme="light"] .bg-gradient-to-br.from-blue-600\/30.to-sky-500\/10{background:linear-gradient(to bottom right,rgba(59,130,246,.14),rgba(14,165,233,.08))}
+
+/* 6) ویزارد نصب — ریسپانسیو و مرتب */
+.sw-card{width:100%;max-width:640px;margin-inline:auto}
+.sw-hero{text-align:center;margin-bottom:1.4rem}
+.sw-logo{width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,#2a8dff,#005aff);display:flex;align-items:center;justify-content:center;font-size:2.3rem;margin:0 auto .9rem;box-shadow:0 18px 40px rgba(0,90,255,.35)}
+.sw-hero h1{font-size:1.45rem;font-weight:900}
+.sw-hero p{color:var(--sw-note);font-size:.84rem;margin-top:.2rem}
+.sw-form{background:var(--card-bg,rgba(255,255,255,.06));border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:clamp(1rem,3vw,1.75rem);display:flex;flex-direction:column;gap:1rem}
+html[data-aria-theme="light"] .sw-form{background:#fff;border-color:rgba(21,54,107,.12);box-shadow:0 24px 60px -24px rgba(15,55,120,.3)}
+.sw-sec{border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1rem 1.1rem;background:rgba(0,0,0,.14);display:flex;flex-direction:column;gap:1rem}
+html[data-aria-theme="light"] .sw-sec{background:#f6f9ff;border-color:rgba(21,54,107,.09)}
+.sw-sec>h2{display:flex;align-items:center;gap:.6rem;font-size:.95rem;font-weight:800}
+.sw-sec>h2 i{font-style:normal;width:24px;height:24px;border-radius:9px;flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:#fff;background:linear-gradient(135deg,#2a8dff,#005aff);box-shadow:0 6px 16px -6px rgba(0,90,255,.7)}
+.sw-sec>h2 small{font-weight:500;color:var(--sw-note);font-size:.72rem}
+.sw-col{display:flex;flex-direction:column;gap:1rem}
+.sw-row2{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.sw-label{display:block;font-size:.8rem;color:var(--sw-lab);margin-bottom:.35rem;font-weight:600}
+.sw-check{display:flex;align-items:flex-start;gap:.5rem;font-size:.78rem;color:var(--sw-lab);line-height:1.7;cursor:pointer}
+.sw-note{font-size:.72rem;color:var(--sw-note);line-height:1.9}
+.sw-details{border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(0,0,0,.15);padding:.7rem 1rem}
+html[data-aria-theme="light"] .sw-details{background:#f6f9ff;border-color:rgba(21,54,107,.1)}
+.sw-details summary{cursor:pointer;font-weight:700;font-size:.88rem;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+.sw-details summary::-webkit-details-marker{display:none}
+.sw-details summary::after{content:"▾";color:#60a5fa;transition:transform .25s}
+.sw-details[open] summary::after{transform:rotate(180deg)}
+.sw-pad{display:flex;flex-direction:column;gap:.75rem;margin-top:.9rem}
+.sw-btnrow{display:flex;gap:.75rem;flex-wrap:wrap}
+.sw-btn{flex:1;min-width:10rem;padding:10px;border-radius:10px;background:rgba(42,141,255,.15);border:1px solid rgba(42,141,255,.4);color:#93c5fd;font-weight:700;cursor:pointer;font-size:.85rem;font-family:inherit;transition:.25s}
+.sw-btn:hover{background:rgba(42,141,255,.3)}
+.sw-btn-ok{background:rgba(16,185,129,.15);border-color:rgba(16,185,129,.4);color:#6ee7b7}
+.sw-btn-ok:hover{background:rgba(16,185,129,.3)}
+.sw-status{font-size:.8rem;border-radius:10px;padding:.6rem .8rem;line-height:1.8}
+.sw-ol{list-style:decimal;padding-inline-start:1.2rem;font-size:.78rem;color:var(--sw-lab);line-height:2;display:grid;gap:.15rem}
+.sw-submit{padding:14px;border-radius:12px;font-weight:800;font-family:inherit;font-size:.95rem}
+.sw-foot{text-align:center;color:var(--sw-note);font-size:.72rem;line-height:1.9}
+.sw-skip{text-align:center}
+.sw-skip button{background:none;border:none;color:rgba(147,197,253,.6);font-size:.75rem;text-decoration:underline;cursor:pointer;font-family:inherit}
+@media (max-width:640px){.sw-row2{grid-template-columns:1fr}.sw-hero h1{font-size:1.25rem}.sw-btn{min-width:100%}}
+@media (min-width:1000px){.sw-card{max-width:760px}}
+
+
+.sw-check input{width:1rem;height:1rem;accent-color:#2563eb;flex:none;margin-top:.15rem}

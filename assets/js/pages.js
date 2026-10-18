@@ -450,7 +450,11 @@ window.switchProfileTab = switchProfileTab;
 window.AryaSupportChat = (function () {
   let root = null, isOpen = false, pollTimer = null, lastCount = -1;
   const esc = v => String(v == null ? '' : v).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const u = () => (typeof state !== 'undefined' && (state.user || state.currentUser)) || null;
+  const GKEY = 'arya_guest_contact';
+  function guestC() { try { const g = JSON.parse(localStorage.getItem(GKEY) || 'null'); return (g && g.phone) ? g : null; } catch (e) { return null; } }
+  function setGuestC(g) { try { g ? localStorage.setItem(GKEY, JSON.stringify(g)) : localStorage.removeItem(GKEY); } catch (e) {} }
+  window.AryaGuestContact = { get: guestC, set: setGuestC };
+  const u = () => (typeof state !== 'undefined' && (state.user || state.currentUser)) || guestC() || null;
   function msgsOf(t) {
     if (Array.isArray(t.messages)) return t.messages;
     try { const p = JSON.parse(t.messages || '[]'); return Array.isArray(p) ? p : []; } catch (e) { return []; }
@@ -492,6 +496,33 @@ window.AryaSupportChat = (function () {
     const body = root.querySelector('#ary-chat-body');
     if (!body) return;
     const { tickets, msgs } = thread();
+    const bar = root.querySelector('#ary-chat-idbar');
+    if (bar) {
+      const g = (!state.user && !state.currentUser) ? guestC() : null;
+      if (g) { bar.style.display = 'flex'; bar.innerHTML = '<span>گفتگوی مهمان — پاسخ‌ها به ' + esc(g.phone) + '</span><button type="button" id="ary-g-change">تغییر</button>';
+        const ch = bar.querySelector('#ary-g-change'); if (ch) ch.onclick = () => { setGuestC(null); paint(); }; }
+      else bar.style.display = 'none';
+    }
+    if (!u()) {
+      body.innerHTML = `<div class="p-4 text-center space-y-3">
+        <p class="text-xs leading-6 text-white/70">برای گفتگو با پشتیبانی <b>نیازی به ورود نیست</b> — شماره موبایل‌تان را بنویسید؛ تیکت شما ثبت می‌شود و پاسخ‌ها همین‌جا (با همین شماره) نمایش داده می‌شوند.</p>
+        <form id="ary-g-form" class="grid gap-2 max-w-[15rem] mx-auto text-right">
+          <input id="ary-g-name" class="input-style text-xs py-2" placeholder="نام (اختیاری)">
+          <input id="ary-g-phone" class="input-style text-xs py-2 text-left" dir="ltr" inputmode="numeric" placeholder="09xxxxxxxxx" maxlength="11" required>
+          <button class="btn-primary rounded-xl py-2 text-xs font-bold" type="submit">شروع گفتگو</button>
+        </form>
+      </div>`;
+      const gf = body.querySelector('#ary-g-form');
+      gf.onsubmit = (ev) => {
+        ev.preventDefault();
+        const ph = String(body.querySelector('#ary-g-phone').value || '').replace(/\D/g, '').replace(/^9/, '09');
+        if (!/^09\d{9}$/.test(ph)) { toast('شماره موبایل معتبر وارد کنید (۰۹xxxxxxxxx)', 'warning'); return; }
+        setGuestC({ phone: ph, name: String(body.querySelector('#ary-g-name').value || '').trim().slice(0, 60) });
+        paint(); pull();
+        const inp2 = root.querySelector('#ary-chat-input'); if (inp2) inp2.focus();
+      };
+      return;
+    }
     body.innerHTML = msgs.length ? msgs.map(m => m.sys
       ? `<div class="text-center text-[10px] text-white/35 py-1">${esc(m.text)}</div>`
       : `<div class="flex ary-msg-in ${m.from === 'user' ? 'justify-end' : 'justify-start'}">
@@ -510,7 +541,7 @@ window.AryaSupportChat = (function () {
   }
   function send(text) {
     const me = u();
-    if (!me) { toast('برای گفتگو ابتدا وارد حساب شوید', 'warning'); close(); goTo('login'); return; }
+    if (!me) { toast('برای شروع، شماره موبایل‌تان را در فرم بزنید — ورود لازم نیست', 'info', 4500); paint(); return; }
     const clean = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 1200);
     if (clean.length < 3) { toast('پیام کوتاه‌تر از ۳ کاراکتر ارسال نمی‌شود', 'warning'); return; }
     const openT = myTickets().find(t => t.status === 'open');
@@ -520,8 +551,6 @@ window.AryaSupportChat = (function () {
     setTimeout(() => { pull(); paint(); }, 800);
   }
   function open() {
-    const me = u();
-    if (!me) { toast('گفتگوی پشتیبانی مخصوص کاربران ثبت‌نام‌شده است', 'info'); goTo('login'); return; }
     if (!root) {
       root = document.createElement('div');
       root.id = 'ary-chat-panel';
@@ -548,6 +577,7 @@ window.AryaSupportChat = (function () {
               </button>
             </div>
           </div>
+          <div id="ary-chat-idbar" style="display:none"></div>
           <div id="ary-chat-body" class="p-3 space-y-2 overflow-y-auto bg-black/25" style="min-height:14rem;max-height:min(42vh,22rem)"></div>
           <form id="ary-chat-form" class="flex items-end gap-2 p-3 border-t border-white/10 bg-black/30">
             <textarea id="ary-chat-input" rows="1" maxlength="1200" placeholder="پیام خود را بنویسید… (Enter ارسال)" class="input-style flex-1 text-[12px] resize-none py-2.5" style="min-height:2.6rem;max-height:6rem"></textarea>
@@ -562,10 +592,10 @@ window.AryaSupportChat = (function () {
       root.querySelector('#ary-chat-form').onsubmit = e => { e.preventDefault(); send(e.target.querySelector('#ary-chat-input').value); };
       const inpEl = root.querySelector('#ary-chat-input');
       inpEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e.target.value); } });
-      root.querySelector('#ary-chat-new').onclick = () => { if (typeof window.openUserTicketModal === 'function') { close(); window.openUserTicketModal(); } };
+      root.querySelector('#ary-chat-new').onclick = () => { if (!u()) { paint(); toast('اول شماره موبایل‌تان را وارد کنید', 'info'); return; } if (typeof window.openUserTicketModal === 'function') { close(); window.openUserTicketModal(); } };
     }
     root.style.display = '';
-    root.classList.remove('ary-chat-open'); void root.offsetWidth; root.classList.add('ary-chat-open');
+    root.classList.remove('ary-chat-open'); root.classList.remove('ary-chat-closing'); void root.offsetWidth; root.classList.add('ary-chat-open');
     isOpen = true;
     paint(); pull();
     if (pollTimer) clearInterval(pollTimer);
@@ -574,7 +604,11 @@ window.AryaSupportChat = (function () {
   function close() {
     isOpen = false;
     if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
-    if (root) root.style.display = 'none';
+    if (!root) return;
+    if (!root.classList.contains('ary-chat-open')) { root.style.display = 'none'; root.classList.remove('ary-chat-closing'); return; }
+    root.classList.remove('ary-chat-open');
+    root.classList.add('ary-chat-closing');
+    setTimeout(() => { if (root) { root.style.display = 'none'; root.classList.remove('ary-chat-closing'); } }, 350);
   }
   function updateBadge() {
     const fab = document.getElementById('arya-support-fab');
@@ -1156,13 +1190,13 @@ window.aryDealsScroll = function (dir) {
         : `<button type="button" onclick="resendLoginOtp()" class="text-blue-400 hover:text-blue-300 transition-colors">ارسال مجدد کد</button>`;
       return `
         ${typeof renderHeader === 'function' ? renderHeader() : ''}
-        <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
+        <main class="max-w-md lg:max-w-xl mx-auto px-4 py-8 lg:py-10">
           <div class="text-center mb-8">
             <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-sky-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-blue-500/30 animate-float">${aryIcon('lock', 'w-10 h-10 text-blue-100')}</div>
             <h1 class="text-2xl font-black mb-1">${state.authOtpMode === 'forgot' ? 'بازیابی رمز عبور' : 'تایید هویت'}</h1>
             <p class="text-white/50 text-sm">کد ۶ رقمی ارسال‌شده به ${target} را وارد کنید</p>
           </div>
-          <div class="glass-strong rounded-3xl p-7 animate-scale">
+          <div class="glass-strong rounded-3xl p-6 lg:p-8 animate-scale">
             <form onsubmit="event.preventDefault(); handleVerifyLoginOtp(this);" class="space-y-4">
               <div>
                 <label class="block text-sm text-white/70 mb-2 text-center">کد تایید</label>
@@ -1178,7 +1212,7 @@ window.aryDealsScroll = function (dir) {
               <div class="text-center text-sm">
                 <span id="login-otp-timer">${timerHtml}</span>
               </div>
-              ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
+              ${err ? `<div class="md:col-span-2 glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
               <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">${state.authOtpMode === 'forgot' ? 'تایید کد و بازنشانی رمز' : 'تایید و ورود'}</button>
               <button type="button" onclick="cancelLoginOtpStep()" class="w-full py-3 btn-ghost rounded-xl text-sm text-white/60">← بازگشت</button>
             </form>
@@ -1188,7 +1222,7 @@ window.aryDealsScroll = function (dir) {
     }
 
     const tabBar = `
-      <div class="flex gap-2 mb-6">
+      <div class="md:col-span-2 flex gap-2 mb-6">
         <button type="button" onclick="state.authTab='login'; state.authError=''; render()"
           class="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${tab==='login' ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' : 'glass text-white/60 hover:bg-white/10'}">
           ورود
@@ -1221,15 +1255,15 @@ window.aryDealsScroll = function (dir) {
                 <span class="inline-flex">${aryIcon('eye','w-5 h-5')}</span></button>
             </div>
           </div>
-          ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
+          ${err ? `<div class="md:col-span-2 glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
           <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">ورود به حساب</button>
         </form>
       `;
     } else if (tab === 'register') {
       formContent = `
         ${tabBar}
-        <form onsubmit="event.preventDefault(); handleUserRegister(this);" class="space-y-4" autocomplete="off">
-          <div>
+        <form onsubmit="event.preventDefault(); handleUserRegister(this);" class="space-y-4 md:grid md:grid-cols-2 md:gap-x-5 md:gap-y-4 md:space-y-0" autocomplete="off">
+          <div class="md:col-span-2">
             <label class="block text-sm text-white/70 mb-2">نام و نام خانوادگی</label>
             <input name="name" class="input-style w-full" placeholder="نام کامل" required minlength="3">
           </div>
@@ -1264,11 +1298,11 @@ window.aryDealsScroll = function (dir) {
                 <span class="inline-flex">${aryIcon('eye','w-5 h-5')}</span></button>
             </div>
           </div>
-          <div class="glass rounded-xl p-3 text-xs text-white/40 space-y-0.5">
+          <div class="md:col-span-2 glass rounded-xl p-3 text-xs text-white/40 space-y-0.5">
             <p>${aryIcon('key', 'w-4 h-4 inline-block align-[-3px] ml-1')} رمز باید: حداقل ۸ کاراکتر، یک حرف بزرگ و یک عدد داشته باشد</p>
           </div>
-          ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
-          <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">ثبت‌نام</button>
+          ${err ? `<div class="md:col-span-2 glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
+          <button type="submit" class="md:col-span-2 btn-primary w-full py-4 rounded-xl font-bold text-base">ثبت‌نام</button>
         </form>
       `;
     } else if (tab === 'forgot') {
@@ -1295,7 +1329,7 @@ window.aryDealsScroll = function (dir) {
             <label class="block text-sm text-white/70 mb-2">تکرار رمز جدید</label>
             <input name="newpass2" type="password" class="input-style w-full" placeholder="تکرار رمز" required autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
           </div>
-          ${err ? `<div class="glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
+          ${err ? `<div class="md:col-span-2 glass rounded-xl px-4 py-3 border border-rose-500/30 bg-rose-500/10"><p class="text-rose-300 text-sm">${err}</p></div>` : ''}
           <button type="submit" class="btn-primary w-full py-4 rounded-xl font-bold text-base">تغییر رمز عبور</button>
           <button type="button" onclick="state.authTab='login'; state.authError=''; render()" class="w-full py-3 btn-ghost rounded-xl text-sm text-white/60">← بازگشت</button>
         </form>
@@ -1304,13 +1338,13 @@ window.aryDealsScroll = function (dir) {
 
     return `
       ${typeof renderHeader === 'function' ? renderHeader() : ''}
-      <main class="max-w-md mx-auto px-4 py-12 lg:py-20">
-        <div class="text-center mb-8">
+      <main class="max-w-md lg:max-w-3xl mx-auto px-4 py-8 lg:py-12">
+        <div class="text-center mb-6 lg:mb-8">
           <div class="w-20 h-20 rounded-3xl bg-gradient-to-br from-blue-500 to-sky-700 flex items-center justify-center text-4xl mx-auto mb-4 shadow-2xl shadow-blue-500/30 animate-float">${aryIcon('key', 'w-9 h-9 text-blue-100')}</div>
           <h1 class="text-2xl font-black mb-1">${tab === 'login' ? 'ورود به حساب' : tab === 'register' ? 'ایجاد حساب' : 'بازیابی رمز'}</h1>
           <p class="text-white/50 text-sm">فروشگاه آریا</p>
         </div>
-        <div class="glass-strong rounded-3xl p-7 animate-scale">
+        <div class="glass-strong rounded-3xl p-7 lg:p-9 animate-scale">
           ${formContent}
         </div>
       </main>
@@ -3840,10 +3874,11 @@ function renderProductPage() {
 
   // ───────── Tickets: create from user (with priority) ─────────
   async function createTicketUser(payload) {
+    let gPhone = '', gName = '';
     if (!state.user) {
-      toast('ابتدا وارد شوید', 'warning');
-      navigate('login');
-      return;
+      const g = window.AryaGuestContact ? AryaGuestContact.get() : null;
+      if (!g || !g.phone) { toast('ابتدا از پنل پشتیبانی (دایرهٔ گوشهٔ صفحه) شماره موبایل‌تان را ثبت کنید — ورود لازم نیست', 'info', 5200); return; }
+      gPhone = g.phone; gName = g.name || 'مهمان';
     }
 
     const subject = String(payload.subject || '').trim();
@@ -3855,17 +3890,17 @@ function renderProductPage() {
       return;
     }
 
-    const phone = normIrPhone(state.user.phone || '');
+    const phone = normIrPhone(state.user ? (state.user.phone || '') : gPhone);
     if (phone && !/^09[0-9]{9}$/.test(phone)) {
-      toast('شماره موبایل حساب شما در سرور معتبر نیست؛ ابتدا از تب پروفایل و با کد احراز آن را اصلاح کنید', 'warning', 6000);
+      toast(state.user ? 'شماره موبایل حساب شما در سرور معتبر نیست؛ ابتدا از تب پروفایل و با کد احراز آن را اصلاح کنید' : 'شماره موبایل معتبر (۰۹...) لازم است تا پاسخ تیکت به شما برسد', 'warning', 6000);
       return;
     }
 
     const ticket = {
       id: (window.utils && utils.uid ? utils.uid() : Date.now()).toString(),
-      user_phone: phone || state.user.phone,
-      user_name: state.user.name || 'کاربر',
-      user_avatar: state.user.avatar || '',
+      user_phone: phone || (state.user ? state.user.phone : gPhone),
+      user_name: (state.user && state.user.name) || gName || 'کاربر',
+      user_avatar: (state.user && state.user.avatar) || '',
       subject,
       status: 'open',
       priority,
@@ -3917,7 +3952,8 @@ function renderProductPage() {
     if (serverAuth()) {
       let r = null;
       try {
-        r = await AryaServer.replyTicket({ id: String(ticketId), reply: msg, user_phone: normIrPhone((state.user && state.user.phone) || '') });
+        const replyPhone = (state.user && state.user.phone) || (window.AryaGuestContact && AryaGuestContact.get() ? AryaGuestContact.get().phone : '');
+        r = await AryaServer.replyTicket({ id: String(ticketId), reply: msg, user_phone: normIrPhone(replyPhone || '') });
       } catch (e) { r = null; }
       if (!r || !r.ok) {
         t.messages = prevMsgs || [];   // حذف پیام شبح‌وار از UI اگر سرور نپذیرفت
