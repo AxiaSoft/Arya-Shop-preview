@@ -403,9 +403,6 @@ html[data-aria-theme="light"] #shop-filter-sidebar .af-plimit b { color: #1d4ed8
   display: inline-flex; pointer-events: none; color: rgba(255,255,255,.45);
 }
 html[data-aria-theme="light"] #shop-filter-sidebar .af-search-ic { color: #7290bd; }
-#shop-filter-sidebar .af-search input {
-  width: 100%; border-radius: 13px; padding: .68rem 2.6rem 2rem 2.4rem;
-}
 #shop-filter-sidebar .af-search input { padding: .68rem 2.6rem .68rem 2.3rem; }
 #shop-filter-sidebar .af-search-x {
   position: absolute; left: .45rem; top: 50%; transform: translateY(-50%);
@@ -492,7 +489,7 @@ html[data-aria-theme="light"] #shop-filter-sidebar .af-foot {
   flex: 0 0 auto; padding: .68rem 1rem;
 }
 #shop-filter-sidebar .af-btn-ghost:hover { background: rgba(255,255,255,.12); }
-html[data-aria-theme="light"] #shop-filter-sidebar .af-btn-ghost { background: #fff; border-color: #d6e4f6; color: #b91c1c66; color: #b91c1c; }
+html[data-aria-theme="light"] #shop-filter-sidebar .af-btn-ghost { background: #fff; border-color: #d6e4f6; color: #b91c1c; }
 html[data-aria-theme="light"] #shop-filter-sidebar .af-btn-ghost:hover { background: #fff5f5; border-color: #fecaca; }
 
 /* ورودی‌های داخل پنل: در لایت سفیدِ خوانا (input-style عمومی هم اعمال می‌شود) */
