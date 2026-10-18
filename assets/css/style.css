@@ -1217,3 +1217,4 @@ html[data-aria-theme="light"] .sw-details{background:#f6f9ff;border-color:rgba(2
 
 
 .sw-check input{width:1rem;height:1rem;accent-color:#2563eb;flex:none;margin-top:.15rem}
+html[data-aria-theme] .ary-chat-closing{pointer-events:none}
