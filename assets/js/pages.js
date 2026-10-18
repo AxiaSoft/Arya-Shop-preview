@@ -142,7 +142,7 @@ function renderHomePage() {
       
       <!-- Hero Slider -->
       <section class="relative overflow-hidden">
-        <div id="home-hero" class="bg-hero-gradient ary-hero py-20 lg:py-32 rounded-b-[4rem] lg:rounded-b-[6rem] relative">
+        <div id="home-hero" class="bg-hero-gradient ary-hero on-media py-20 lg:py-32 rounded-b-[4rem] lg:rounded-b-[6rem] relative">
           ${slidesHtml}
           <div class="absolute inset-0 bg-gradient-to-b from-slate-950/65 via-slate-950/40 to-slate-950/75 z-[1]"></div>
 
@@ -339,7 +339,7 @@ function renderHomePage() {
       <section class="py-16 lg:py-24">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
 
-          <div class="bg-hero-gradient rounded-3xl lg:rounded-[2.5rem] p-10 lg:p-20 text-center relative overflow-hidden">
+          <div class="bg-hero-gradient on-media rounded-3xl lg:rounded-[2.5rem] p-10 lg:p-20 text-center relative overflow-hidden">
             <div class="ary-cta-banner" style="background-image:url('assets/img/home/cta-banner.jpg')"></div>
             <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/45 to-slate-950/70"></div>
             <div class="absolute -bottom-10 -right-10 w-48 h-48 rounded-full bg-white/10 blur-3xl animate-float" style="animation-duration:7s"></div>
@@ -1665,7 +1665,7 @@ function renderShopPage() {
                 value="${state.productFilter.search}"
                 oninput="state.productFilter.search=this.value; updateShopProductsOnly()"
                 class="w-full input-style pr-14"
-                style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 12px; padding: 12px 46px 12px 12px; color: #fff; width: 100%; outline: none;"
+                style="border-radius: 12px; padding: 12px 46px 12px 12px; width: 100%; outline: none;"
               >
             </div>
           </div>
@@ -2755,7 +2755,7 @@ function renderProductVideos(product) {
                 </div>
                 
                 ${index === 0 && videos.length > 1 ? `
-                  <div class="absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md text-[10px]">
+                  <div class="on-media absolute bottom-1.5 right-1.5 bg-black/60 backdrop-blur-sm px-1.5 py-0.5 rounded-md text-[10px] text-white">
                     +${videos.length - 1} ویدیو دیگر
                   </div>
                 ` : ''}

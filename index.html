@@ -2,22 +2,21 @@
 <html lang="fa" dir="rtl" class="h-full">
 <head>
 <script>
-(function(){try{
-  var K="arya_theme",t=null;
-  try{t=localStorage.getItem(K)}catch(e){}
-  var mq=window.matchMedia?matchMedia("(prefers-color-scheme: light)"):null;
-  var eff=t||(mq&&mq.matches?"light":"dark");
-  document.documentElement.setAttribute("data-aria-theme",eff);
+(function(){var D=document.documentElement,K="arya_theme";
+  function sysLight(){try{return !!(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)}catch(e){return false}}
+  function set(t){D.setAttribute("data-aria-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#eef4fd":"#0b1630";try{document.dispatchEvent(new CustomEvent("arya:theme",{detail:t}))}catch(e){}}
+  function cur(){return D.getAttribute("data-aria-theme")}
+  var saved=null;try{saved=localStorage.getItem(K)}catch(e){}
+  set(saved==="light"||saved==="dark"?saved:(sysLight()?"light":"dark"));
   window.AryaTheme={
-    get:function(){return eff},
-    apply:function(){document.documentElement.setAttribute("data-aria-theme",eff);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=eff==="light"?"#eef4fd":"#0b1630";document.dispatchEvent(new CustomEvent("arya:theme",{detail:eff}))},
-    toggle:function(){eff=eff==="light"?"dark":"light";try{localStorage.setItem(K,eff)}catch(e){}this.apply()},
-    reset:function(){try{localStorage.removeItem(K)}catch(e){}eff=(mq&&mq.matches)?"light":"dark";this.apply()}
+    get:function(){return cur()||"dark"},
+    set:function(t){t=t==="light"?"light":"dark";try{localStorage.setItem(K,t)}catch(e){}set(t)},
+    toggle:function(){this.set(cur()==="light"?"dark":"light")},
+    reset:function(){try{localStorage.removeItem(K)}catch(e){}set(sysLight()?"light":"dark")}
   };
-  if(mq&&mq.addEventListener)mq.addEventListener("change",function(e){if(!localStorage.getItem(K)){eff=e.matches?"light":"dark";document.documentElement.setAttribute("data-aria-theme",eff)}});
-}catch(e){}})();
-</script>
-  <meta charset="UTF-8">
+  try{var mq=matchMedia("(prefers-color-scheme: light)");if(mq&&mq.addEventListener)mq.addEventListener("change",function(e){var t=null;try{t=localStorage.getItem(K)}catch(_){}if(t!=="light"&&t!=="dark")set(e.matches?"light":"dark")})}catch(e){}
+})();
+</script>  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>وب سایت فروشگاهی آریا</title>
 
@@ -51,6 +50,7 @@
   <!-- ====== STYLES ====== -->
   <script src="assets/js/tailwind-cdn.js"></script>
   <link rel="stylesheet" href="assets/css/style.css">  <link rel="stylesheet" href="assets/css/ds.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
   
 </head>
@@ -301,7 +301,7 @@
                   <span class="font-black text-lg gradient-text">${config?.store_name || 'فروشگاه'}</span>
                 </button>
                 <div class="flex items-center gap-2">
-                  <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><span class="ico-sun" style="display:inline-flex">☀</span><span class="ico-moon">☾</span></button>
+                  <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><span class="ico-sun">☀</span><span class="ico-moon">☾</span></button>
                   <button onclick="goTo('shop')" class="text-white/80 hover:text-white text-sm font-medium transition-colors px-3 py-2 rounded-xl glass" type="button">فروشگاه</button>
                   <button onclick="goTo('blog')" class="text-white/80 hover:text-white text-sm font-medium transition-colors px-3 py-2 rounded-xl glass" type="button">بلاگ</button>
                   <button onclick="goTo('cart')" class="relative p-2.5 glass rounded-xl hover:bg-white/10" type="button">🛒</button>

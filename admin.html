@@ -1,15 +1,18 @@
 <!doctype html>
-<html lang="fa" dir="rtl" class="h-full">
+<html lang="fa" dir="rtl" class="h-full" data-aria-admin="1">
 <head>
+<script>(function(){var D=document.documentElement,K="arya_theme";function sysLight(){try{return !!(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)}catch(e){return false}}function set(t){D.setAttribute("data-aria-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#eef4fd":"#0b1630";try{document.dispatchEvent(new CustomEvent("arya:theme",{detail:t}))}catch(e){}}function cur(){return D.getAttribute("data-aria-theme")}var saved=null;try{saved=localStorage.getItem(K)}catch(e){}set(saved==="light"||saved==="dark"?saved:(sysLight()?"light":"dark"));window.AryaTheme={get:function(){return cur()||"dark"},set:function(t){t=t==="light"?"light":"dark";try{localStorage.setItem(K,t)}catch(e){}set(t)},toggle:function(){this.set(cur()==="light"?"dark":"light")},reset:function(){try{localStorage.removeItem(K)}catch(e){}set(sysLight()?"light":"dark")}};try{var mq=matchMedia("(prefers-color-scheme: light)");if(mq&&mq.addEventListener)mq.addEventListener("change",function(e){var t=null;try{t=localStorage.getItem(K)}catch(_){}if(t!=="light"&&t!=="dark")set(e.matches?"light":"dark")})}catch(e){}})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>پنل مدیریت آریا</title>
+  <meta name="theme-color" content="#0b1630">
 
   <!-- استایل بحرانی: بلافاصله پس‌زمینه تیره را نمایش می‌دهد تا صفحه قبلی
        (سایت اصلی) در حین بارگذاری اسکریپت‌های سنگین به چشم نیاید (رفع مشکل
        «فلش زدن سایت اصلی» هنگام ورود به پنل مدیریت) -->
   <style>
     html, body { background: #142346; }
+    html[data-aria-theme="light"], html[data-aria-theme="light"] body { background: #edf3fb; color: #12294e; }
     #admin-auth-screen, #admin-panel-screen { display: none; }
   </style>
 
@@ -21,6 +24,7 @@
   </script>
 
   <link rel="stylesheet" href="assets/css/style.css">  <link rel="stylesheet" href="assets/css/ds.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -58,7 +62,7 @@
     .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(37, 99, 235, 0.5); }
     .tab-auth { padding: 10px 20px; border-radius: 10px; font-size: 0.9rem; font-weight: 600;
       transition: all 0.2s; font-family: inherit; cursor: pointer; flex: 1; }
-    .tab-active { background: rgba(59, 130, 246, 0.2); border: 1.5px solid rgba(59, 130, 246, 0.5); color: #c4b5fd; }
+    .tab-active { background: rgba(59, 130, 246, 0.2); border: 1.5px solid rgba(59, 130, 246, 0.5); color: #93c5fd; }
     .tab-inactive { background: rgba(255,255,255,0.04); border: 1.5px solid rgba(255,255,255,0.08); color: rgba(255,255,255,0.6); }
     .tab-inactive:hover { background: rgba(255,255,255,0.08); }
     .sbar { height: 4px; border-radius: 4px; flex: 1; transition: all 0.3s; }

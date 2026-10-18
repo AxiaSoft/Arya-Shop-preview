@@ -416,7 +416,7 @@ window.aryCatIcon = function (cat, extra) {
           <button onclick="navigate('home'); toggleMenu();" class="gpt5-drawer-link" type="button">خانه</button>
           <button onclick="navigate('shop'); toggleMenu();" class="gpt5-drawer-link" type="button">فروشگاه</button>
           <button onclick="navigate('blog'); toggleMenu();" class="gpt5-drawer-link" type="button">بلاگ</button>
-          <button onclick="window.AryaTheme&&AryaTheme.toggle()" class="gpt5-drawer-link items-center justify-between flex" type="button"><span>حالت روشن / تاریک</span><span class="inline-flex">${document.documentElement.getAttribute('data-aria-theme')==='light'?'☾ تاریک':'☀ روشن'}</span></button>
+          <button onclick="window.AryaTheme&&AryaTheme.toggle()" class="gpt5-drawer-link items-center justify-between flex" type="button"><span>تم سایت</span><span class="inline-flex gpt5-theme-state"></span></button>
 
           <div class="mt-1">
             <button onclick="toggleSidebarCategories()" class="gpt5-drawer-link flex items-center justify-between" type="button">

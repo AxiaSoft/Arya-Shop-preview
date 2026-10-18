@@ -1,0 +1,275 @@
+/* ════════════════════════════════════════════════════════════════
+   ARYA · THEME LAYER v3 — بعد از style.css و ds.css لینک می‌شود.
+   مسئولیت‌ها:
+   ۱) لایهٔ روشن: کشوی موبایل، دراپ‌داون، نوار جستجو و سایدبار فیلتر
+      (که CSS-شان داخل template رشته‌ای injected می‌شود) را تم‌آگاه می‌کند.
+   ۲) دامنهٔ .on-media: هرچه روی عکس/مدیاست در هر دو تم سفید بماند.
+   ۳) چیپ‌های رنگی (آبی/قرمز/سبز) در لایت‌مود متن سفید نگه دارند.
+   ۴) دکمهٔ تم: قرصِ وضعیت‌دار (متن «روشن/تاریک» با CSS، بدون وابستگی
+      به رندر مجدد) + بازخورد فشار.
+   ۵) پنل ادمین (html[data-aria-admin]): بدون هیچ افکت شیشه‌ای، کاملاً
+      جامد — در هر دو تم — + فرم ورودِ تم‌آگاه.
+   ════════════════════════════════════════════════════════════════ */
+
+/* ───────── ۱) متغیرهای لایهٔ طراحی در تم روشن ───────── */
+html[data-aria-theme="light"] {
+  --sds-bg: #eaf1fb;
+  --sds-surface: rgba(19, 52, 104, .045);
+  --sds-border: rgba(19, 52, 104, .13);
+  --sds-text: #122a4e;
+  --sds-text-muted: rgba(18, 42, 78, .62);
+  --sds-drop-1: 0 1px 2px rgba(23, 51, 105, .08), 0 1px 6px rgba(23, 51, 105, .07);
+  --sds-drop-2: 0 1px 4px rgba(23, 51, 105, .10), 0 6px 18px -6px rgba(23, 51, 105, .16);
+  --sds-drop-3: 0 2px 6px rgba(23, 51, 105, .12), 0 12px 26px -8px rgba(23, 51, 105, .20);
+  --sds-drop-4: 0 4px 12px rgba(23, 51, 105, .14), 0 22px 44px -12px rgba(23, 51, 105, .24);
+  --sds-focus-ring: 0 0 0 2px #fff, 0 0 0 4px #2f6fe0;
+}
+
+/* ───────── ۲) کشوی موبایل — جامد و تم‌آگاه ─────────
+   (CSS اصلی داخل template رشته‌ایِ components.js با selector (0,1,0) تزریق
+   می‌شود؛ html[data-aria-theme] با (0,2,1)+ترتیبِ فایل، در هر دو تم می‌بَرَد) */
+html[data-aria-theme] .gpt5-drawer {
+  background: linear-gradient(180deg, #0d1a33 0%, #0b1630 100%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  color: #fff;
+  border-left: 1px solid rgba(255, 255, 255, .08);
+}
+html[data-aria-theme="light"] .gpt5-drawer {
+  background: linear-gradient(180deg, #ffffff 0%, #f3f7fd 100%);
+  color: #12294e;
+  border-left: 1px solid rgba(19, 52, 104, .12);
+  box-shadow: -14px 0 36px rgba(23, 51, 105, .18);
+}
+html[data-aria-theme] .gpt5-drawer-link { color: rgba(255, 255, 255, .95); }
+html[data-aria-theme] .gpt5-drawer-link:hover { background: rgba(255, 255, 255, .10); }
+html[data-aria-theme] .gpt5-drawer-link:active { background: rgba(255, 255, 255, .18); }
+html[data-aria-theme="light"] .gpt5-drawer-link { color: #1c3a63; }
+html[data-aria-theme="light"] .gpt5-drawer-link:hover { background: rgba(19, 52, 104, .06); }
+html[data-aria-theme="light"] .gpt5-drawer-link:active { background: rgba(19, 52, 104, .11); border-color: rgba(19, 52, 104, .14); }
+
+/* دراپ‌داون دسته‌بندیِ هدر */
+html[data-aria-theme] .gpt5-dd-inner { background: rgba(13, 24, 47, .96); border-color: rgba(255, 255, 255, .12); }
+html[data-aria-theme] .gpt5-dd-item { color: rgba(255, 255, 255, .92); }
+html[data-aria-theme] .gpt5-dd-item:hover { background: rgba(255, 255, 255, .10); }
+html[data-aria-theme="light"] .gpt5-dd-inner { background: #ffffff; border-color: rgba(19, 52, 104, .14); box-shadow: var(--sds-drop-3); }
+html[data-aria-theme="light"] .gpt5-dd-item { color: #21406c; }
+html[data-aria-theme="light"] .gpt5-dd-item:hover { background: rgba(19, 52, 104, .06); }
+
+/* نوار جستجوی شناور هدر */
+html[data-aria-theme] .gpt5-search { background: rgba(10, 19, 40, .96); backdrop-filter: none; -webkit-backdrop-filter: none; border-color: rgba(255, 255, 255, .10); color: #fff; }
+html[data-aria-theme] .gpt5-search-input { color: #fff; background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); }
+html[data-aria-theme] .gpt5-search-input::placeholder { color: rgba(255, 255, 255, .55); }
+html[data-aria-theme="light"] .gpt5-search { background: #ffffff; border-color: rgba(19, 52, 104, .12); box-shadow: var(--sds-drop-4); color: #12294e; }
+html[data-aria-theme="light"] .gpt5-search-input { color: #12294e; background: rgba(19, 52, 104, .05); border-color: rgba(19, 52, 104, .14); }
+html[data-aria-theme="light"] .gpt5-search-input::placeholder { color: rgba(18, 42, 78, .45); }
+html[data-aria-theme="light"] .gpt5-search-input:focus { border-color: #2f6fe0; box-shadow: 0 0 0 3px rgba(47, 111, 224, .18); }
+
+/* سایدبار فیلتر شاپ */
+html[data-aria-theme] .shop-filter-sidebar {
+  background: #0c1730;
+  backdrop-filter: none; -webkit-backdrop-filter: none;
+  border-left: 1px solid rgba(255, 255, 255, .08);
+  color: #fff;
+}
+html[data-aria-theme="light"] .shop-filter-sidebar {
+  background: #f5f9ff;
+  border-left: 1px solid rgba(19, 52, 104, .14);
+  box-shadow: -14px 0 36px rgba(23, 51, 105, .16);
+  color: #12294e;
+}
+html[data-aria-theme="light"] .shop-filter-sidebar .gpt5-range,
+html[data-aria-theme="light"] .shop-filter-sidebar input[type="range"] { accent-color: #2563eb; }
+html[data-aria-theme="light"] .shop-filter-sidebar .cat-btn.glass { background: #ffffff; border: 1px solid rgba(19, 52, 104, .12); }
+html[data-aria-theme="light"] .shop-filter-sidebar label { color: #33507c; }
+html[data-aria-theme="light"] .shop-filter-sidebar .text-white\/70 { color: #33507c; }
+html[data-aria-theme="light"] .shop-filter-sidebar .text-white\/60 { color: rgba(18, 42, 78, .62); }
+html[data-aria-theme="light"] .shop-filter-sidebar .text-white\/50 { color: rgba(18, 42, 78, .55); }
+html[data-aria-theme="light"] .shop-filter-sidebar .text-white\/40 { color: rgba(18, 42, 78, .48); }
+html[data-aria-theme="light"] .shop-filter-sidebar input.input-style:not([style*="color"]) {
+  background: #ffffff; border: 1px solid rgba(19, 52, 104, .14); color: #12294e;
+}
+html[data-aria-theme="light"] .shop-filter-sidebar input.input-style::placeholder { color: rgba(18, 42, 78, .42); }
+html[data-aria-theme="light"] .shop-filter-sidebar .border-white\/10 { border-color: rgba(19, 52, 104, .12); }
+html[data-aria-theme="light"] .shop-filter-sidebar .border-white\/5 { border-color: rgba(19, 52, 104, .08); }
+html[data-aria-theme="light"] .shop-filter-sidebar .divide-white\/5 > * + * { border-color: rgba(19, 52, 104, .08); }
+
+/* ───────── ۳) دامنهٔ مدیا: روی عکس، در هر دو تم سبکِ دارک حفظ شود ───────── */
+html[data-aria-theme="light"] .on-media { color: #fff; }
+html[data-aria-theme="light"] .on-media .text-white { color: #fff; }
+html[data-aria-theme="light"] .on-media .text-white\/95 { color: rgba(255, 255, 255, .95); }
+html[data-aria-theme="light"] .on-media .text-white\/90 { color: rgba(255, 255, 255, .90); }
+html[data-aria-theme="light"] .on-media .text-white\/85 { color: rgba(255, 255, 255, .85); }
+html[data-aria-theme="light"] .on-media .text-white\/80 { color: rgba(255, 255, 255, .80); }
+html[data-aria-theme="light"] .on-media .text-white\/75 { color: rgba(255, 255, 255, .75); }
+html[data-aria-theme="light"] .on-media .text-white\/70 { color: rgba(255, 255, 255, .70); }
+html[data-aria-theme="light"] .on-media .text-white\/65 { color: rgba(255, 255, 255, .65); }
+html[data-aria-theme="light"] .on-media .text-white\/60 { color: rgba(255, 255, 255, .60); }
+html[data-aria-theme="light"] .on-media .text-white\/55 { color: rgba(255, 255, 255, .55); }
+html[data-aria-theme="light"] .on-media .text-white\/50 { color: rgba(255, 255, 255, .50); }
+html[data-aria-theme="light"] .on-media .text-white\/45 { color: rgba(255, 255, 255, .45); }
+html[data-aria-theme="light"] .on-media .text-white\/40 { color: rgba(255, 255, 255, .40); }
+html[data-aria-theme="light"] .on-media .text-white\/35 { color: rgba(255, 255, 255, .35); }
+html[data-aria-theme="light"] .on-media .text-white\/30 { color: rgba(255, 255, 255, .30); }
+html[data-aria-theme="light"] .on-media .bg-white\/5 { background-color: rgba(255, 255, 255, .05); }
+html[data-aria-theme="light"] .on-media .bg-white\/10 { background-color: rgba(255, 255, 255, .10); }
+html[data-aria-theme="light"] .on-media .bg-white\/15 { background-color: rgba(255, 255, 255, .15); }
+html[data-aria-theme="light"] .on-media .bg-white\/20 { background-color: rgba(255, 255, 255, .20); }
+html[data-aria-theme="light"] .on-media .bg-white\/25 { background-color: rgba(255, 255, 255, .25); }
+html[data-aria-theme="light"] .on-media .bg-black\/20 { background-color: rgba(3, 10, 24, .20); }
+html[data-aria-theme="light"] .on-media .bg-black\/30 { background-color: rgba(3, 10, 24, .30); }
+html[data-aria-theme="light"] .on-media .bg-black\/40 { background-color: rgba(3, 10, 24, .40); }
+html[data-aria-theme="light"] .on-media .bg-black\/50 { background-color: rgba(3, 10, 24, .50); }
+html[data-aria-theme="light"] .on-media .bg-black\/60 { background-color: rgba(3, 10, 24, .60); }
+html[data-aria-theme="light"] .on-media .bg-black\/70 { background-color: rgba(3, 10, 24, .70); }
+html[data-aria-theme="light"] .on-media .bg-black\/80 { background-color: rgba(3, 10, 24, .80); }
+html[data-aria-theme="light"] .on-media .bg-black\/90 { background-color: rgba(3, 10, 24, .90); }
+html[data-aria-theme="light"] .on-media .border-white\/5 { border-color: rgba(255, 255, 255, .08); }
+html[data-aria-theme="light"] .on-media .border-white\/10 { border-color: rgba(255, 255, 255, .16); }
+html[data-aria-theme="light"] .on-media .border-white\/15 { border-color: rgba(255, 255, 255, .22); }
+html[data-aria-theme="light"] .on-media .border-white\/20 { border-color: rgba(255, 255, 255, .28); }
+html[data-aria-theme="light"] .on-media .hover\:bg-white\/10:hover { background-color: rgba(255, 255, 255, .12); }
+html[data-aria-theme="light"] .on-media .hover\:bg-white\/20:hover { background-color: rgba(255, 255, 255, .20); }
+html[data-aria-theme="light"] .on-media .hover\:bg-black\/70:hover { background-color: rgba(3, 10, 24, .78); }
+html[data-aria-theme="light"] .on-media .hover\:bg-black\/80:hover { background-color: rgba(3, 10, 24, .85); }
+html[data-aria-theme="light"] .on-media .glass,
+html[data-aria-theme="light"] .on-media .glass-strong,
+html[data-aria-theme="light"] .on-media .glass-dark {
+  background: rgba(10, 19, 40, .58);
+  border: 1px solid rgba(255, 255, 255, .14);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  color: #fff;
+}
+html[data-aria-theme="light"] .on-media .btn-ghost { color: #fff; border-color: rgba(255, 255, 255, .35); }
+/* رنگ‌های لهجه‌ای روی مدیا روشن بمانند */
+html[data-aria-theme="light"] .on-media .text-sky-300 { color: #7dd3fc; }
+html[data-aria-theme="light"] .on-media .text-emerald-300 { color: #6ee7b7; }
+html[data-aria-theme="light"] .on-media .text-amber-300 { color: #fcd34d; }
+html[data-aria-theme="light"] .on-media .text-rose-300 { color: #fda4af; }
+
+/* ───────── ۴) چیپ‌ها/توگل‌های رنگی: متن سفید روی پس‌زمینهٔ رنگی در لایت ───────── */
+html[data-aria-theme="light"] .text-white.bg-blue-500,
+html[data-aria-theme="light"] .bg-blue-500.text-white,
+html[data-aria-theme="light"] .bg-blue-600.text-white,
+html[data-aria-theme="light"] .bg-blue-500\/20.text-white,
+html[data-aria-theme="light"] .bg-blue-500\/25.text-white,
+html[data-aria-theme="light"] .bg-blue-500\/30.text-white,
+html[data-aria-theme="light"] .bg-blue-600\/30.text-white,
+html[data-aria-theme="light"] .bg-rose-500.text-white,
+html[data-aria-theme="light"] .bg-rose-600.text-white,
+html[data-aria-theme="light"] .bg-rose-500\/20.text-white,
+html[data-aria-theme="light"] .bg-emerald-500.text-white,
+html[data-aria-theme="light"] .bg-emerald-600.text-white,
+html[data-aria-theme="light"] .bg-emerald-500\/20.text-white,
+html[data-aria-theme="light"] .bg-amber-500.text-white,
+html[data-aria-theme="light"] .bg-sky-500.text-white,
+html[data-aria-theme="light"] .bg-sky-600.text-white,
+html[data-aria-theme="light"] .badge-discount,
+html[data-aria-theme="light"] .badge-new,
+html[data-aria-theme="light"] .badge-featured,
+html[data-aria-theme="light"] .badge { color: #fff; }
+/* کنترل روی تصویر (فلش‌های گالری/ویدیو) حتی بیرون از .on-media: پس‌زمینهٔ تیره بماند */
+html[data-aria-theme="light"] .bg-black\/40.text-white,
+html[data-aria-theme="light"] .bg-black\/50.text-white,
+html[data-aria-theme="light"] .bg-black\/55.text-white,
+html[data-aria-theme="light"] .bg-black\/60.text-white,
+html[data-aria-theme="light"] .bg-black\/70.text-white {
+  background-color: rgba(3, 10, 24, .58); color: #fff;
+}
+html[data-aria-theme="light"] .hover\:bg-black\/80:hover.text-white,
+html[data-aria-theme="light"] .hover\:bg-black\/80.text-white:hover,
+html[data-aria-theme="light"] .hover\:bg-black\/85.text-white:hover { background-color: rgba(3, 10, 24, .84); }
+
+/* ───────── ۵) دکمهٔ تم: قرصِ وضعیت‌دار ───────── */
+.ary-theme-btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  height: 2.1rem; padding: 0 .65rem;
+  border-radius: 999px; flex: none;
+  background: rgba(255, 255, 255, .09);
+  border: 1px solid rgba(255, 255, 255, .16);
+  color: #fff; cursor: pointer;
+  transition: background .18s ease, transform .12s ease, border-color .18s ease, box-shadow .18s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.ary-theme-btn:hover { background: rgba(255, 255, 255, .16); }
+.ary-theme-btn:active { transform: scale(.94); }
+.ary-theme-btn svg { width: 1.05rem; height: 1.05rem; flex: none; }
+.ary-theme-btn .ico-sun { display: inline-flex; }
+.ary-theme-btn .ico-moon { display: none; }
+.ary-theme-btn::after {
+  content: "تاریک";
+  font-size: .72rem; font-weight: 800; line-height: 1;
+  letter-spacing: .01em; opacity: .92;
+}
+html[data-aria-theme="light"] .ary-theme-btn {
+  background: rgba(19, 52, 104, .06);
+  border-color: rgba(19, 52, 104, .16);
+  color: #17335e;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6);
+}
+html[data-aria-theme="light"] .ary-theme-btn:hover { background: rgba(19, 52, 104, .10); }
+html[data-aria-theme="light"] .ary-theme-btn .ico-sun { display: none; }
+html[data-aria-theme="light"] .ary-theme-btn .ico-moon { display: inline-flex; }
+html[data-aria-theme="light"] .ary-theme-btn::after { content: "روشن"; }
+/* برچسب وضعیت در کشوی موبایل — CSS-محور، همیشه به‌روز */
+.gpt5-theme-state::after { content: "☾ تاریک — برای روشن بزنید"; font-size: .78rem; opacity: .8; }
+html[data-aria-theme="light"] .gpt5-theme-state::after { content: "☀ روشن — برای تاریک بزنید"; }
+/* هدرِ fallback (بدون JS) — آیکن‌ها هم CSS-محور شوند */
+#fallback-header .ico-sun { display: inline-flex; }
+#fallback-header .ico-moon { display: none; }
+html[data-aria-theme="light"] #fallback-header .ico-sun { display: none; }
+html[data-aria-theme="light"] #fallback-header .ico-moon { display: inline-flex; }
+
+/* ───────── ۶) پنل ادمین — کلاً بدون شیشه، جامد مطلق ───────── */
+html[data-aria-admin="1"] .glass,
+html[data-aria-admin="1"] .glass-strong,
+html[data-aria-admin="1"] .glass-dark {
+  background: #16264a;
+  border-color: rgba(255, 255, 255, .09);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, var(--sds-drop-2);
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  color: #fff;
+}
+html[data-aria-admin="1"] body.bg-main,
+html[data-aria-admin="1"] body { background: #0f1d3d; }
+html[data-aria-admin="1"][data-aria-theme="dark"] body { color: rgba(255, 255, 255, .92); }
+html[data-aria-admin="1"] .modal-overlay,
+html[data-aria-admin="1"] .admin-sheet-backdrop { background: rgba(4, 10, 26, .62); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+html[data-aria-admin="1"] .admin-sheet { background: #16264a; border-color: rgba(255, 255, 255, .10); }
+/* روشن */
+html[data-aria-admin="1"][data-aria-theme="light"] .glass,
+html[data-aria-admin="1"][data-aria-theme="light"] .glass-strong,
+html[data-aria-admin="1"][data-aria-theme="light"] .glass-dark {
+  background: #ffffff;
+  border-color: #e2eaf6;
+  box-shadow: var(--sds-drop-1);
+  color: #12294e;
+}
+html[data-aria-admin="1"][data-aria-theme="light"] body,
+html[data-aria-admin="1"][data-aria-theme="light"] body.bg-main { background: #edf3fb; }
+html[data-aria-admin="1"][data-aria-theme="light"] .admin-sheet { background: #ffffff; border-color: #e2eaf6; }
+html[data-aria-admin="1"][data-aria-theme="light"] .modal-overlay,
+html[data-aria-admin="1"][data-aria-theme="light"] .admin-sheet-backdrop { background: rgba(30, 58, 105, .38); }
+/* فرم ورود ادمین */
+html[data-aria-admin="1"][data-aria-theme="light"] .input-auth {
+  background: #ffffff; border-color: rgba(19, 52, 104, .18); color: #12294e;
+}
+html[data-aria-admin="1"][data-aria-theme="light"] .input-auth::placeholder { color: rgba(18, 42, 78, .40); }
+html[data-aria-admin="1"][data-aria-theme="light"] .tab-inactive { background: rgba(19, 52, 104, .05); border-color: rgba(19, 52, 104, .14); color: rgba(18, 42, 78, .65); }
+html[data-aria-admin="1"][data-aria-theme="light"] .tab-inactive:hover { background: rgba(19, 52, 104, .09); }
+html[data-aria-admin="1"][data-aria-theme="light"] .tab-active { background: rgba(59, 130, 246, .12); border-color: rgba(37, 99, 235, .45); color: #1d4ed8; }
+html[data-aria-admin="1"][data-aria-theme="light"] .auth-card-surface { background: #ffffff !important; border-color: #e2eaf6 !important; }
+/* جدول‌ها/کارت‌های ادمین در لایت: خطوطِ سفیدِ کم‌رنگ به حاشیهٔ آبی‌کم تبدیل شوند */
+html[data-aria-theme="light"] .admin-table thead th { color: rgba(18, 42, 78, .62); border-color: #e2eaf6; }
+html[data-aria-theme="light"] .admin-table tbody tr { border-color: rgba(19, 52, 104, .07); }
+html[data-aria-theme="light"] .admin-table tbody td { color: #24406e; }
+
+@media (max-width: 640px) {
+  .ary-theme-btn::after { display: none; }
+  .ary-theme-btn { padding: 0 .5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ary-theme-btn, .ary-theme-btn:active { transition: none; transform: none; }
+}
