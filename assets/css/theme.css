@@ -316,8 +316,8 @@ html[data-aria-theme="light"] .admin-table tbody td { color: #24406e; }
 html[data-aria-theme] #shop-filter-sidebar {
   background: transparent !important; box-shadow: none; border: 0;
   transform: none !important; opacity: 1 !important;
-  transition: none; pointer-events: none; visibility: hidden;
 }
+#shop-filter-sidebar:not(.open) { pointer-events: none; visibility: hidden; }
 #shop-filter-sidebar.open { pointer-events: auto; visibility: visible; }
 html[data-aria-theme] #shop-filter-sidebar .shop-filter-inner {
   position: absolute; top: 0; right: 0; bottom: 0; height: auto; overflow: visible;
@@ -370,8 +370,9 @@ html[data-aria-theme="light"] #shop-filter-sidebar, html[data-aria-theme="light"
 
 /* ✕ دایره‌ای بیرونِ کادر (روی لبهٔ پنل) */
 .ary-float-x {
-  position: absolute; top: .85rem; left: 0; transform: translateX(-64%);
-  width: 2.55rem; height: 2.55rem; border-radius: 50%; z-index: 5;
+  position: static; transform: none;
+  width: 2.4rem; height: 2.4rem; border-radius: 50%; flex: none;
+  margin-inline-start: auto;
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 1rem; line-height: 1; cursor: pointer;
   background: linear-gradient(140deg, #233c6e, #16294f); color: #dbeafe;
@@ -379,13 +380,13 @@ html[data-aria-theme="light"] #shop-filter-sidebar, html[data-aria-theme="light"
   box-shadow: 0 10px 26px -8px rgba(2,10,40,.85), 0 0 0 4px rgba(8,16,38,.35);
   transition: transform .16s ease, box-shadow .16s ease;
 }
-.ary-float-x:hover { transform: translateX(-64%) scale(1.07); }
-.ary-float-x:active { transform: translateX(-64%) scale(.93); }
+.ary-float-x:hover { transform: scale(1.08); }
+.ary-float-x:active { transform: scale(.92); }
 html[data-aria-theme="light"] .ary-float-x {
   background: #fff; color: #1d4ed8; border-color: #cfdff5;
   box-shadow: 0 10px 24px -8px rgba(23,51,105,.35), 0 0 0 4px rgba(237,243,251,.8);
 }
-@media (max-width: 380px) { .ary-float-x { transform: translateX(-46%); } .ary-float-x:hover{transform:translateX(-46%) scale(1.07);} .ary-float-x:active{transform:translateX(-46%) scale(.93);} }
+@media (max-width: 380px) { .ary-float-x { width: 2.15rem; height: 2.15rem; } }
 
 /* ── هدر مشترک ── */
 #shop-filter-sidebar .af-head, #mobileMenu .ary-dh {

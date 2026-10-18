@@ -107,7 +107,14 @@ function goTo(page, data = null) {
 // اعمال فوری صفحه از روی هش آدرس، پیش از اولین رندر واقعی
 // (چون render() با requestAnimationFrame به تاخیر می‌افتد، این فراخوانی
 // همزمان تضمین می‌کند state.page درست باشد پیش از نقاشی اول صفحه)
-applyHashToState();
+// ⚠ در «ورود اول» فقط لینک‌های عمیق (محصول/مقاله/بلاگ/ادمین با آی‌دی) از هش
+// خوانده می‌شوند؛ هش‌های عمومی مثل #/shop که از نشستِ پیشین باقی مانده‌اند
+// نادیده گرفته می‌شوند تا سایت همیشه با صفحهٔ هوم باز شود (تغییر درخواستی).
+try {
+  var _h0 = String(location.hash || '').replace(/^#\/?/, '');
+  if (/^(product|article|blog|admin)(\/|$)/.test(_h0)) applyHashToState();
+  else if (state.page !== 'home') { state.page = 'home'; }
+} catch (e) { applyHashToState(); }
 
 window.addEventListener('popstate', applyHashToState);
 window.addEventListener('hashchange', applyHashToState);

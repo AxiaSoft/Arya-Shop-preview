@@ -450,13 +450,12 @@ window.aryCatIcon = function (cat, extra) {
       <!-- Mobile/Tablet Sidebar (همیشه در DOM، فقط کلاس open) -->
       <div id="mobileMenu" class="mobile-menu">
         <div class="gpt5-drawer gpt5-drawer-w ml-auto h-full flex flex-col">
-          <button onclick="toggleMenu()" class="ary-float-x" aria-label="بستن منو" type="button">✕</button>
           <div class="ary-dh">
-            <span class="ary-dh-ic">${aryIcon('home','w-5 h-5')}</span>
             <div class="min-w-0">
               <div class="ary-dh-t">${config.store_name}</div>
               <div class="ary-dh-s">فهرست دسترسی‌ها</div>
             </div>
+            <button onclick="toggleMenu()" class="ary-float-x" aria-label="بستن منو" type="button">✕</button>
           </div>
           <div class="ary-dnav">
 

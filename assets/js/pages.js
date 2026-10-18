@@ -1679,7 +1679,6 @@ function renderShopPage() {
         <style>#shop-filter-sidebar:not(.open){pointer-events:none;visibility:hidden} #shop-filter-sidebar{background:transparent!important;box-shadow:none;border:0}</style>
         <div class="af-backdrop" onclick="toggleFilterSidebar()"></div>
         <div class="shop-filter-inner af-panel">
-          <button onclick="toggleFilterSidebar()" class="af-x ary-float-x" type="button" aria-label="بستن فیلترها">✕</button>
 
           <div class="af-head">
             <div class="flex items-center gap-3 min-w-0">
@@ -1689,7 +1688,7 @@ function renderShopPage() {
                 <p class="af-sub">${filteredProducts.length} محصول یافت شد</p>
               </div>
             </div>
-            <span class="af-hcount">${filteredProducts.length}</span>
+            <button onclick="toggleFilterSidebar()" class="af-x ary-float-x" type="button" aria-label="بستن فیلترها">✕</button>
           </div>
 
           <div class="af-body">
