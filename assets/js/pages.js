@@ -188,11 +188,12 @@ function renderHomePage() {
       <!-- Features Section -->
       <section id="features" class="py-8 lg:py-12">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
-          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 lg:gap-6">
 
             ${[
               { icon: 'truck',     tint: 'text-sky-300',   title: 'ارسال رایگان', desc: 'سفارش بالای ۵۰۰ هزار' },
               { icon: 'shield',    tint: 'text-emerald-300', title: 'ضمانت اصالت', desc: 'تضمین کیفیت کالا' },
+              { icon: 'return',    tint: 'text-rose-300',  title: '۷ روز مرجوعی', desc: 'بازگشت آسان، بدون دردسر' },
               { icon: 'card',      tint: 'text-blue-300', title: 'پرداخت امن', desc: 'درگاه معتبر بانکی' },
               { icon: 'chat',      tint: 'text-amber-300',  title: 'پشتیبانی ۲۴/۷', desc: 'همیشه در کنار شما' },
             ].map((f, i) => `
@@ -1381,11 +1382,20 @@ window.aryDealsScroll = function (dir) {
 // SHOP PAGE
 // ═══════════════════════════════════════════════════════════════
 
-function toggleFilterSidebar() {
+function toggleFilterSidebar(force) {
   const sidebar = document.getElementById('shop-filter-sidebar');
   if (!sidebar) return;
-  sidebar.classList.toggle('open');
+  if (force === true) sidebar.classList.add('open');
+  else if (force === false) sidebar.classList.remove('open');
+  else sidebar.classList.toggle('open');
+  const btn = document.getElementById('af-open-btn'); if (btn) btn.setAttribute('aria-expanded', sidebar.classList.contains('open') ? 'true' : 'false');
 }
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape') {
+    const sb = document.getElementById('shop-filter-sidebar');
+    if (sb && sb.classList.contains('open')) toggleFilterSidebar(false);
+  }
+}, true);
 
 function getFilteredProducts() {
   const products = state.products || [];
@@ -1655,197 +1665,113 @@ function renderShopPage() {
             </div>
           </div>
           <button
+            id="af-open-btn"
             onclick="toggleFilterSidebar()"
-            class="btn-primary px-4 py-2 rounded-xl font-semibold"
-            type="button"
+            class="btn-primary px-4 py-2 rounded-xl font-semibold inline-flex items-center gap-2"
+            type="button" aria-expanded="false"
           >
-            فیلترها
+            ${aryIcon('settings','w-4 h-4')}<span>فیلترها</span>
           </button>
         </div>
       </div>
 
       <div id="shop-filter-sidebar" class="shop-filter-sidebar">
-        <div class="shop-filter-inner">
-          <div class="flex items-center justify-between mb-6" style="padding: 1.5rem 1.5rem 0 1.5rem;">
-            <h3 class="font-bold text-lg">فیلتر محصولات</h3>
-            <button onclick="toggleFilterSidebar()" class="text-white/60 hover:text-white text-xl" type="button">✕</button>
-          </div>
+        <div class="af-backdrop" onclick="toggleFilterSidebar()"></div>
+        <div class="shop-filter-inner af-panel">
 
-          <div class="mb-6" style="padding: 0 1.5rem;">
-            <div class="relative">
-              <span class="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 inline-flex">${aryIcon('search', 'w-5 h-5')}</span>
-              <input 
-                type="text"
-                placeholder="جستجوی محصول..."
-                value="${state.productFilter.search}"
-                oninput="state.productFilter.search=this.value; updateShopProductsOnly()"
-                class="w-full input-style pr-14"
-                style="border-radius: 12px; padding: 12px 46px 12px 12px; width: 100%; outline: none;"
-              >
-            </div>
-          </div>
-
-          <div class="mb-6" style="padding: 0 1.5rem;">
-            <h4 class="text-sm text-white/70 mb-3">دسته‌بندی</h4>
-            <div class="flex flex-wrap gap-2">
-              <button 
-                data-category=""
-                onclick="state.productFilter.category=''; updateShopProductsOnly(true); updateCategoryButtonsUI()"
-                class="cat-btn px-4 py-2.5 rounded-xl text-sm font-medium ${
-                  !state.productFilter.category
-                    ? 'bg-blue-500 text-white shadow-lg'
-                    : 'glass hover:bg-white/10'
-                }"
-                type="button"
-              >همه</button>
-
-              ${(state.categories || [])
-                .map(
-                  cat => `
-                <button 
-                  data-category="${cat.id}"
-                  onclick="state.productFilter.category='${cat.id}'; updateShopProductsOnly(true); updateCategoryButtonsUI()"
-                  class="cat-btn px-4 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 ${
-                    state.productFilter.category === cat.id
-                      ? 'bg-blue-500 text-white shadow-lg'
-                      : 'glass hover:bg-white/10'
-                  }"
-                  type="button"
-                >
-                  <span>${cat.icon || cat.title}</span>
-                  <span class="hidden sm:inline">${cat.title}</span>
-                </button>
-              `
-                )
-                .join('')}
-            </div>
-          </div>
-
-          <div class="mb-6" style="padding: 0 1.5rem;">
-            <h4 class="text-sm text-white/70 mb-3">مرتب‌سازی</h4>
-            <div class="flex flex-wrap gap-2">
-              ${[
-                { value: 'newest', label: 'جدیدترین' },
-                { value: 'popular', label: 'پرفروش' },
-                { value: 'price-low', label: 'ارزان‌ترین' },
-                { value: 'price-high', label: 'گران‌ترین' }
-              ]
-                .map(
-                  opt => `
-                <button 
-                  data-sort="${opt.value}"
-                  onclick="state.productFilter.sort='${opt.value}'; updateShopProductsOnly(); updateSortButtonsUI()"
-                  class="sort-btn px-3 py-1.5 rounded-lg text-xs font-medium ${
-                    state.productFilter.sort === opt.value
-                      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50'
-                      : 'bg-white/5 text-white/60 hover:bg-white/10'
-                  }"
-                  type="button"
-                >${opt.label}</button>
-              `
-                )
-                .join('')}
-            </div>
-          </div>
-
-          ${
-            prices.length > 0
-              ? `
-          <div class="mb-6" style="padding: 0 1.5rem;">
-            <div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 1rem;">
-              <h4 class="text-sm text-white/70 mb-3">بازه قیمت</h4>
-
-              <input
-                type="range"
-                id="priceMax"
-                min="${autoMinPrice}"
-                max="${autoMaxPrice}"
-                value="${state.productFilter.maxPrice || autoMaxPrice}"
-                oninput="updatePriceSlider()"
-                class="w-full"
-              >
-
-              <div class="flex justify-between text-white/70 text-sm mt-2">
-                <span>${utils.formatPrice(autoMinPrice)}</span>
-                <span id="priceMaxLabel">${utils.formatPrice(state.productFilter.maxPrice || autoMaxPrice)}</span>
+          <div class="af-head">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="af-head-ic">${aryIcon('settings','w-5 h-5')}</span>
+              <div class="min-w-0">
+                <h3 class="af-title">فیلتر محصولات</h3>
+                <p class="af-sub">${filteredProducts.length} محصول یافت شد</p>
               </div>
             </div>
+            <button onclick="toggleFilterSidebar()" class="af-x" type="button" aria-label="بستن فیلترها">✕</button>
           </div>
-          `
-              : ''
-          }
 
-          <div class="flex gap-2 mt-4" style="padding: 0 1.5rem 1.5rem 1.5rem;">
-            <button class="btn-success px-4 py-2 rounded-xl flex-1" onclick="toggleFilterSidebar()" type="button" style="background: linear-gradient(135deg,#2a8dff,#005aff); border: none; color: white; font-weight: 600; padding: 10px 16px; border-radius: 11px; box-shadow: 0 4px 14px rgba(37,99,235,0.55);">اعمال</button>
-            <button
-              class="btn-ghost px-4 py-2 rounded-xl flex-1"
-              onclick="state.productFilter={category:'',search:'',sort:'newest',minPrice:'',maxPrice:''}; updateShopProductsOnly(true); updateSortButtonsUI(); updateCategoryButtonsUI()"
-              type="button"
-              style="background: transparent; border: 1px solid rgba(255,255,255,0.12); color: rgba(255,255,255,0.9); padding: 10px 16px; border-radius: 11px;"
-            >پاک‌سازی</button>
+          <div class="af-body">
+
+            <section class="af-sect">
+              <span class="af-label">جستجو</span>
+              <div class="af-search">
+                <span class="af-search-ic">${aryIcon('search','w-5 h-5')}</span>
+                <input id="af-search" type="text" placeholder="نام یا توضیح محصول…"
+                  value="${(state.productFilter.search || '').replace(/"/g, '&quot;')}"
+                  oninput="state.productFilter.search=this.value; updateShopProductsOnly()">
+                <button type="button" class="af-search-x" aria-label="پاک‌کردن جستجو"
+                  onclick="var i=document.getElementById('af-search'); if(i) i.value=''; state.productFilter.search=''; updateShopProductsOnly()">✕</button>
+              </div>
+            </section>
+
+            <section class="af-sect">
+              <div class="af-rowlbl"><span class="af-label">دسته‌بندی</span>
+                <span class="af-catcount">${(state.categories || []).length} دسته</span></div>
+              <div class="af-cats">
+                <button data-category=""
+                  onclick="state.productFilter.category=''; updateShopProductsOnly(true); updateCategoryButtonsUI()"
+                  class="cat-btn af-chip ${!state.productFilter.category ? 'bg-blue-500 text-white shadow-lg' : 'glass hover:bg-white/10'}"
+                  type="button">همه محصولات</button>
+                ${(state.categories || []).map(cat => {
+                  const cnt = (state.products || []).filter(p => p.category === cat.id).length;
+                  const act = state.productFilter.category === cat.id;
+                  return `<button data-category="${cat.id}"
+                    onclick="state.productFilter.category='${cat.id}'; updateShopProductsOnly(true); updateCategoryButtonsUI()"
+                    class="cat-btn af-chip ${act ? 'bg-blue-500 text-white shadow-lg' : 'glass hover:bg-white/10'}" type="button">
+                    <span class="af-chip-ic">${cat.icon || '📦'}</span><span class="af-chip-t">${cat.title}</span><span class="af-chip-n">${cnt}</span></button>`;
+                }).join('')}
+              </div>
+            </section>
+
+            <section class="af-sect">
+              <span class="af-label">مرتب‌سازی</span>
+              <div class="af-sorts">
+                ${[
+                  { value: 'newest', label: 'جدیدترین', ic: '🕐' },
+                  { value: 'popular', label: 'پرفروش', ic: '🔥' },
+                  { value: 'price-low', label: 'ارزان‌ترین', ic: '↓' },
+                  { value: 'price-high', label: 'گران‌ترین', ic: '↑' }
+                ].map(opt => `
+                  <button data-sort="${opt.value}"
+                    onclick="state.productFilter.sort='${opt.value}'; updateShopProductsOnly(); updateSortButtonsUI()"
+                    class="sort-btn af-chip af-chip-s ${state.productFilter.sort === opt.value ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50' : 'bg-white/5 text-white/60 hover:bg-white/10'}"
+                    type="button"><span aria-hidden="true">${opt.ic}</span>${opt.label}</button>
+                `).join('')}
+              </div>
+            </section>
+
+            ${prices.length > 0 ? `
+            <section class="af-sect">
+              <div class="af-rowlbl"><span class="af-label">بازه قیمت — تومان</span>
+                <span class="af-plimit">تا <b id="priceMaxLabel">${utils.formatPrice(state.productFilter.maxPrice || autoMaxPrice)}</b></span></div>
+              <input type="range" id="priceMax" min="${autoMinPrice}" max="${autoMaxPrice}" step="1000"
+                value="${state.productFilter.maxPrice || autoMaxPrice}" oninput="updatePriceSlider()" class="af-range" aria-label="حداکثر قیمت">
+              <div class="af-minmax">
+                <input id="af-minNum" type="number" inputmode="numeric" dir="ltr" class="af-num" placeholder="${autoMinPrice}"
+                  min="${autoMinPrice}" max="${autoMaxPrice}" value="${state.productFilter.minPrice || ''}"
+                  oninput="state.productFilter.minPrice=this.value ? Number(this.value) : ''; updateShopProductsOnly()">
+                <span class="af-dash" aria-hidden="true">—</span>
+                <input id="af-maxNum" type="number" inputmode="numeric" dir="ltr" class="af-num" placeholder="${autoMaxPrice}"
+                  min="${autoMinPrice}" max="${autoMaxPrice}" value="${state.productFilter.maxPrice || ''}"
+                  oninput="var sl=document.getElementById('priceMax'); if(sl && this.value){ sl.value=this.value; updatePriceSlider(); } else { state.productFilter.maxPrice=this.value ? Number(this.value) : ''; updateShopProductsOnly(); }">
+              </div>
+              <p class="af-hint">بازهٔ مجاز بازار: ${utils.formatPrice(autoMinPrice)} تا ${utils.formatPrice(autoMaxPrice)}</p>
+            </section>
+            ` : ''}
+
+          </div>
+
+          <div class="af-foot">
+            <button type="button" class="af-btn af-btn-ghost"
+              onclick="state.productFilter={category:'',search:'',sort:'newest',minPrice:'',maxPrice:''}; updateShopProductsOnly(true); updateSortButtonsUI(); updateCategoryButtonsUI(); var si=document.getElementById('af-search'); if(si) si.value=''; var mn=document.getElementById('af-minNum'); if(mn) mn.value=''; var mx=document.getElementById('af-maxNum'); if(mx) mx.value='';">
+              پاک‌سازی همه
+            </button>
+            <button type="button" class="af-btn af-btn-primary" onclick="toggleFilterSidebar()">
+              نمایش ${filteredProducts.length} محصول ${aryIcon('check','w-4 h-4')}
+            </button>
           </div>
         </div>
       </div>
-
-      <div id="shop-products-container">
-        ${renderShopProductsOnly()}
-      </div>
-    </main>
-    
-    <style>
-      .shop-filter-sidebar {
-        position: fixed;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        max-width: 420px;
-        z-index: 1000;
-        pointer-events: none;
-        opacity: 0;
-        transition: opacity 220ms ease;
-      }
-      
-      .shop-filter-sidebar.open {
-        pointer-events: auto;
-        opacity: 1;
-      }
-      
-      .shop-filter-sidebar .shop-filter-inner {
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        width: 100%;
-        background: 
-          radial-gradient(900px 500px at 95% 5%, rgba(86,125,255,0.22) 0%, rgba(0,0,0,0) 40%),
-          radial-gradient(700px 500px at 10% 95%, rgba(0,210,255,0.16) 0%, rgba(0,0,0,0) 45%),
-          linear-gradient(180deg, rgba(16,18,24,0.92) 0%, rgba(16,18,24,0.88) 55%, rgba(16,18,24,0.95) 100%);
-        backdrop-filter: blur(26px) saturate(160%);
-        border-left: 1px solid rgba(255,255,255,0.12);
-        box-shadow: -14px 0 36px rgba(0,0,0,0.45);
-        color: #fff;
-        overflow-y: auto;
-      }
-      
-      @media (max-width: 480px) {
-        .shop-filter-sidebar {
-          max-width: 86vw;
-        }
-      }
-      
-      @media (min-width: 481px) and (max-width: 768px) {
-        .shop-filter-sidebar {
-          max-width: 72vw;
-        }
-      }
-      
-      @media (min-width: 769px) {
-        .shop-filter-sidebar {
-          max-width: 420px;
-        }
-      }
-    </style>
   `;
 
   setTimeout(() => {
