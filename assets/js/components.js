@@ -449,11 +449,16 @@ window.aryCatIcon = function (cat, extra) {
 
       <!-- Mobile/Tablet Sidebar (همیشه در DOM، فقط کلاس open) -->
       <div id="mobileMenu" class="mobile-menu">
-        <div class="gpt5-drawer gpt5-drawer-w ml-auto h-full p-5 sm:p-6 flex flex-col gap-2">
-          <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <span class="font-bold text-white text-base sm:text-lg">${config.store_name}</span>
-            <button onclick="toggleMenu()" class="p-2 rounded-lg hover:bg-white/10 text-white/90" aria-label="بستن" type="button">✕</button>
+        <div class="gpt5-drawer gpt5-drawer-w ml-auto h-full flex flex-col">
+          <button onclick="toggleMenu()" class="ary-float-x" aria-label="بستن منو" type="button">✕</button>
+          <div class="ary-dh">
+            <span class="ary-dh-ic">${aryIcon('home','w-5 h-5')}</span>
+            <div class="min-w-0">
+              <div class="ary-dh-t">${config.store_name}</div>
+              <div class="ary-dh-s">فهرست دسترسی‌ها</div>
+            </div>
           </div>
+          <div class="ary-dnav">
 
           <button onclick="navigate('home'); toggleMenu();" class="gpt5-drawer-link" type="button">خانه</button>
           <button onclick="navigate('shop'); toggleMenu();" class="gpt5-drawer-link" type="button">فروشگاه</button>
@@ -482,6 +487,7 @@ window.aryCatIcon = function (cat, extra) {
               <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('user','w-4 h-4')}پروفایل</span></button>
 
             `:''}
+          </div>
           </div>
         </div>
 
