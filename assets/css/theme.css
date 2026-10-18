@@ -360,22 +360,22 @@ html[data-aria-theme] #mobileMenu > button.bg-black\/40 { background: var(--ar-s
 html[data-aria-theme="dark"] .ary-float-x { background: rgba(255,255,255,.10); border-color: rgba(255,255,255,.2); color:#fff; }
 
 /* ── ۱۰) پنل فیلتر شاپ (af-*) ── */
-html[data-aria-theme] #shop-filter-sidebar { background: transparent !important; box-shadow:none; border:0; transform:none !important; opacity:1 !important; }
+html[data-aria-theme] #shop-filter-sidebar { background: transparent !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important; box-shadow:none !important; border:0; transform:none !important; opacity:1 !important; width:100%; max-width:440px; }
 #shop-filter-sidebar:not(.open) { pointer-events:none; visibility:hidden; }
 #shop-filter-sidebar.open { pointer-events:auto; visibility:visible; }
-html[data-aria-theme] #shop-filter-sidebar .shop-filter-inner { position:absolute; top:0; right:0; bottom:0; height:auto; overflow:visible; }
-#shop-filter-sidebar .af-backdrop { position:fixed; inset:0; z-index:-1; background:var(--ar-scrim); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); opacity:0; pointer-events:none; transition:opacity .3s ease; }
+html[data-aria-theme] #shop-filter-sidebar .shop-filter-inner { position:absolute; top:0; right:0; bottom:0; height:auto; overflow:visible; padding:0 !important; }
+#shop-filter-sidebar .af-backdrop { position:fixed; inset:0; z-index:-1; background:var(--ar-scrim); opacity:0; pointer-events:none; transition:opacity .3s ease; }
 #shop-filter-sidebar.open .af-backdrop { opacity:1; pointer-events:auto; }
 #shop-filter-sidebar .af-panel {
-  position:relative; display:flex; flex-direction:column; width:100%; height:100%; max-width:420px;
-  background: var(--ar-panel); color: var(--ar-ink);
-  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
-  border-left:1px solid var(--ar-line); box-shadow: var(--ar-shpop);
-  transform: translateX(101%); transition: transform .38s cubic-bezier(.25,.85,.3,1);
-  overflow-x: clip;
+  position:relative; display:flex; flex-direction:column; width:100%; height:100%;
+  background: var(--ar-surface); color: var(--ar-ink);
+  border:1px solid var(--ar-line); border-right:0; border-radius: 26px 0 0 26px;
+  box-shadow: var(--ar-shpop);
+  transform: translateX(calc(100% + 2px)); transition: transform .38s cubic-bezier(.25,.85,.3,1);
+  overflow: hidden;
 }
 #shop-filter-sidebar.open .af-panel { transform: translateX(0); }
-@media (min-width:640px) { #shop-filter-sidebar .af-panel, #mobileMenu .gpt5-drawer { border-radius: 26px 0 0 26px; } }
+@media (max-width:639px) { #shop-filter-sidebar .af-panel { border-radius: 22px 0 0 22px; } } @media (min-width:640px) { #mobileMenu .gpt5-drawer { border-radius: 26px 0 0 26px; } }
 #shop-filter-sidebar .af-head { flex:none; position:sticky; top:0; z-index:4; display:flex; align-items:center; gap:.7rem; padding:1.05rem 1.25rem; background:var(--ar-head); border-bottom:1px solid var(--ar-line); }
 #shop-filter-sidebar .af-head-ic { width:2.3rem; height:2.3rem; border-radius:13px; flex:none; display:inline-flex; align-items:center; justify-content:center; background:var(--ar-chip); border:1px solid var(--ar-chipbd); color:var(--ar-ink); }
 #shop-filter-sidebar .af-title { font-weight:900; font-size:1rem; line-height:1.4; white-space:nowrap; }
@@ -569,4 +569,24 @@ html[data-aria-theme] .admin-sheet-trigger { background: var(--ar-glass2); borde
 .admin-topbar-btn:hover { background: var(--ar-hover); color: var(--ar-ink); }
 .admin-topbar-btn:active { transform: scale(.96); }
 .admin-topbar-logout:hover { background: var(--ar-bad-bg); border-color: rgba(244,63,94,.45); color: var(--ar-rose); }
+/* ── ۱۹) سوئیچ تم کشوی موبایل — پیِل دو-آیکونه با تامبِ کشویی ── */
+.ary-seg-theme { position:relative; display:inline-flex; align-items:center; padding:3px; border-radius:999px; background:var(--ar-sink); border:1px solid var(--ar-chipbd); }
+.ary-seg-opt {
+  position:relative; z-index:1; display:inline-flex; align-items:center; justify-content:center;
+  width:2rem; height:1.85rem; border:0; background:none; cursor:pointer; border-radius:999px;
+  color:var(--ar-ink4); transition: color .3s ease, transform .45s cubic-bezier(.34,1.5,.4,1);
+}
+.ary-seg-opt svg { width:1.05rem; height:1.05rem; }
+.ary-seg-opt:active { transform: scale(.85); }
+.ary-seg-thumb {
+  position:absolute; top:3px; bottom:3px; width:calc(50% - 3.5px); inset-inline-start:3px; z-index:0;
+  border-radius:999px; background: linear-gradient(135deg, var(--ar-accent2), var(--ar-deep));
+  box-shadow: 0 6px 16px -6px rgba(37,99,235,.75);
+  transition: inset-inline-start .42s cubic-bezier(.3,1.35,.4,1), background .3s ease;
+}
+html[data-aria-theme="light"] .ary-seg-thumb { inset-inline-start: calc(50% + .5px); background: linear-gradient(135deg,#f59e0b,#f97316); box-shadow: 0 6px 16px -6px rgba(245,158,11,.7); }
+html[data-aria-theme="light"] .ary-seg-opt[data-th="light"] { color:#fff; transform: rotate(60deg) scale(1.05); }
+html[data-aria-theme="dark"]  .ary-seg-opt[data-th="dark"]  { color:#fff; transform: rotate(-15deg) scale(1.05); }
+.ary-dtheme-row { padding-inline-end: 1rem !important; }
+@media (prefers-reduced-motion: reduce) { .ary-seg-thumb, .ary-seg-opt { transition: none; } }
 
