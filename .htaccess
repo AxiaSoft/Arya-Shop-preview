@@ -41,6 +41,13 @@ RedirectMatch 404 ^/.git(/|$)
         Header set Cache-Control "no-store, max-age=0"
     </FilesMatch>
 </IfModule>
+<IfModule mod_headers.c>
+    # aria-cache-bust: استاتیکِ کد هرگز کشِ بلندمدت نگیرد (سبکِ توسعهٔ بدون build)
+    <FilesMatch "\\.(html|css|js)$">
+        Header set Cache-Control "no-cache, must-revalidate"
+    </FilesMatch>
+    </IfModule>
+
 
 # ── HTTPS enforcement (در صورت وجود گواهی، کامنت این ۴ خط را بردارید) ──
 # <IfModule mod_rewrite.c>

@@ -1676,6 +1676,7 @@ function renderShopPage() {
       </div>
 
       <div id="shop-filter-sidebar" class="shop-filter-sidebar">
+        <style>#shop-filter-sidebar:not(.open){pointer-events:none;visibility:hidden} #shop-filter-sidebar{background:transparent!important;box-shadow:none;border:0}</style>
         <div class="af-backdrop" onclick="toggleFilterSidebar()"></div>
         <div class="shop-filter-inner af-panel">
 
