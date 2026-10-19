@@ -2070,6 +2070,17 @@ function addTicketMessage(ticket, payload) {
 
   if (window.AppState) AppState.set({ tickets: state.tickets });
 
+  // اطلاع‌رسانی پیامکی به کاربر (اگر شماره دارد) — سرور: واقعی / دمو: شبیه‌سازی یا صف
+  if (ticket.user_phone && window.AryaSMS && payload.from !== 'user') {
+    AryaSMS.send(ticket.user_phone, text, ticket.id).then(function (st) {
+      try {
+        ticket.sms_last = { to: st.to || ticket.user_phone, at: new Date().toISOString(), via: st.via, ok: !!st.ok };
+        if (window.AppState) AppState.set({ tickets: state.tickets });
+        if (window.toast) toast(st.via === 'server' ? 'پاسخ ثبت شد؛ پیامک هم برای کاربر ارسال شد' : (st.via === 'demo' ? 'پاسخ ثبت شد؛ اطلاع‌رسانی پیامکی (شبیه‌سازی دمو) انجام شد' : 'پاسخ ثبت شد؛ پیامک در صف ارسال بک‌اند قرار گرفت'), 'info', 4600);
+      } catch (e) {}
+    }).catch(function () {});
+  }
+
   // همگام‌سازی روی سرور: پاسخ ادمین + باز/پاسخ‌داده‌شده شدن وضعیت (خودکار سمت سرور)
   if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
     AryaServer.replyTicket({ id: String(ticket.id), reply: text }).then(function (r) {
@@ -5091,3 +5102,62 @@ const AryaAdminPreview = (function () {
 })();
 window.AryaAdminPreview = AryaAdminPreview;
 
+// ════════════════════════════════════════════════════════════════
+// ARYA SELECT — ارتقای همهٔ <select>های پنل به لیست‌باکس اختصاصیِ خود اپ
+// (هیچ پاپ‌آپ/دراپ‌داونِ مرورگری باز نمی‌شود؛ value و change همان native)
+// ════════════════════════════════════════════════════════════════
+window.AryaSelect = (function () {
+  var openSel = null;
+  var CHEV = '<svg class=\"as-chev\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m6 9 6 6 6-6\"/></svg>';
+  function closeAll() { if (!openSel) return; try { openSel._asBox.style.display = 'none'; openSel._asBtn.setAttribute('aria-expanded', 'false'); } catch (e) {} openSel = null; }
+  document.addEventListener('mousedown', function (e) { if (openSel && openSel._asWrap && !openSel._asWrap.contains(e.target)) closeAll(); }, true);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeAll(); }, true);
+  function curLabel(sel) {
+    for (var i = 0; i < sel.options.length; i++) { if (sel.options[i].selected || String(sel.options[i].value) === String(sel.value)) return sel.options[i].textContent.trim(); }
+    return (sel.options[0] && sel.options[0].textContent.trim()) || '—';
+  }
+  function fill(sel) {
+    var box = sel._asBox; box.innerHTML = '';
+    Array.prototype.forEach.call(sel.options, function (o) {
+      if (o.tagName === 'OPTGROUP') { var g = document.createElement('div'); g.className = 'as-grp'; g.textContent = o.label; box.appendChild(g); }
+      var it = document.createElement('button');
+      it.type = 'button'; it.className = 'as-item' + (String(o.value) === String(sel.value) ? ' sel' : '');
+      it.textContent = o.textContent.trim();
+      it.onclick = function (ev) {
+        ev.stopPropagation();
+        sel.value = o.value; sel.dispatchEvent(new Event('change', { bubbles: true })); sel.dispatchEvent(new Event('input', { bubbles: true }));
+        var v = sel._asBtn.querySelector('.as-val'); if (v) v.textContent = o.textContent.trim();
+        closeAll();
+      };
+      box.appendChild(it);
+    });
+    var sel_ = box.querySelector('.as-item.sel'); if (sel_) box.scrollTop = Math.max(0, sel_.offsetTop - 48);
+  }
+  function enhance(sel) {
+    if (sel._asOn || sel.multiple || sel.size > 1 || sel.classList.contains('as-skip')) return;
+    sel._asOn = true;
+    var wrap = document.createElement('span'); wrap.className = 'as-wrap' + (sel.dataset.asClass ? ' ' + sel.dataset.asClass : '');
+    var btn = document.createElement('button'); btn.type = 'button'; btn.className = 'as-btn'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+    btn.innerHTML = '<span class=\"as-val\"></span>' + CHEV;
+    var box = document.createElement('div'); box.className = 'as-box'; box.setAttribute('role', 'listbox');
+    sel._asWrap = wrap; sel._asBtn = btn; sel._asBox = box;
+    btn.addEventListener('click', function (ev) { ev.stopPropagation(); if (sel.disabled) return; if (openSel === sel) { closeAll(); return; } closeAll(); openSel = sel; fill(sel); box.style.display = 'block'; btn.setAttribute('aria-expanded', 'true'); });
+    sel.addEventListener('change', function () { var v = btn.querySelector('.as-val'); if (v) v.textContent = curLabel(sel); });
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(btn); wrap.appendChild(box); wrap.appendChild(sel);
+    sel.classList.add('as-native');
+    btn.querySelector('.as-val').textContent = curLabel(sel);
+    if (sel.disabled) { btn.disabled = true; }
+  }
+  function enhanceAll(root) { (root || document).querySelectorAll('select').forEach(enhance); }
+  return { enhanceAll: enhanceAll, refresh: function (root) { closeAll(); enhanceAll(root); } };
+})();
+(function () {
+  function boot() {
+    var scr = document.getElementById('admin-panel-screen') || document.getElementById('admin-auth-screen');
+    if (!scr) return;
+    try { window.AryaSelect && AryaSelect.enhanceAll(scr); } catch (e) {}
+    new MutationObserver(function () { try { window.AryaSelect && AryaSelect.enhanceAll(scr); } catch (e) {} }).observe(scr, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 1200);
+})();

@@ -239,7 +239,7 @@ function renderHomePage() {
 
       <!-- شگفت‌انگیزها — اسلایدر افقی (حداکثر ۱۰ کارت؛ ارتفاع ثابت، بدون کش‌آمدن صفحه) -->
       ${dealsList.length > 0 ? `
-      <section class="py-12 lg:py-16">
+      <section class="py-12 lg:py-16 ary-amazing">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
           <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-l from-rose-600 via-pink-600 to-blue-700 p-5 lg:p-8 shadow-2xl shadow-rose-500/15">
             <div class="absolute -top-12 -left-12 w-44 h-44 rounded-full bg-white/10 blur-2xl animate-pulse-slow"></div>
@@ -447,6 +447,29 @@ window.switchProfileTab = switchProfileTab;
   });
 })();
 
+// ── AryaSMS — اطلاع‌رسانی پاسخ تیکت via SMS (backend-aware, demo-sim) ──
+window.AryaSMS = (function () {
+  function mask(ph) { ph = String(ph || ''); return ph.length >= 4 ? ph.slice(0, 4) + '•••' + ph.slice(-4) : ph; }
+  async function send(phone, text, ticketId) {
+    phone = window.normIrPhone ? normIrPhone(String(phone || '')) : String(phone || '');
+    if (!/^09\d{9}$/.test(phone)) return { ok: false, via: 'none', reason: 'invalid-phone' };
+    const snippet = String(text || '').replace(/\s+/g, ' ').trim().slice(0, 150);
+    try {
+      if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+        if (typeof AryaServer.sendSMS === 'function') {
+          const r = await AryaServer.sendSMS({ phone: phone, message: 'پشتیبانی آریا: ' + snippet, ticket_id: String(ticketId || '') });
+          return { ok: !!(r && r.ok), via: 'server', to: phone };
+        }
+        // بک‌اند بدون درگاه پیامک: تیکت به‌عنوان «در صف ارسال» ثبت می‌شود تا پس از اتصال SMS-Provider ارسال گردد
+        try { await AryaServer.crud.upsert('tickets', { id: String(ticketId || ''), sms_pending: 1 }); } catch (e) {}
+        return { ok: true, via: 'queued', to: phone };
+      }
+    } catch (e) {}
+    return { ok: true, via: 'demo', to: phone }; // شبیه‌سازی دمو — بدون بک‌اند
+  }
+  return { send: send, mask: mask };
+})();
+
 // ── دایرهٔ شناور پشتیبانی — گفتگوی اختصاصی و امن کاربر با ادمین (بر بستر تیکت) ──
 window.AryaSupportChat = (function () {
   let root = null, isOpen = false, pollTimer = null, lastCount = -1;
@@ -486,7 +509,10 @@ window.AryaSupportChat = (function () {
     const ts = myTickets().slice().sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
     const msgs = [];
     ts.slice(0, 3).forEach(t => {
-      msgs.push({ sys: true, text: 'تیکت «' + (t.subject || 'پشتیبانی') + '» — وضعیت: ' + (t.status === 'open' ? 'باز' : (t.status === 'answered' ? 'پاسخ داده شده' : t.status)) });
+      let smsNote = '';
+      if (t.sms_last && t.sms_last.at) smsNote = ' · 📱 پاسخ به ' + (window.AryaSMS ? AryaSMS.mask(t.sms_last.to || t.user_phone) : 'موبایل شما') + ' ' + (t.sms_last.via === 'queued' ? 'در صف ارسال پیامک است' : 'پیامک شد');
+      else if (t.user_phone && !state.user) smsNote = ' · 📱 پاسخ نهایی با پیامک به ' + (window.AryaSMS ? AryaSMS.mask(t.user_phone) : 'موبایل شما') + ' اطلاع داده می‌شود';
+      msgs.push({ sys: true, text: 'تیکت «' + (t.subject || 'پشتیبانی') + '» — وضعیت: ' + (t.status === 'open' ? 'باز' : (t.status === 'answered' ? 'پاسخ داده شده' : t.status)) + smsNote });
       msgsOf(t).forEach(m => msgs.push(m));
     });
     msgs.sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')));
@@ -570,9 +596,6 @@ window.AryaSupportChat = (function () {
               </div>
             </div>
             <div class="flex items-center gap-1 shrink-0">
-              <button type="button" id="ary-chat-new" title="ثبت تیکت جدید" class="w-8 h-8 rounded-full flex items-center justify-center text-white/75 hover:bg-white/15 transition-colors">
-                <svg class="w-4.5 h-4.5 w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5h4a2 2 0 0 1 2 2v3"/><path d="M13.5 17.5 17.5 13.5a2.12 2.12 0 0 0-3-3L4 21l4-1Z"/><path d="M10 4H4a2 2 0 0 0-2 2v0"/></svg>
-              </button>
               <button type="button" id="ary-chat-close" class="w-8 h-8 rounded-full flex items-center justify-center text-white/75 hover:bg-white/15 transition-colors" aria-label="بستن">
                 <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
@@ -593,7 +616,6 @@ window.AryaSupportChat = (function () {
       root.querySelector('#ary-chat-form').onsubmit = e => { e.preventDefault(); send(e.target.querySelector('#ary-chat-input').value); };
       const inpEl = root.querySelector('#ary-chat-input');
       inpEl.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(e.target.value); } });
-      root.querySelector('#ary-chat-new').onclick = () => { if (!u()) { paint(); toast('اول شماره موبایل‌تان را وارد کنید', 'info'); return; } if (typeof window.openUserTicketModal === 'function') { close(); window.openUserTicketModal(); } };
     }
     root.style.display = '';
     root.classList.remove('ary-chat-open'); root.classList.remove('ary-chat-closing'); void root.offsetWidth; root.classList.add('ary-chat-open');
@@ -601,6 +623,11 @@ window.AryaSupportChat = (function () {
     paint(); pull();
     if (pollTimer) clearInterval(pollTimer);
     pollTimer = setInterval(() => { if (isOpen) pull(); }, 30000); // دریافت پاسخ‌های تازه
+    if (!window.__aryChatLiveBound) { window.__aryChatLiveBound = true;
+      // هر بار که استیت (مثلاً پاسخ ادمین در همین مرورگر/تب) به‌روز شد، چت فوراً رفرش می‌شود
+      document.addEventListener('ary:rendered', function () { if (isOpen) { pull().then(function(){ paint(); }).catch(function(){}); } });
+      window.addEventListener('storage', function (ev) { if (isOpen && ev.key && String(ev.key).indexOf('arya') === 0) { pull().then(function(){ paint(); }).catch(function(){}); } });
+    }
   }
   function close() {
     isOpen = false;
@@ -611,19 +638,21 @@ window.AryaSupportChat = (function () {
     root.classList.add('ary-chat-closing');
     setTimeout(() => { if (root) { root.style.display = 'none'; root.classList.remove('ary-chat-closing'); } }, 560);
   }
-  /* موبایل: با اسکرول صفحه یا کلیک بیرون، پنل خودش را می‌بندد */
-  function aryIsPhone() { try { return window.matchMedia && matchMedia('(max-width: 639px)').matches; } catch (e) { return false; } }
+  /* موبایل/تبلت: با اسکرول صفحه یا کلیک بیرون (خارج کارتِ داخلی)، پنل خودش را می‌بندد */
+  function aryIsPhone() { try { return window.matchMedia && matchMedia('(max-width: 1023px)').matches; } catch (e) { return false; } }
+  function chatCard() { return root ? root.firstElementChild : null; }
   document.addEventListener('pointerdown', (e) => {
     if (!isOpen || !root || !aryIsPhone()) return;
     const t = e.target;
-    if (root.contains(t)) return;
+    const card = chatCard(); if (card && card.contains(t)) return;
     if (t && t.closest && t.closest('#arya-support-fab')) return;
     close();
   }, true);
   document.addEventListener('scroll', (e) => {
     if (!isOpen || !root || !aryIsPhone()) return;
     const t = e.target;
-    if (t && t.nodeType === 1 && root.contains(t)) return; // اسکرول داخل گفتگو نبندد
+    const card = chatCard();
+    if (t && t.nodeType === 1 && card && card.contains(t)) return; // اسکرول داخل گفتگو نبندد
     close();
   }, { capture: true, passive: true });
   function updateBadge() {
@@ -3876,9 +3905,10 @@ function renderProductPage() {
 
     state.tickets = Array.isArray(state.tickets) ? state.tickets : [];
     state.tickets.unshift(ticket);
+    if (ticket.user_phone) { ticket.sms_optin = true; }
     persistTickets();
 
-    toast('تیکت ثبت و برای پشتیبانی ارسال شد');
+    toast(ticket.user_phone ? 'تیکت ثبت شد — پاسخ هم داخل سایت و هم عبر پیامک (SMS) به ' + (window.AryaSMS ? AryaSMS.mask(ticket.user_phone) : 'موبایل‌تان') + ' می‌رسد' : 'تیکت ثبت و برای پشتیبانی ارسال شد', 'success', 5600);
     state.userTicketModal = { open: false, subject: '', message: '', priority: 'normal' };
     state.profileTab = 'tickets';
     render();
