@@ -461,7 +461,6 @@ window.aryCatIcon = function (cat, extra) {
           <button onclick="navigate('home'); toggleMenu();" class="gpt5-drawer-link" type="button">خانه</button>
           <button onclick="navigate('shop'); toggleMenu();" class="gpt5-drawer-link" type="button">فروشگاه</button>
           <button onclick="navigate('blog'); toggleMenu();" class="gpt5-drawer-link" type="button">بلاگ</button>
-          <div class="gpt5-drawer-link ary-dtheme-row flex items-center justify-between"><span>تم سایت</span><span class="ary-seg-theme" role="group" aria-label="تغییر تم سایت"><button type="button" class="ary-seg-opt" data-th="light" title="حالت روشن" aria-label="حالت روشن" onclick="window.AryaTheme&&AryaTheme.set('light')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button><button type="button" class="ary-seg-opt" data-th="dark" title="حالت تاریک" aria-label="حالت تاریک" onclick="window.AryaTheme&&AryaTheme.set('dark')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button><span class="ary-seg-thumb" aria-hidden="true"></span></span></div>
 
           <div class="mt-1">
             <button onclick="toggleSidebarCategories()" class="gpt5-drawer-link flex items-center justify-between" type="button">
@@ -634,7 +633,7 @@ window.aryCatIcon = function (cat, extra) {
         </div>
 
         <!-- Back-to-top button -->
-        <div class="fixed bottom-6 left-6 z-[60]">
+        <div class="fixed bottom-6 left-6 z-[60] ary-to-top">
           <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
             class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 ring-1 ring-white/10 shadow-2xl hover:bg-white/20 transition-all flex items-center justify-center text-xl"
             aria-label="برو به بالا" title="برو به بالا" type="button"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>

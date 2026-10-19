@@ -2781,7 +2781,7 @@ function renderProductArticle(article) {
             </svg>
           </div>
           <div>
-            <h2 class="text-3xl font-black bg-gradient-to-l from-white to-white/70 bg-clip-text text-transparent">مقاله محصول</h2>
+            <h2 class="text-3xl font-black bg-gradient-to-l from-white to-white/70 bg-clip-text text-transparent product-article-title">مقاله محصول</h2>
             <p class="text-white/50 text-sm mt-1">اطلاعات تکمیلی و راهنمای استفاده</p>
           </div>
         </div>

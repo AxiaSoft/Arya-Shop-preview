@@ -290,15 +290,24 @@ html[data-aria-theme="light"] .hover\:bg-black\/80.text-white:hover, html[data-a
 #ary-chat-panel { background: transparent; border: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 0; color: var(--ar-ink); }
 html[data-aria-theme] #ary-chat-panel { position: fixed; }
 @media (max-width:1023.98px) {
-  html[data-aria-theme] #ary-chat-panel { inset: 0 !important; width: auto !important; display: flex; align-items: center; justify-content: center; padding: 1rem; pointer-events: none; }
+  html[data-aria-theme] #ary-chat-panel { inset: 0 !important; width: auto !important; display: flex; align-items: center; justify-content: center; padding: 1rem; pointer-events: auto; background: rgba(3,10,24,.55); }
+  html[data-aria-theme="light"] #ary-chat-panel { background: rgba(24,48,92,.38); }
+  #ary-chat-panel.ary-chat-closing { background: rgba(3,10,24,.2); transition: background .4s ease; }
   #ary-chat-panel > * { pointer-events: auto; width: min(24.5rem, 100%); }
 }
 @media (min-width:1024px) {
   html[data-aria-theme] #ary-chat-panel { top: auto !important; bottom: 6.7rem !important; right: 1.25rem !important; left: auto !important; width: 24rem !important; }
 }
-#ary-chat-panel .glass, #ary-chat-panel .glass-strong, #ary-chat-panel .glass-dark {
-  background: var(--ar-head); border-color: transparent; color: var(--ar-ink); box-shadow: none;
+#ary-chat-panel > .glass-strong {
+  background: rgba(11,21,44,.93); border: 1px solid var(--ar-line2); color: var(--ar-ink);
+  backdrop-filter: var(--ar-blur-pop); -webkit-backdrop-filter: var(--ar-blur-pop);
+  box-shadow: 0 30px 70px -20px rgba(2,8,26,.9), inset 0 1px 0 rgba(255,255,255,.08);
 }
+html[data-aria-theme="light"] #ary-chat-panel > .glass-strong {
+  background: rgba(255,255,255,.88);
+  box-shadow: 0 26px 60px -22px rgba(23,51,105,.4), inset 0 1px 0 #fff;
+}
+#ary-chat-panel .glass-dark { background: rgba(7,14,32,.72); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 #ary-chat-panel #ary-chat-close, #ary-chat-panel #ary-chat-new { color: var(--ar-ink3); }
 #ary-chat-panel #ary-chat-close:hover, #ary-chat-panel #ary-chat-new:hover { background: var(--ar-hover); color: var(--ar-ink); }
 #ary-chat-status { color: var(--ar-ink3); }
@@ -618,7 +627,7 @@ html[data-aria-theme] #ary-admin-preview .ap-btn-danger:hover { background: #a32
 html[data-aria-admin="1"] .input-auth { }
 html[data-aria-theme] button[class*="btn"], html[data-aria-theme] .af-btn, html[data-aria-theme] .ap-btn,
 html[data-aria-theme] .admin-topbar-btn, html[data-aria-theme] .ary-seg-opt, html[data-aria-theme] .gpt5-search-btn,
-html[data-aria-theme] #admin-auth-screen button.btn-primary { white-space: nowrap; text-overflow: ellipsis; overflow: hidden; max-width: 100%; }
+html[data-aria-theme] #admin-auth-screen button.btn-primary { white-space: nowrap; max-width: 100%; }
 html[data-aria-theme] button[class*="btn"] > svg, html[data-aria-theme] .af-btn svg, html[data-aria-theme] .admin-topbar-btn svg { flex: none; }
 @media (max-width:639px) { .admin-topbar-btn span { display:none; } .admin-topbar-btn { padding:.45rem .6rem; } }
 /* دکمهٔ تمِ هدر موبایل — فقط موبایل */
@@ -639,16 +648,16 @@ html[data-aria-theme="light"] .article-content .prose-blockquote\:bg-white\/5 :i
 html[data-aria-theme="light"] .article-content img { border-radius: 14px; }
 
 /* ── ۲۲) شگفت‌انگیزها — همیشه متن سفید (هر دو تم) ── */
-.ary-amazing :is(h2, h3, p, span, b, strong, a, div, button, .text-white\/75, .text-white\/70) { color: #fff; }
+/* (replaced by scoped rules in section 25) */
 html[data-aria-theme] .ary-amazing .text-amber-400 { color: #fcd34d; }
 html[data-aria-theme] .ary-amazing .card, html[data-aria-theme] .ary-amazing .glass {
   background: rgba(10, 20, 44, .72); border: 1px solid rgba(148,187,255,.2); color: #fff;
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
 }
 html[data-aria-theme] .ary-amazing .card :is(h3, p, span, b, div) { color:#fff; }
-html[data-aria-theme] .ary-amazing .card .text-white\/70 { color: rgba(255,255,255,.75); }
+/* badge/color handled in section 25 */
 html[data-aria-theme] .ary-amazing .card .line-clamp-1, html[data-aria-theme] .ary-amazing .card .line-clamp-2 { color: #fff; }
-html[data-aria-theme] .ary-amazing .shop-card-badge { color:#fff; }
+/* badge/color handled in section 25 */
 
 /* ── ۲۳) AryaSelect — لیست‌باکس اختصاصی پنل ── */
 .as-wrap { position: relative; display: inline-block; width: 100%; vertical-align: middle; }
@@ -680,4 +689,63 @@ html[data-aria-theme] .ary-amazing .shop-card-badge { color:#fff; }
 .as-item:hover { background: var(--ar-hover); color: var(--ar-ink); }
 .as-item.sel { background: linear-gradient(135deg, var(--ar-accent2), var(--ar-deep)); color: #fff; }
 .as-grp { font-size: .64rem; font-weight: 900; color: var(--ar-ink4); padding: .45rem .7rem .2rem; }
-
+/* ── ۲۴) سرچ هدر — ریوال دایره‌ای (سروی) مثل پشتیبانی، کمی کندتر ── */
+html[data-aria-theme] .gpt5-search-shell { transition: none; opacity: 0; pointer-events: none; transform: translateY(8px); clip-path: circle(10px at var(--ary-src-x, 86%) var(--ary-src-y, 26px)); }
+html[data-aria-theme] .gpt5-search-shell.open {
+  opacity: 1; pointer-events: auto; transform: translateY(8px);
+  clip-path: circle(165% at var(--ary-src-x, 86%) var(--ary-src-y, 26px));
+  animation: arySearchOrbIn .52s cubic-bezier(.24,.86,.3,1) both;
+}
+html[data-aria-theme] .gpt5-search-shell.closing {
+  opacity: 1; pointer-events: none; transform: translateY(8px);
+  clip-path: circle(165% at var(--ary-src-x, 86%) var(--ary-src-y, 26px));
+  animation: arySearchOrbOut .4s cubic-bezier(.55,0,.7,.45) both;
+}
+@keyframes arySearchOrbIn {
+  0%   { clip-path: circle(10px at var(--ary-src-x,86%) var(--ary-src-y,26px)); opacity:.3; }
+  55%  { opacity:1; }
+  100% { clip-path: circle(165% at var(--ary-src-x,86%) var(--ary-src-y,26px)); opacity:1; }
+}
+@keyframes arySearchOrbOut {
+  0%   { clip-path: circle(165% at var(--ary-src-x,86%) var(--ary-src-y,26px)); opacity:1; }
+  100% { clip-path: circle(10px at var(--ary-src-x,86%) var(--ary-src-y,26px)); opacity:.12; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-aria-theme] .gpt5-search-shell.open, html[data-aria-theme] .gpt5-search-shell.closing { animation: none; clip-path: none; }
+}
+/* ═─ ۲۵) اصلاحات این دور ═─ */
+/* Up: دکمهٔ آبیِ هم‌خانواده FAB */
+html[data-aria-theme] .ary-to-top button {
+  background: linear-gradient(135deg,#1d4ed8 0%,#2563eb 48%,#0ea5e9 100%) !important;
+  color:#fff !important; border: 1px solid rgba(147,197,253,.4) !important;
+  box-shadow: 0 12px 30px -8px rgba(29,78,216,.65) !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  transition: transform .2s cubic-bezier(.22,1.4,.36,1), box-shadow .2s ease, filter .2s ease;
+}
+html[data-aria-theme] .ary-to-top button:hover { transform: translateY(-3px) scale(1.07); filter: brightness(1.14); box-shadow: 0 16px 36px -8px rgba(29,78,216,.8) !important; }
+html[data-aria-theme] .ary-to-top button:active { transform: scale(.92); }
+/* تایتل لندینگ مقاله محصول — گرادیان جوهری در لایت */
+html[data-aria-theme="light"] .product-article-title {
+  background-image: linear-gradient(to left, #122a4e, rgba(18,42,78,.66)) !important;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+html[data-aria-theme="light"] .article-container .text-white\/40 { color: rgba(18,42,78,.55); }
+/* شگفت‌انگیزها: فقط متن‌های بخش سفید؛ دکمه/بج‌ها هویت خودشان را پس می‌گیرند */
+.ary-amazing :is(h2, .text-white, .text-white\/75, .text-white\/70) { color:#fff !important; }
+html[data-aria-theme] .ary-amazing button.bg-white,
+html[data-aria-theme] .ary-amazing .bg-white.text-rose-600,
+html[data-aria-theme] .ary-amazing .card button.bg-white {
+  background:#fff !important; color:#be123c !important; box-shadow: 0 8px 20px -8px rgba(2,10,40,.5);
+}
+html[data-aria-theme] .ary-amazing button.bg-white:hover,
+html[data-aria-theme] .ary-amazing .bg-white.text-rose-600:hover { background:#fff1f2 !important; color:#9f1239 !important; }
+html[data-aria-theme] .ary-amazing .bg-white\/15 { background: rgba(6,14,34,.42) !important; color:#fff !important; border:1px solid rgba(255,255,255,.22); }
+html[data-aria-theme] .ary-amazing .bg-white\/15 svg { color:#fff !important; }
+html[data-aria-theme] .ary-amazing .bg-white\/15:hover { background: rgba(6,14,34,.6) !important; }
+html[data-aria-theme] .ary-amazing .bg-white\/30 { background: rgba(255,255,255,.3) !important; }
+/* دکمه‌های متن‌طولانی: بزرگ‌سازی به‌جای برش */
+html[data-aria-theme] .af-btn, html[data-aria-theme] .ap-btn, html[data-aria-theme] .admin-topbar-btn,
+html[data-aria-theme] .btn-primary, html[data-aria-theme] .btn-ghost, html[data-aria-theme] .btn-danger,
+html[data-aria-theme] #db-setup-screen .sw-btn { min-width: max-content; max-width: 100%; width: auto; padding-inline: 1.15rem; }
+html[data-aria-theme] #shop-filter-sidebar .af-btn { flex: 1 1 max-content; }
+html[data-aria-theme] #shop-filter-sidebar .af-btn-primary { flex: 2 1 max-content; }
+@media (max-width:420px) { #shop-filter-sidebar .af-btn { font-size:.73rem; padding-inline:.72rem; } .af-foot { gap:.45rem; } }
