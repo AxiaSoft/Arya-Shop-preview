@@ -8,7 +8,7 @@
   'use strict';
 
   const DB_NAME    = 'AryaStoreDB';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2; // v2: افزودن جدول blog
 
   // جداول دیتابیس
   const STORES = {
@@ -17,14 +17,15 @@
     users:    { keyPath: 'id', indexes: ['email', 'phone'] },
     tickets:  { keyPath: 'id', indexes: ['user_phone', 'status'] },
     categories: { keyPath: 'id', indexes: [] },
+    blog:     { keyPath: 'id', indexes: ['status', 'created_at'] },
     reviews:  { keyPath: 'id', indexes: ['product_id', 'status'] },
     admins:   { keyPath: 'id', indexes: ['email', 'phone'] },
     settings: { keyPath: 'key', indexes: [] },
   };
 
-  // ── PHP backend config (اگر سرور داشتید) ──
-  const BACKEND_URL = 'Db.php'; // مثال: 'https://yoursite.com/api/db.php'
-  const USE_BACKEND = true; // true = از PHP/MySQL استفاده کن
+  // ── همگام‌سازی با سرور (Arya_api.js) — در صورت نبود config، فقط محلی ──
+  const SERVER_SYNC_TABLES = ['products', 'categories', 'orders', 'reviews', 'blog'];
+  function serverOn() { return !!(window.AryaServer && AryaServer.isConfigured()); }
 
   let db = null;
   let _ready = false;
@@ -195,8 +196,115 @@
   // ──────────────────────────────────────────
   // SYNC: IndexedDB → state (on load)
   // ──────────────────────────────────────────
+  function _mapServerProduct(p) {
+    if (typeof p.images === 'string') { try { p.images = JSON.parse(p.images); } catch { p.images = []; } }
+    if (typeof p.videos === 'string') { try { p.videos = JSON.parse(p.videos); } catch { p.videos = []; } }
+    return p;
+  }
+
+  // در حالت سرور: محصولات/دسته‌ها/نظرات از سرور (مرجع) و کش در IndexedDB
+  async function loadFromServer() {
+    const isAdminPage = /admin\.html/.test(location.pathname) || location.hash.includes('admin');
+    const wanted = [['products'], ['categories'], ['reviews']];
+    if (isAdminPage) wanted.push(['orders'], ['tickets']);
+    else if (window.state && state.user && state.user.phone) {
+      // پنل کاربر: تیکت‌ها و سفارش‌ها از سرور (با فیلتر موبایل) — وگرنه تیکت‌های ارسال‌شده در دستگاه دیگر/بعد از پاک‌کردن کش دیده نمی‌شوند
+      const up = { user_phone: String(state.user.phone).replace(/\D/g, '') };
+      wanted.push(['orders', up], ['tickets', up]);
+    }
+    for (const [table, extra] of wanted) {
+      try {
+        const r = await AryaServer.crud.getAll(table, Object.assign({}, extra || {}, isAdminPage && table === 'reviews' ? { include_all: 1 } : {}));
+        if (r && r.ok && Array.isArray(r.data)) {
+          const rows = r.data.map(x => ({ ...x }));
+          if (typeof getAll === 'function' && db) {
+            await Promise.all(rows.map(row => upsert(table, row).catch(() => {})));
+          }
+          if (table === 'products') state.products = rows.map(_mapServerProduct).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          if (table === 'categories') state.categories = rows;
+          if (table === 'reviews') state.reviews = rows;
+          if (table === 'orders') state.orders = rows.map(o => {
+            if (typeof o.items === 'string') { try { o.items = JSON.parse(o.items); } catch { o.items = []; } }
+            return o;
+          }).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+          if (table === 'tickets') state.tickets = rows.map(t => {
+            if (typeof t.messages === 'string') { try { t.messages = JSON.parse(t.messages); } catch { t.messages = []; } }
+            return t;
+          }).sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0));
+        }
+      } catch (e) { console.warn('[AryaDB] server load failed for', table, e); }
+    }
+    // پیکربندی فروشگاه (زمان‌های ارسال + مبدأ نقشه) — یک‌بار در بوت
+    try {
+      const sc = await AryaServer.shopConfig();
+      if (sc && sc.ok && sc.data) {
+        window.__aryShopCfg = sc.data;
+        if (window.state) state.shopConfig = sc.data;
+        document.dispatchEvent(new CustomEvent('arya-shop-config'));
+      }
+    } catch (e) {}
+  }
+
+  // بک‌فیل ردیف‌های وبلاگ از کاتالوگ نمونه: فقط ردیف‌های غایب (بر پایهٔ id) افزوده می‌شوند
+  async function seedBlogRows(blogs) {
+    const rows = (blogs || []).map(function (b) { return Object.assign({}, b, { media: JSON.stringify(b.media || []) }); });
+    if (!rows.length) return rows;
+    if (db) {
+      const have = await getAll('blog').catch(function () { return []; });
+      const ids = {}; have.forEach(function (r) { ids[String(r.id)] = 1; });
+      const missing = rows.filter(function (r) { return !ids[String(r.id)]; });
+      for (const r of missing) { try { await upsert('blog', r); } catch (e) {} }
+    }
+    return rows;
+  }
+  async function backfillDemoBlog() {
+    try {
+      const res = await fetch('assets/data/demo-catalog.json', { cache: 'no-store' });
+      if (!res.ok) return [];
+      const cat = await res.json();
+      return await seedBlogRows(cat && Array.isArray(cat.blog) ? cat.blog : []);
+    } catch (e) { return []; }
+  }
+  // ── حالت دمو بدون سرور (GitHub Pages/فایل محلی): اگر IndexedDB خالی بود، کاتالوگ نمونه را بارگذاری کن ──
+  // منبع یکی است با سید سمت سرور: assets/data/demo-catalog.json — بعد از اولین اتصال PHP، دیتابیس مرجع است.
+  async function ensureDemoSeed() {
+    try {
+      if (typeof state === 'undefined') return;
+      const hadCatalog = (state.products || []).length || (state.categories || []).length;
+      const res = await fetch('assets/data/demo-catalog.json', { cache: 'no-store' });
+      if (!res.ok) return;
+      const cat = await res.json();
+      if (!cat || !Array.isArray(cat.products) || !cat.products.length) return;
+      const cats = Array.isArray(cat.categories) ? cat.categories : [];
+      const prods = cat.products.map(function (p) { return Object.assign({}, p); });
+      if (!hadCatalog) {
+        state.categories = cats;
+        state.products = prods.sort(function (a, b) { return new Date(b.created_at || 0) - new Date(a.created_at || 0); });
+        if (db) {
+          const stamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
+          await Promise.all(
+            cats.map(function (c) { return upsert('categories', Object.assign({ created_at: stamp }, c)).catch(function () {}); })
+               .concat(prods.map(function (pr) { return upsert('products', Object.assign({ created_at: stamp }, pr)).catch(function () {}); }))
+          );
+        }
+      }
+      // بلاگ دمو: بک‌فیل مستقل — حتی وقتی محصولات از قبل پر هستند (سفرهای قبلی)
+      const seededBlogs = await seedBlogRows(Array.isArray(cat.blog) ? cat.blog : []);
+      if (seededBlogs.length && !(Array.isArray(state.blog) && state.blog.length)) state.blog = seededBlogs;
+
+      if (typeof toast === 'function') toast('حالت دمو (بدون سرور): کاتالوگ نمونه (محصولات + بلاگ) بارگذاری شد', 'info');
+    } catch (e) { /* فایل نبود یا آفلاین — فروشگاه خالی می‌ماند */ }
+  }
+
   async function loadToState() {
-    if (!db || typeof state === 'undefined') return;
+    if (typeof state === 'undefined') return;
+    try { await AryaServer.ready; } catch (e) {}
+    if (typeof AryaServer !== 'undefined' && AryaServer.isConfigured()) {
+      await loadFromServer();
+      if (typeof render === 'function') render();
+      return;
+    }
+    if (!db) { await ensureDemoSeed(); if (typeof render === 'function') render(); return; }
 
     const [products, orders, categories, tickets, reviews] = await Promise.all([
       getAll('products'),
@@ -222,6 +330,8 @@
     }
 
     if (categories.length > 0) state.categories = categories;
+
+    if (!products.length && !categories.length) { await ensureDemoSeed(); if (typeof render === 'function') render(); }
 
     if (tickets.length > 0) {
       state.tickets = tickets.map(t => {
@@ -478,20 +588,25 @@
   // PHP BACKEND SYNC (اختیاری - با سرور PHP)
   // ──────────────────────────────────────────
   async function syncToBackend(table, action, record) {
-    if (!USE_BACKEND || !BACKEND_URL) return;
+    // اکشن‌های عمومی CRUD روی سرور (فقط در حالت پیکربندی‌شده)
+    if (!serverOn()) return { skipped: true };
     try {
-      await fetch(BACKEND_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ table, action, record })
-      });
-    } catch(e) {}
+      if (action === 'upsert') return await AryaServer.crud.upsert(table, _cleanRecord({ ...record }));
+      if (action === 'delete') return await AryaServer.crud.remove(table, record && record.id ? record.id : record);
+    } catch (e) { console.warn('[AryaDB] sync failed:', e); return { ok: false, msg: String(e) }; }
+    return { skipped: true };
   }
 
   // ──────────────────────────────────────────
   // DB STATS (for admin panel)
   // ──────────────────────────────────────────
   async function getStats() {
+    if (serverOn()) {
+      try {
+        const r = await AryaServer.crud.stats();
+        if (r && r.ok && r.data && r.data.counts) return { ...r.data.counts };
+      } catch (e) {}
+    }
     const stats = {};
     for (const name of Object.keys(STORES)) {
       const rows = await getAll(name);
@@ -503,14 +618,31 @@
   // ──────────────────────────────────────────
   // PUBLIC API
   // ──────────────────────────────────────────
+  async function upsertS(table, record) {
+    const r = await upsert(table, record);
+    if (serverOn() && SERVER_SYNC_TABLES.includes(table)) {
+      try { await syncToBackend(table, 'upsert', record); } catch (e) {}
+    }
+    return r;
+  }
+  async function removeS(table, id) {
+    const r = await remove(table, id);
+    if (serverOn() && SERVER_SYNC_TABLES.includes(table)) {
+      try { await syncToBackend(table, 'delete', { id }); } catch (e) {}
+    }
+    return r;
+  }
+
   window.AryaDB = {
     init,
-    upsert,
+    upsert: upsertS,
     getAll,
     getById,
-    remove,
+    remove: removeS,
     clearStore,
     loadToState,
+    seedDemoCatalog: ensureDemoSeed,
+    seedDemoBlog: backfillDemoBlog,
     syncState: _syncStateToDb,
     downloadSQL,
     downloadJSON,
