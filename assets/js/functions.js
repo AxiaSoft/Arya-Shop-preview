@@ -373,18 +373,20 @@ function changePhoneNumber() {
   render();
 }
 
-// خروج از حساب
+// خروج از حساب — یکپارچه با نسخهٔ کامل (سرور + AppState) — همه‌جا با مودال تایید
 function logout() {
+  if (typeof window.logoutUser === 'function') { window.logoutUser(); return; }
   state.confirmModal = {
     type: 'logout',
     title: 'خروج از حساب کاربری',
-    message: 'آیا مطمئن هستید که می‌خواهید از حساب خود خارج شوید؟',
-    icon: '🚪',
-    confirmText: 'خروج',
+    message: 'با خروج، از حساب خود خارج می‌شوید. سبد خرید و علاقه‌مندی‌های شما ذخیره می‌مانند و با ورود دوباره بازمی‌گردند.',
+    icon: (typeof aryIcon === 'function' ? '<span class="inline-flex text-rose-300">' + aryIcon('logout', 'w-12 h-12') + '</span>' : '🚪'),
+    confirmText: 'بله، خروج',
     confirmClass: 'btn-danger',
     onConfirm: () => {
-      state.user = null;
-      state.isAdmin = false;
+      try { if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) AryaServer.logout().catch(() => {}); } catch (e) {}
+      state.user = null; state.currentUser = null; state.isAdmin = false;
+      try { if (window.AppState) AppState.set({ user: null, currentUser: null, isAdmin: false, loggedIn: false }); } catch (e) {}
       state.confirmModal = null;
       goTo('home');
       toast('از حساب خارج شدید', 'info');

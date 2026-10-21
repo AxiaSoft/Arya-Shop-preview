@@ -5058,7 +5058,7 @@ window.deleteAdminUserConfirm = deleteAdminUserConfirm;
     const idle = Date.now() - last;
     if (idle >= LIMIT) {
       last = Date.now(); // جلوگیری از اجرای دوباره پیش از رفتن صفحه
-      if (typeof window.adminLogout === 'function') { try { window.adminLogout(); return; } catch (e) {} }
+      if (typeof window.adminLogoutNow === 'function') { try { window.adminLogoutNow(); return; } catch (e) {} }
       try { if (window.AryaServer) AryaServer.call('admin_logout', { method: 'POST' }).catch(() => {}); } catch (e) {}
       location.reload();
     } else if (idle >= WARN && !warned) {
@@ -5497,5 +5497,22 @@ window.aryBlogExcerpt = function () {
   if (window.aryBlogCount) window.aryBlogCount();
 };
 
-
-
+// ═══════ راند ۴۳ — خروج از پنل با مودال تایید (in-app) ═══════
+window.adminLogoutNow = function () {
+  if (typeof window.__aryAdminLogoutRaw === 'function') { try { return window.__aryAdminLogoutRaw(); } catch (e) {} }
+  try { if (window.AryaServer) AryaServer.call('admin_logout', { method: 'POST' }).catch(function () {}); } catch (e) {}
+  try { if (typeof state !== 'undefined') { state.isAdmin = false; state.page = 'home'; } } catch (e) {}
+  location.reload();
+};
+window.adminLogout = function () {
+  if (window.state && state.confirmModal) { state.confirmModal = null; }
+  state.confirmModal = {
+    type: 'danger',
+    title: 'خروج از پنل مدیریت',
+    message: '<div class="text-start space-y-2"><p class="text-xs leading-6">با خروج، سشن مدیریتی بسته می‌شود و صفحهٔ ورود پنل نمایش داده می‌شود.</p><p class="text-[10px] text-white/45">اگر فرمی (محصول/مقاله/تنظیمات) باز و ذخیره‌نشده دارید، ابتدا «ذخیره» را بزنید — پیش‌نویس خودکار مقاله‌ها حفظ می‌ماند.</p></div>',
+    confirmText: 'بله، خروج از پنل',
+    confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+    onConfirm: function () { state.confirmModal = null; window.adminLogoutNow(); }
+  };
+  render();
+};

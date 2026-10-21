@@ -119,131 +119,73 @@ window.aryCatIcon = function (cat, extra) {
       .gpt5-dd-item:hover { background: var(--ar-hover, rgba(255,255,255,0.10)); }
       .gpt5-dd-item:active { background: var(--ar-active, rgba(255,255,255,0.18)); }
 
-      /* SEARCH FLOATING BAR */
-      .gpt5-search-wrap {
-        position: relative;
-        height: 0;
-        overflow: visible;
-        z-index: 40;
-      }
-      .gpt5-search-shell {
-        position: absolute;
-        top: 0;
-        right: 0;
-        left: 0;
-        display: flex;
-        justify-content: center;
-        pointer-events: none;
-        transform: translateY(-18px);
-        opacity: 0;
-        transition:
-          transform 260ms cubic-bezier(0.4,0,0.2,1),
-          opacity 220ms ease;
-      }
-      .gpt5-search-shell.open {
-        transform: translateY(8px);
-        opacity: 1;
-        pointer-events: auto;
-      }
-      .gpt5-search {
-        background: var(--ar-surface, rgba(20,20,24,0.9));
-        border: 1px solid var(--ar-line2, rgba(255,255,255,0.14));
-        backdrop-filter: none;
-        box-shadow: var(--ar-shpop, 0 18px 40px rgba(0,0,0,0.45));
-        color: var(--ar-ink, #fff);
-        border-radius: 18px;
-        padding: 10px 12px;
-        width: 100%;
-        max-width: 720px;
-      }
-      .gpt5-search-inner {
-        position: relative;
-      }
-      .gpt5-search-input {
-        width:100%;
-        color: var(--ar-ink, #fff);
-        background: var(--ar-input, rgba(255,255,255,0.08));
-        border:1px solid var(--ar-inputbd, rgba(255,255,255,0.14));
-        border-radius:12px;
-        padding:12px 46px 12px 104px;
-        outline:none;
-        transition: all 0.22s ease;
-        font-size: 0.92rem;
-      }
-      .gpt5-search-input::placeholder { color: rgba(255,255,255,0.55); }
-      .gpt5-search-input:hover {
-        background: rgba(255,255,255,0.12);
-        border-color: rgba(255,255,255,0.22);
-      }
-      .gpt5-search-input:focus {
-        border-color:#5cd2f6;
-        box-shadow:0 0 0 3px rgba(92,210,246,0.35);
-        background: rgba(255,255,255,0.10);
-      }
-      .gpt5-search-icon {
-        position:absolute;
-        right:14px;
-        top:50%;
-        transform:translateY(-50%);
-        font-size:1.2rem;
-        color:rgba(255,255,255,0.75);
-      }
-      .gpt5-search-btn {
-        position:absolute;
-        left:10px;
-        top:50%;
-        transform:translateY(-50%);
-        padding:9px 16px;
-        border-radius:11px;
-        background: linear-gradient(135deg,#2a8dff,#005aff);
-        box-shadow: 0 4px 14px rgba(37,99,235,0.55);
-        font-size:0.85rem;
-        font-weight:600;
-        transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-        white-space: nowrap;
-      }
-      .gpt5-search-btn:hover {
-        background: linear-gradient(135deg,#3b82f6,#2563eb);
-        box-shadow: 0 7px 20px rgba(37,99,235,0.65);
-        transform: translateY(-50%) translateY(-1px);
-      }
-      .gpt5-search-btn:active {
-        box-shadow: 0 3px 10px rgba(37,99,235,0.5);
-        transform: translateY(-50%) translateY(0);
-      }
-
-      .gpt5-badge {
-        position:absolute; top:-6px; right:-6px; min-width:20px; height:20px; padding:0 4px;
-        font-size:12px; line-height:20px; color:#fff; text-align:center; border-radius:999px;
-        background: linear-gradient(180deg,#ff4d8d,#ff2f6f); box-shadow: 0 6px 16px rgba(255,70,130,0.45);
-      }
-
-      /* MOBILE MENU (بدون رندر، فقط کلاس) */
-      .mobile-menu {
-        position:fixed;
-        inset:0;
-        z-index:60;
-        display:flex;
-        pointer-events:none;
-        opacity:0;
-        transition:opacity 220ms ease;
-      }
-      .mobile-menu.open {
-        pointer-events:auto;
-        opacity:1;
-      }
-
-      @media (max-width:640px){
-        .gpt5-search-input{
-          padding-left: 96px;
-          font-size: 0.85rem;
-        }
-        .gpt5-search-btn{
-          padding:8px 14px;
-          font-size:0.8rem;
-        }
-      }
-
+      /* ═══ AryaSearch — بازشوی فرمانی (بازطراحی کامل) ═══ */
+.ary-cmdk { position: fixed; inset: 0; z-index: 85; display: none; }
+.ary-cmdk.on { display: block; }
+.ary-cmdk-scrim { position: absolute; inset: 0; background: rgba(3,9,22,.66); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); animation: aryCmdkFade .2s ease; }
+.ary-cmdk-pop {
+  position: absolute; left: 50%; top: 11vh; transform: translateX(-50%);
+  width: min(660px, 94vw); display: flex; flex-direction: column;
+  background: linear-gradient(165deg, rgba(19,34,68,.98), rgba(10,21,45,.99));
+  border: 1px solid rgba(147,197,253,.24); border-radius: 22px;
+  box-shadow: 0 34px 90px -22px rgba(0,0,0,.75), 0 0 0 1px rgba(255,255,255,.04) inset;
+  overflow: hidden; animation: aryCmdkUp .28s cubic-bezier(.3,1.3,.45,1);
+}
+html[data-aria-theme="light"] .ary-cmdk-pop { background: #fff; border-color: #cfe0fa; box-shadow: 0 26px 70px -18px rgba(30,64,175,.4); }
+@keyframes aryCmdkUp { from { opacity: 0; transform: translateX(-50%) translateY(16px) scale(.97); } to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); } }
+@keyframes aryCmdkFade { from { opacity: 0; } to { opacity: 1; } }
+.ary-cmdk-row { display: flex; align-items: center; gap: .65rem; padding: .95rem 1.05rem; border-bottom: 1px solid rgba(147,197,253,.15); }
+.ary-cmdk-row > svg { width: 1.2rem; height: 1.2rem; color: #60a5fa; flex: none; }
+html[data-aria-theme="light"] .ary-cmdk-row > svg { color: #2563eb; }
+.ary-cmdk-input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; color: #e9f1ff; font-size: 1.02rem; font-weight: 700; }
+.ary-cmdk-input::placeholder { color: rgba(190,214,255,.45); font-weight: 500; }
+html[data-aria-theme="light"] .ary-cmdk-input { color: #0f2247; }
+html[data-aria-theme="light"] .ary-cmdk-input::placeholder { color: #94a3b8; }
+.ary-cmdk-x { width: 2rem; height: 2rem; border-radius: 10px; border: 1px solid transparent; background: rgba(255,255,255,.06); color: rgba(220,232,255,.75); cursor: pointer; flex: none; display: inline-flex; align-items: center; justify-content: center; font-size: .8rem; }
+.ary-cmdk-x:hover { background: rgba(244,63,94,.16); color: #fda4af; }
+.ary-cmdk-body { max-height: min(60vh, 500px); overflow-y: auto; padding: .55rem .6rem .7rem; scrollbar-width: thin; }
+.ary-cmdk-sec { display: flex; align-items: center; gap: .4rem; margin: .5rem .55rem .25rem; font-size: 10.5px; font-weight: 900; letter-spacing: .02em; color: rgba(191,219,254,.55); }
+html[data-aria-theme="light"] .ary-cmdk-sec { color: #64748b; }
+.ary-cmdk-recentx { margin-inline-start: auto; border: 0; background: none; color: inherit; font-size: 10px; cursor: pointer; padding: .15rem .4rem; border-radius: 7px; }
+.ary-cmdk-recentx:hover { background: rgba(244,63,94,.15); color: #fda4af; }
+.ary-cmdk-item { display: flex; align-items: center; gap: .7rem; width: 100%; padding: .55rem .6rem; margin: .12rem 0; border-radius: 14px; cursor: pointer; text-align: start; border: 1px solid transparent; background: transparent; color: inherit; transition: background .13s ease, border-color .13s ease; }
+.ary-cmdk-item:hover, .ary-cmdk-item.on { background: rgba(59,130,246,.15); border-color: rgba(96,165,250,.32); }
+.ary-cmdk-thumb { width: 2.5rem; height: 2.5rem; border-radius: 11px; object-fit: cover; flex: none; background: rgba(148,197,253,.12); border: 1px solid rgba(148,197,253,.16); display: inline-flex; align-items: center; justify-content: center; font-size: 1rem; }
+.ary-cmdk-t { font-weight: 800; font-size: .86rem; line-height: 1.55; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 34ch; }
+.ary-cmdk-s { font-size: 10.5px; color: rgba(203,225,255,.55); margin-top: .1rem; }
+html[data-aria-theme="light"] .ary-cmdk-s { color: #64748b; }
+.ary-cmdk-price { margin-inline-start: auto; font-weight: 900; color: #93c5fd; font-size: .78rem; white-space: nowrap; flex: none; }
+html[data-aria-theme="light"] .ary-cmdk-price { color: #1d4ed8; }
+.ary-cmdk-chips { display: flex; flex-wrap: wrap; gap: .4rem; padding: .15rem .55rem .35rem; }
+.ary-cmdk-chip { font-size: 11px; font-weight: 800; padding: .42rem .75rem; border-radius: 999px; background: rgba(59,130,255,.12); border: 1px solid rgba(96,165,250,.28); color: #bfdbfe; cursor: pointer; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; transition: background .14s ease; }
+.ary-cmdk-chip:hover { background: rgba(59,130,255,.24); }
+html[data-aria-theme="light"] .ary-cmdk-chip { color: #1e40af; background: #eaf2ff; border-color: #c3d7f8; }
+.ary-cmdk-all { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: calc(100% - 1.1rem); margin: .45rem .55rem 0; padding: .62rem .8rem; border-radius: 14px; background: linear-gradient(135deg, #2a8dff, #005aff); color: #fff; font-weight: 900; font-size: .82rem; border: 0; cursor: pointer; white-space: nowrap; box-shadow: 0 10px 24px -10px rgba(37,99,235,.65); }
+.ary-cmdk-all:active { transform: scale(.985); }
+.ary-cmdk-kbd { font-family: inherit; font-size: 9.5px; font-weight: 900; padding: .18rem .42rem; border-radius: 7px; border: 1px solid rgba(255,255,255,.28); background: rgba(255,255,255,.1); color: rgba(235,244,255,.85); white-space: nowrap; line-height: 1.4; }
+html[data-aria-theme="light"] .ary-cmdk-kbd { border-color: #b9d0f2; background: #eef5ff; color: #3a5a8c; }
+.ary-cmdk-empty { padding: 1.5rem 1rem 1.7rem; text-align: center; color: rgba(203,225,255,.6); font-size: .85rem; line-height: 2.1; }
+html[data-aria-theme="light"] .ary-cmdk-empty { color: #64748b; }
+.ary-cmdk-empty button { margin-top: .2rem; border: 0; background: rgba(59,130,246,.16); color: #bfdbfe; font-weight: 900; font-size: 11.5px; padding: .45rem .9rem; border-radius: 11px; cursor: pointer; }
+.ary-cmdk-tip { padding: .55rem .8rem .15rem; font-size: 10px; color: rgba(180,205,240,.42); line-height: 1.9; }
+html[data-aria-theme="light"] .ary-cmdk-tip { color: #94a3b8; }
+/* تریگر دسکتاپ: پیِل پهن */
+.ary-search-pill { display: none; align-items: center; gap: .55rem; padding: .5rem .75rem; border-radius: 14px; background: rgba(255,255,255,.06); border: 1px solid rgba(148,197,253,.18); color: rgba(210,228,255,.78); font-size: .78rem; font-weight: 700; cursor: pointer; min-width: 13.5rem; transition: background .15s ease, color .15s ease, border-color .15s ease; }
+.ary-search-pill:hover { background: rgba(255,255,255,.11); color: #fff; border-color: rgba(148,197,253,.34); }
+.ary-search-pill svg { width: 1rem; height: 1rem; flex: none; color: #7fb0f7; }
+.ary-search-pill .ary-cmdk-kbd { margin-inline-start: auto; }
+html[data-aria-theme="light"] .ary-search-pill { background: #f2f7ff; border-color: #cfdef8; color: #33517e; }
+@media (min-width:1024px) { .ary-search-pill { display: inline-flex; } }
+/* موبایل: برگه تمام‌عرض از بالا */
+@media (max-width:639px) {
+  .ary-cmdk-pop { top: 0; left: 0; transform: none; width: 100%; border-radius: 0 0 22px 22px; animation: aryCmdkSlide .3s cubic-bezier(.3,1.2,.45,1); min-height: 46dvh; }
+  .ary-cmdk-pop::after { content: ""; display: block; width: 44px; height: 5px; border-radius: 99px; background: rgba(148,197,253,.25); margin: .5rem auto .1rem; }
+  .ary-cmdk-row { padding: .7rem .8rem; }
+  .ary-cmdk-input { font-size: 1rem; }
+  .ary-cmdk-body { max-height: calc(88dvh - 5rem); }
+  .ary-cmdk-t { max-width: 22ch; }
+}
+@keyframes aryCmdkSlide { from { transform: translateY(-24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       @media (max-width:480px){ .gpt5-drawer-w{width:86vw;} }
       @media (min-width:481px) and (max-width:768px){ .gpt5-drawer-w{width:72vw;} }
       @media (min-width:769px){ .gpt5-drawer-w{width:58vw;} }
@@ -275,68 +217,140 @@ window.aryCatIcon = function (cat, extra) {
     cats.classList.toggle('open');
   }
 
-  // فقط کلاس نوار سرچ را عوض می‌کند، بدون render
-  function toggleSearchBar(force) {
-    const shell = document.querySelector('.gpt5-search-shell');
-    const btn = document.getElementById('searchToggleBtn');
-    if (!shell) return;
-    let open = !shell.classList.contains('open');
-    if (force === true || force === false) open = force;
-    if (open === shell.classList.contains('open') && !shell.classList.contains('closing') && force !== undefined) return;
-    if (btn) btn.innerHTML = open ? '✕' : aryIcon('search','w-5 h-5');
-    if (open) {
-      try {
-        if (btn) {
-          const r = btn.getBoundingClientRect();
-          const sr = shell.getBoundingClientRect();
-          shell.style.setProperty('--ary-src-x', (r.left + r.width / 2 - sr.left) + 'px');
-          shell.style.setProperty('--ary-src-y', (r.top + r.height / 2 - sr.top) + 'px');
-        }
-      } catch (e) {}
-      shell.classList.remove('closing');
-      shell.classList.add('open');
-      setTimeout(function () {
-        if (shell.classList.contains('open')) {
-          const inp = document.getElementById('header-search');
-          if (inp) { try { inp.focus(); } catch (e) {} }
-        }
-      }, 380);
+  /* ═══ AryaSearch — جستجوی فرمانی تمام‌صفحه (بازطراحی کامل r43) ═══
+     تریگر موبایل: دکمه مربعی هدر | دسکتاپ: پیِل پهن | Ctrl+K یا / از هر جا
+     پنل: اینپوت بزرگ + نتایج زنده محصولات (تصویر/قیمت) + دسته‌ها + تاریخچه + کیبورد */
+  var _cmdkOpen = false;
+  function $cmdk(id) { return document.getElementById(id); }
+  function cmdkEsc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+  function cmdkRecents() { try { return JSON.parse(localStorage.getItem('arya_recent_search_v1') || '[]') || []; } catch (e) { return []; } }
+  function cmdkPushRecent(t) { try { t = String(t || '').trim(); if (t.length < 2) return; var a = cmdkRecents().filter(function (x) { return x !== t; }); a.unshift(t); localStorage.setItem('arya_recent_search_v1', JSON.stringify(a.slice(0, 6))); } catch (e) {} }
+  function cmdkOpen() {
+    var root = $cmdk('ary-cmdk'); if (!root) return;
+    root.classList.add('on'); root.setAttribute('aria-hidden', 'false');
+    try { document.body.style.overflow = 'hidden'; } catch (e) {}
+    var q = $cmdk('ary-cmdk-q');
+    if (q) q.value = '';
+    cmdkDraw('');
+    _cmdkOpen = true;
+    setTimeout(function () { if (q) { try { q.focus(); } catch (e) {} } }, 80);
+  }
+  function cmdkClose() {
+    var root = $cmdk('ary-cmdk'); if (!root || !_cmdkOpen) return;
+    root.classList.remove('on'); root.setAttribute('aria-hidden', 'true');
+    try { document.body.style.overflow = ''; } catch (e) {}
+    _cmdkOpen = false;
+    var b = $cmdk('searchToggleBtn'); if (b) { try { b.focus(); } catch (e) {} }
+  }
+  function toggleSearchBar(force) { if (force === false) cmdkClose(); else cmdkOpen(); }
+  function cmdkMove(dd) {
+    var rows = window.__aryCmdkRows || []; if (!rows.length) return;
+    var idx = (window.__aryCmdkIdx == null ? -1 : window.__aryCmdkIdx) + dd;
+    if (idx < 0) idx = rows.length - 1; if (idx >= rows.length) idx = 0;
+    window.__aryCmdkIdx = idx;
+    var box = $cmdk('ary-cmdk-results'); if (!box) return;
+    [].slice.call(box.querySelectorAll('.ary-cmdk-item')).forEach(function (el2) { el2.classList.toggle('on', Number(el2.getAttribute('data-i')) === idx); });
+    var cur = box.querySelector('.ary-cmdk-item.on'); if (cur && cur.scrollIntoView) { try { cur.scrollIntoView({ block: 'nearest' }); } catch (e) {} }
+  }
+  function cmdkDraw(qRaw) {
+    var q = String(qRaw || '').trim();
+    var box = $cmdk('ary-cmdk-results'); if (!box) return;
+    var prods = (window.state && window.state.products) || [];
+    var cats = (window.state && window.state.categories) || [];
+    var rows = []; var html = '';
+    if (!q) {
+      var rec = cmdkRecents();
+      if (rec.length) {
+        html += '<div class="ary-cmdk-sec"><span>🕘 جستجوهای اخیر</span><button type="button" class="ary-cmdk-recentx" onclick="AryaSearch.clearRecents()" title="پاک‌کردن" aria-label="پاک‌کردن تاریخچه">✕ پاک‌کردن</button></div><div class="ary-cmdk-chips">'
+          + rec.map(function (t) { rows.push({ k: 'q', v: t }); return '<button type="button" class="ary-cmdk-chip" onclick="AryaSearch.query(__cmdkRe(' + (rows.length - 1) + '))">🕘 ' + cmdkEsc(t) + '</button>'; }).join('') + '</div>';
+      }
+      if (cats.length) {
+        html += '<div class="ary-cmdk-sec">دسته‌بندی‌ها</div><div class="ary-cmdk-chips">'
+          + cats.slice(0, 8).map(function (c) { rows.push({ k: 'c', v: String(c.id) }); return '<button type="button" class="ary-cmdk-chip" onclick="AryaSearch.pick(' + (rows.length - 1) + ')">' + cmdkEsc(c.name || c.title || '') + '</button>'; }).join('') + '</div>';
+      }
+      html += '<div class="ary-cmdk-tip">برای جستجو تایپ کنید — ↑↓ جابه‌جایی، ↵ انتخاب، Esc بستن — میانبر <b>Ctrl+K</b> یا <b>/</b></div>';
+      box.innerHTML = html;
+      window.__aryCmdkRows = rows; window.__aryCmdkIdx = -1;
+      return;
+    }
+    var lq = q.toLowerCase();
+    var hits = prods.filter(function (p) {
+      return (String(p.title || '') + ' ' + String(p.description || '') + ' ' + String(p.category || '')).toLowerCase().indexOf(lq) !== -1;
+    }).slice(0, 6);
+    var catHits = cats.filter(function (c) { return String(c.name || c.title || '').toLowerCase().indexOf(lq) !== -1; }).slice(0, 3);
+    if (hits.length) {
+      html += '<div class="ary-cmdk-sec">محصولات (' + hits.length + ')</div>';
+      hits.forEach(function (p) {
+        var img = p.mainImage || p.main_image || p.image || '';
+        if (img && !/^(https?:|data:|assets\/)/i.test(String(img))) img = 'assets/img/photo/' + img;
+        rows.push({ k: 'p', id: String(p.id) });
+        html += '<button type="button" class="ary-cmdk-item" data-i="' + (rows.length - 1) + '" onclick="AryaSearch.pick(' + (rows.length - 1) + ')">'
+          + (img ? '<img class="ary-cmdk-thumb" src="' + cmdkEsc(img) + '" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'span\'),{className:\'ary-cmdk-thumb\',textContent:\'📦\'}))">' : '<span class="ary-cmdk-thumb">📦</span>')
+          + '<span class="min-w-0"><span class="ary-cmdk-t block">' + cmdkEsc(p.title) + '</span>'
+          + (p.category ? '<span class="ary-cmdk-s block">' + cmdkEsc(p.category) + '</span>' : '') + '</span>'
+          + '<span class="ary-cmdk-price">' + (typeof fmtPrice === 'function' ? fmtPrice(p.price) : (Number(p.price || 0).toLocaleString('fa-IR') + ' تومان')) + '</span></button>';
+      });
+    }
+    if (catHits.length) {
+      html += '<div class="ary-cmdk-sec">دسته‌بندی‌ها</div>';
+      catHits.forEach(function (c) {
+        rows.push({ k: 'c', v: String(c.id) });
+        html += '<button type="button" class="ary-cmdk-item" data-i="' + (rows.length - 1) + '" onclick="AryaSearch.pick(' + (rows.length - 1) + ')"><span class="ary-cmdk-thumb">🗂️</span><span class="min-w-0"><span class="ary-cmdk-t block">' + cmdkEsc(c.name || c.title || '') + '</span></span><span class="ary-cmdk-price">مشاهده ←</span></button>';
+      });
+    }
+    if (!hits.length && !catHits.length) {
+      html = '<div class="ary-cmdk-empty">چیزی برای «' + cmdkEsc(q) + '» پیدا نشد<div><button type="button" onclick="AryaSearch.submit()">مشاهده همه محصولات فروشگاه</button></div></div>';
     } else {
-      if (!shell.classList.contains('open') && !shell.classList.contains('closing')) return;
-      shell.classList.remove('open');
-      shell.classList.add('closing');
-      setTimeout(function () { shell.classList.remove('closing'); }, 540);
+      html += '<button type="button" class="ary-cmdk-all" onclick="AryaSearch.submit()"><span>مشاهده همه نتایج در فروشگاه</span><kbd class="ary-cmdk-kbd">↵</kbd></button>';
+    }
+    box.innerHTML = html;
+    window.__aryCmdkRows = rows; window.__aryCmdkIdx = -1;
+  }
+  window.__cmdkRe = function (i) { return ((window.__aryCmdkRows || [])[i] || {}).v || ''; };
+  function cmdkPick(i) {
+    var r = (window.__aryCmdkRows || [])[Number(i)]; if (!r) return;
+    if (r.k === 'p') { cmdkClose(); try { window.openProductById(r.id); } catch (e) { try { state.selectedProductId = r.id; navigate('product'); } catch (e2) {} } }
+    else if (r.k === 'c') { try { state.productFilter.category = r.v; state.productFilter.search = ''; } catch (e) {} cmdkClose(); navigate('shop'); }
+    else if (r.k === 'q') { var q = $cmdk('ary-cmdk-q'); if (q) { q.value = r.v; cmdkDraw(r.v); } }
+  }
+  function cmdkQuery(t) {
+    var q = $cmdk('ary-cmdk-q'); if (q) { q.value = String(t || ''); try { q.focus(); } catch (e) {} }
+    cmdkDraw(t);
+  }
+  function cmdkSubmit() {
+    var q = String(($cmdk('ary-cmdk-q') || {}).value || '').trim();
+    if (q) cmdkPushRecent(q);
+    try { state.productFilter.search = q; state.productFilter.category = ''; } catch (e) {}
+    cmdkClose();
+    navigate('shop');
+    try { if (window.updateShopProductsOnly) updateShopProductsOnly(); } catch (e) {}
+  }
+  function cmdkKey(e) {
+    if (e.key === 'Escape') { e.preventDefault(); cmdkClose(); return; }
+    if (e.key === 'ArrowDown') { e.preventDefault(); cmdkMove(1); return; }
+    if (e.key === 'ArrowUp') { e.preventDefault(); cmdkMove(-1); return; }
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var i = window.__aryCmdkIdx; var rows = window.__aryCmdkRows || [];
+      if (i >= 0 && rows[i]) cmdkPick(i); else cmdkSubmit();
     }
   }
-  function arySearchPhone() { try { return window.matchMedia && matchMedia('(max-width: 639px)').matches; } catch (e) { return false; } }
-  document.addEventListener('pointerdown', function (e) {
-    const shell = document.querySelector('.gpt5-search-shell');
-    if (!shell || !shell.classList.contains('open') || !arySearchPhone()) return;
-    const t = e.target;
-    if (shell.contains(t)) return;
-    if (t && t.closest && t.closest('#searchToggleBtn, [onclick*="toggleSearchBar"]')) return;
-    toggleSearchBar(false);
-  }, true);
-  document.addEventListener('scroll', function (e) {
-    const shell = document.querySelector('.gpt5-search-shell');
-    if (!shell || !shell.classList.contains('open') || !arySearchPhone()) return;
-    const t = e.target;
-    if (t && t.nodeType === 1 && shell.contains(t)) return;
-    toggleSearchBar(false);
-  }, { capture: true, passive: true });
+  document.addEventListener('keydown', function (e) {
+    var tag = ((document.activeElement && document.activeElement.tagName) || '').toLowerCase();
+    if (_cmdkOpen && e.key === 'Escape') { e.preventDefault(); cmdkClose(); return; }
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || (document.activeElement && document.activeElement.isContentEditable)) return;
+    var k = String(e.key || '').toLowerCase();
+    if (((e.ctrlKey || e.metaKey) && k === 'k') || (k === '/' && !e.ctrlKey && !e.metaKey && !e.altKey)) { e.preventDefault(); cmdkOpen(); }
+  });
+  function handleSearchKey(e) { cmdkKey(e); }
+  function applySearch() { cmdkSubmit(); }
 
-  function applySearch() {
-    const input = document.getElementById('header-search');
-    if (!input) return;
-    state.productFilter.search = input.value || '';
-    navigate('shop');
-    try { toggleSearchBar(false); } catch (e) {}
-  }
-
-  function handleSearchKey(e) {
-    if (e.key === 'Enter') applySearch();
-  }
-
+  window.AryaSearch = {
+    open: cmdkOpen, close: cmdkClose, toggle: function () { _cmdkOpen ? cmdkClose() : cmdkOpen(); },
+    type: function () { cmdkDraw(String(($cmdk('ary-cmdk-q') || {}).value || '').trim()); },
+    key: cmdkKey, pick: cmdkPick, query: cmdkQuery, submit: cmdkSubmit,
+    clearRecents: function () { try { localStorage.removeItem('arya_recent_search_v1'); } catch (e) {} cmdkDraw(String(($cmdk('ary-cmdk-q') || {}).value || '').trim()); },
+  };
   function renderHeader() {
     ensureHeaderStyles();
 
@@ -385,15 +399,19 @@ window.aryCatIcon = function (cat, extra) {
             
             <!-- Actions -->
             <div class="flex items-center gap-2 lg:gap-4">
-              <!-- Search toggle -->
+              <!-- Search trigger (بازشوی فرمانی) -->
               <button
                 id="searchToggleBtn"
-                onclick="toggleSearchBar()"
-                class="p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10"
+                onclick="AryaSearch.open()"
+                class="as-hbtn p-2.5 glass rounded-xl hover:bg-white/10 lg:hidden"
                 aria-label="جستجو"
+                aria-keyshortcuts="Control+K"
                 type="button"
               >
-                ${aryIcon('search','w-5 h-5 lg:w-6 lg:h-6')}
+                ${aryIcon('search','w-5 h-5')}
+              </button>
+              <button onclick="AryaSearch.open()" class="ary-search-pill" aria-keyshortcuts="Control+K" type="button">
+                ${aryIcon('search','w-4 h-4')}<span>جستجوی محصولات…</span><kbd class="ary-cmdk-kbd">Ctrl K</kbd>
               </button>
 
               <!-- Cart -->
@@ -420,28 +438,18 @@ window.aryCatIcon = function (cat, extra) {
           </div>
         </div>
 
-        <!-- Floating Search (بدون رندر مجدد) -->
-        <div class="gpt5-search-wrap">
-          <div class="gpt5-search-shell">
-            <div class="gpt5-search">
-              <div class="gpt5-search-inner">
-                <span class="gpt5-search-icon">${aryIcon('search','w-4 h-4')}</span>
-                <input
-                  id="header-search"
-                  type="text"
-                  placeholder="جستجوی محصولات..."
-                  class="gpt5-search-input"
-                  onkeydown="handleSearchKey(event)"
-                >
-                <button
-                  class="gpt5-search-btn"
-                  onclick="applySearch()"
-                  type="button"
-                >
-                  جستجو
-                </button>
-              </div>
+        <!-- AryaSearch — پنل فرمانی جستجو -->
+        <div id="ary-cmdk" class="ary-cmdk" aria-hidden="true">
+          <div class="ary-cmdk-scrim" onclick="AryaSearch.close()"></div>
+          <div class="ary-cmdk-pop" role="dialog" aria-modal="true" aria-label="جستجوی محصولات">
+            <div class="ary-cmdk-row">
+              ${aryIcon('search','w-5 h-5')}
+              <input id="ary-cmdk-q" class="ary-cmdk-input" type="search" inputmode="search" autocomplete="off"
+                     placeholder="جستجوی محصول، دسته یا کلید…"
+                     oninput="AryaSearch.type()" onkeydown="AryaSearch.key(event)">
+              <button type="button" class="ary-cmdk-x" onclick="AryaSearch.close()" aria-label="بستن جستجو">✕</button>
             </div>
+            <div id="ary-cmdk-results" class="ary-cmdk-body"></div>
           </div>
         </div>
       </header>
@@ -479,9 +487,10 @@ window.aryCatIcon = function (cat, extra) {
           <div class="mt-3 border-t border-white/10"></div>
 
           <div class="flex items-center gap-2 mt-3">
-            <button onclick="toggleSearchBar(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('search','w-4 h-4')}جستجو</span></button>
+            <button onclick="AryaSearch.open(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('search','w-4 h-4')}جستجو</span></button>
             ${state.user?`
               <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('user','w-4 h-4')}پروفایل</span></button>
+              <button onclick="logout(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;color:#fda4af" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('logout','w-4 h-4')}خروج</span></button>
 
             `:''}
           </div>
@@ -502,6 +511,7 @@ window.aryCatIcon = function (cat, extra) {
   window.toggleSearchBar = toggleSearchBar;
   window.applySearch = applySearch;
   window.handleSearchKey = handleSearchKey;
+  // (AryaSearch inside the engine block)
 })();
 
 // ═══════════════════════════════════════════════════════════════

@@ -3494,9 +3494,9 @@ function renderProductPage() {
     state.confirmModal = {
       type: 'logout',
       title: 'خروج از حساب کاربری',
-      message: 'آیا مطمئن هستید که می‌خواهید از حساب خود خارج شوید؟',
-      icon: aryIcon('logout', 'w-14 h-14 text-rose-300'),
-      confirmText: 'خروج',
+      message: 'با خروج، از حساب خود خارج می‌شوید. سبد خرید، علاقه‌مندی‌ها و آدرس‌های شما ذخیره می‌مانند و با ورود دوباره بازمی‌گردند.',
+      icon: '<span class="inline-flex text-rose-300">' + aryIcon('logout', 'w-14 h-14') + '</span>',
+      confirmText: 'بله، خروج',
       confirmClass: 'btn-danger',
       onConfirm: () => {
         if (serverAuth()) { try { AryaServer.logout().catch(() => {}); } catch (e) {} }
