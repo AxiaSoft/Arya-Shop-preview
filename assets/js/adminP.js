@@ -5509,3 +5509,4 @@ window.adminLogout = function () {
   };
   render();
 };
+window.adminLogout.__aryConfirmed = true; // r44fix — نشانهٔ «نسخهٔ تاییددار» تا startAdminPanel بازنویسی‌اش نکند
