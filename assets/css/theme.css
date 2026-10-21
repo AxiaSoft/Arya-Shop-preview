@@ -846,13 +846,9 @@ html[data-aria-theme] .tabular-nums { font-variant-numeric: tabular-nums; }
 .ary-empty::before { content:''; position:absolute; inset:0; background: radial-gradient(65% 90% at 50% -10%, rgba(59,130,246,.12), transparent 62%); pointer-events:none; }
 .ary-empty > * { position:relative; }
 html[data-aria-theme] .ary-empty :is(h2,h3) { font-weight: 900; letter-spacing:-.01em; }
-/* ═══ ۲۸) ویرایش v6.1 — دات‌های اسلایدر دایره‌ای + چارت تعاملی ═══ */
-.ary-hero-dots { gap: .5rem; }
-.ary-hero-dots button { width: .62rem !important; height: .62rem !important; min-height: 0 !important; padding: 0 !important; position: relative; aspect-ratio: 1; background: rgba(255,255,255,.38); transition: background .2s ease, box-shadow .22s ease, transform .2s ease; }
-.ary-hero-dots button::after { content: ''; position: absolute; inset: -9px; }
-.ary-hero-dots button:hover { background: rgba(255,255,255,.85); transform: scale(1.14); }
-.ary-hero-dots button.on { width: .62rem !important; background: #fff; box-shadow: 0 0 0 3px rgba(255,255,255,.28), 0 0 14px rgba(147,197,253,.6); }
-@media (hover:none) and (pointer:coarse) { .ary-hero-dots button { min-height: 0 !important; width: .72rem !important; height: .72rem !important; } }
+/* ═══ ۲۸) چارت تعاملی داشبورد (v6.1) — دات‌های هیرو به استایل کلاسیک style.css بازگشت ═══ */
+/* تنها استثنا: آزادسازی دات‌ها از حداقل‌ارتفاع لمسی v6 تا دقیقاً مثل دو نسخه قبل رندر شوند */
+.ary-hero-dots button { min-height: 0 !important; }
 svg text { font-family: inherit; }
 .ary-cx-col { cursor: pointer; }
 .ary-cx-col:focus { outline: none; }
