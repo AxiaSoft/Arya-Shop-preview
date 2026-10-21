@@ -1345,13 +1345,13 @@ function renderCategoryModal() {
 
         </div>
 
-        <div class="flex gap-4 mt-8">
+        <div class="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-4 mt-8">
           ${
             m.mode === 'edit'
               ? `<button 
                   type="button" 
                   onclick="deleteCategoryWithConfirm('${m.id}')"
-                  class="flex-1 btn-danger py-4 rounded-xl font-semibold"
+                  class="btn-danger w-full sm:flex-1 py-3.5 sm:py-4 rounded-xl font-semibold text-center whitespace-nowrap"
                 >
                   حذف دسته
                 </button>`
@@ -1361,7 +1361,7 @@ function renderCategoryModal() {
           <button 
             type="button" 
             onclick="closeCategoryModal()"
-            class="flex-1 btn-ghost py-4 rounded-xl font-semibold"
+            class="btn-ghost w-full sm:flex-1 py-3.5 sm:py-4 rounded-xl font-semibold text-center whitespace-nowrap"
           >
             انصراف
           </button>
@@ -1369,7 +1369,7 @@ function renderCategoryModal() {
           <button 
             type="button" 
             onclick="saveCategoryModal()"
-            class="flex-1 btn-primary py-4 rounded-xl font-semibold"
+            class="btn-primary w-full sm:flex-1 py-3.5 sm:py-4 rounded-xl font-semibold text-center whitespace-nowrap"
           >
             ثبت
           </button>
@@ -3175,10 +3175,12 @@ function renderAdminProductsEditor() {
           <p class="text-sm text-white/60 mt-1">مدیریت محصولات و مقالات</p>
         </div>
 
-        <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 max-w-full">
-          <button type="button" class="btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()"> افزودن دسته‌جمعی</button>
-          <label class="text-sm text-white/70 hidden md:inline">فیلتر دسته:</label>
-          <select onchange="setProductFilterCategory(this.value)" class="input-style">${categoriesOptions}</select>
+        <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end gap-2 sm:gap-3 max-w-full w-full">
+          <button type="button" class="btn-ghost h-10 w-full sm:w-auto !py-0 px-3 rounded-xl text-[11px] font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()"> افزودن دسته‌جمعی</button>
+          <div class="col-span-2 sm:col-auto flex items-center gap-2 min-w-0">
+            <label class="text-xs text-white/55 font-bold shrink-0 hidden md:inline">فیلتر دسته:</label>
+            <select onchange="setProductFilterCategory(this.value)" class="input-style !py-2 text-xs rounded-xl w-full sm:w-auto sm:min-w-[170px] min-w-0">${categoriesOptions}</select>
+          </div>
 
           <button onclick="
             state.editProduct = {}; 
@@ -3192,8 +3194,8 @@ function renderAdminProductsEditor() {
               redirect_old_url:'', schema_json:''
             }; 
             render();
-          " class="btn-primary px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold" type="button">
-            <i class="ri-add-line text-base"></i><span class="hidden sm:inline">افزودن محصول جدید</span><span class="sm:hidden">محصول +</span>
+          " class="btn-primary h-10 w-full sm:w-auto !py-0 px-3.5 rounded-xl inline-flex items-center justify-center gap-1.5 text-[11px] sm:text-sm font-bold whitespace-nowrap" type="button">
+            ${typeof aryIcon === 'function' ? aryIcon('plus', 'w-4 h-4') : ''}<span>افزودن محصول جدید</span>
           </button>
         </div>
       </div>
@@ -3374,7 +3376,7 @@ function renderProductModal() {
               </div>
 
               <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-blue-400 transition" onclick="document.getElementById('gallery-image-input').click()">
-                <div class="text-3xl"></div>
+                <div class="inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.7rem;height:1.7rem;color:#bfdbfe" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.4"/></svg></div>
                 <p class="text-sm text-white/70 text-center">برای افزودن تصاویر کلیک کنید</p>
                 <input id="gallery-image-input" type="file" accept="image/*" multiple class="hidden" onchange="handleGalleryFiles(this.files)">
               </div>
@@ -3416,10 +3418,10 @@ function renderProductModal() {
 
           </div>
 
-          <div class="flex gap-4 mt-8">
-            ${ isEdit ? `<button type="button" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center gap-2" onclick="confirmDeleteProductFromModal('${product.id}', '${escapeJs(product.title)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg><span>حذف محصول</span></button>` : '' }
-            <button type="button" onclick="clearProductDraft()" class="flex-1 btn-ghost py-4 rounded-xl font-semibold">انصراف</button>
-            <button type="submit" class="flex-1 btn-primary py-4 rounded-xl font-semibold" ${state.loading ? 'disabled' : ''}>${state.loading ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>' : isEdit ? 'بروزرسانی' : 'ذخیره'}</button>
+          <div class="flex flex-col-reverse sm:flex-row gap-2.5 sm:gap-4 mt-8">
+            ${ isEdit ? `<button type="button" class="btn-danger w-full sm:flex-1 py-3.5 sm:py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap" onclick="confirmDeleteProductFromModal('${product.id}', '${escapeJs(product.title)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg><span>حذف محصول</span></button>` : '' }
+            <button type="button" onclick="clearProductDraft()" class="btn-ghost w-full sm:flex-1 py-3.5 sm:py-4 rounded-xl font-semibold text-center whitespace-nowrap">انصراف</button>
+            <button type="submit" class="btn-primary w-full sm:flex-1 py-3.5 sm:py-4 rounded-xl font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap text-center" ${state.loading ? 'disabled' : ''}>${state.loading ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>' : isEdit ? 'بروزرسانی' : 'ذخیره'}</button>
           </div>
         </form>
       </div>
@@ -5303,7 +5305,20 @@ function aryCatIconPickerHTML(m) {
 }
 
 // ═══════ ایمپورت انبوت محصولات (JSON/CSV/URL/تولید خودکار) ═══════
-function openAryaBulkImport() { state.adminBulk = { tab: 'paste', text: '', url: '', genCount: 60, genCat: '', preview: null, err: '' }; render(); }
+function openAryaBulkImport() {
+  state.adminBulk = { tab: 'paste', text: '', url: '', genCount: 60, genCat: '', preview: null, err: '',
+    media: { image: '', video: '', article: '', onlyEmpty: true }, mediaOpen: false };
+  render();
+}
+// انتخاب فایل از دستگاه برای تصویر مشترک (تبدیل به dataURL)
+function aryBulkImgFile(inp) {
+  const f = inp && inp.files && inp.files[0]; if (!f) return;
+  if (f.size > 1500000) { if (window.toast) toast('فایل تصویر بزرگ است — حداکثر ۱.۵ مگابایت', 'warning'); inp.value=''; return; }
+  const r = new FileReader();
+  r.onload = () => { if (state.adminBulk) { state.adminBulk.media.image = String(r.result || ''); state.adminBulk.mediaOpen = true; render(); } };
+  r.readAsDataURL(f);
+}
+function aryBulkMediaToggle(k, v) { if (state.adminBulk) { state.adminBulk.media[k] = v; if (k==='onlyEmpty') render(); } }
 function closeAryaBulkImport() { state.adminBulk = null; render(); }
 function aryBulkParse() {
   const b = state.adminBulk; if (!b) return;
@@ -5335,12 +5350,20 @@ function aryBulkParse() {
 function aryBulkNorm(p) {
   p = p || {};
   const num = v => Number(String(v == null ? '' : v).replace(/[٬,]/g, '')) || 0;
-  return { id: String(p.id || 'imp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)), title: String(p.title || p.name || 'بدون عنوان').slice(0, 120), price: num(p.price) || 100000, original_price: num(p.original_price) || 0, stock: p.stock != null ? num(p.stock) : 10, category: String(p.category || (state.adminBulk && state.adminBulk.genCat) || '').trim(), description: String(p.description || '').slice(0, 600), image: p.image || p.main_image || '', rating: p.rating || 4.2 };
+  return { id: String(p.id || 'imp-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7)), title: String(p.title || p.name || 'بدون عنوان').slice(0, 120), price: num(p.price) || 100000, original_price: num(p.original_price) || 0, stock: p.stock != null ? num(p.stock) : 10, category: String(p.category || (state.adminBulk && state.adminBulk.genCat) || '').trim(), description: String(p.description || '').slice(0, 600), image: p.image || p.main_image || p.mainImage || '', videos: Array.isArray(p.videos) ? p.videos : (p.video ? [String(p.video)] : []), article: String(p.article || p.content || '').slice(0, 20000), rating: p.rating || 4.2 };
 }
 function aryBulkApply() {
   const b = state.adminBulk; if (!b || !b.preview || !b.preview.length) return;
   const cats = new Set((state.categories || []).map(c => String(c.id)));
-  const rows = b.preview.map(p => { if (p.category && !cats.has(String(p.category))) p.category = ''; return p; });
+  const m = b.media || {};
+  const fill = m.onlyEmpty !== false;
+  const rows = b.preview.map(p => {
+    if (p.category && !cats.has(String(p.category))) p.category = '';
+    if (m.image && String(m.image).trim() && (fill ? !p.image : true)) p.image = String(m.image).trim();
+    if (m.video && String(m.video).trim() && (fill ? !(p.videos && p.videos.length) : true)) p.videos = [String(m.video).trim()];
+    if (m.article && String(m.article).trim() && (fill ? !p.article : true)) p.article = String(m.article);
+    return p;
+  });
   const ids = new Set((state.products || []).map(p => String(p.id)));
   let addN = 0;
   state.products = Array.isArray(state.products) ? state.products : [];
@@ -5353,19 +5376,46 @@ function aryBulkApply() {
 function renderAdminBulkImport() {
   const b = state.adminBulk; if (!b) return '';
   const pvN = (b.preview || []).length;
+  const m = b.media || {};
+  const setImg = m.image ? `<div class="w-12 h-12 rounded-xl overflow-hidden border border-white/15 bg-black/30 shrink-0"><img src="${String(m.image).slice(0,400000)}" class="w-full h-full object-cover" alt=""></div>` : '';
+  const ico = (n, c) => (typeof aryIcon === 'function' ? aryIcon(n, c) : '');
   return `
-    <div class="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay" onclick="if(event.target===this)closeAryaBulkImport()">
-      <div class="glass-strong rounded-3xl p-6 max-w-2xl w-full max-h-[92%] overflow-y-auto animate-scale">
-        <h2 class="text-xl font-black mb-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.15rem;height:1.15rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> افزودن دسته‌جمعی محصولات</h2>
-        <p class="text-[11px] text-white/50 mb-4">برای حجم بالا (مثلاً ۱۰۰+ محصول) به‌جای ثبت تک‌تک — JSON یا CSV بچسبانید، آدرس API بدهید، یا تولید خودکار بزنید.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">${[['paste','چسباندن JSON/CSV'],['url','از آدرس (URL)'],['gen','تولید خودکار']].map(t => `<button type="button" class="py-2 rounded-xl text-[11px] font-black ${b.tab === t[0] ? 'bg-blue-600 text-white' : 'glass text-white/60'}" onclick="state.adminBulk.tab='${t[0]}'; state.adminBulk.preview=null; render()">${t[1]}</button>`).join('')}</div>
-        ${b.tab === 'paste' ? `<textarea class="input-style w-full font-mono text-[11px] leading-5" rows="7" dir="auto" placeholder='[{"title":"هدفون","price":850000,"original_price":990000,"stock":12}]\nیا CSV: نام، قیمت، قیمت‌قبلی، موجودی، دسته'  oninput="state.adminBulk.text=this.value">${escapeHtml(b.text || '')}</textarea>` : ''}
+    <div class="fixed inset-0 z-[200] flex items-center justify-center p-3 sm:p-4 modal-overlay" onclick="if(event.target===this)closeAryaBulkImport()">
+      <div class="glass-strong rounded-3xl p-4 sm:p-6 max-w-2xl w-full max-h-[92%] overflow-y-auto animate-scale">
+        <h2 class="text-lg sm:text-xl font-black mb-1 inline-flex items-center gap-2">${ico('download','w-5 h-5 text-blue-300')} افزودن دسته‌جمعی محصولات</h2>
+        <p class="text-[11px] text-white/50 mb-4 leading-6">یک‌جا وارد کنید: خطی به شکل «نام، قیمت، قیمت‌قبلی، موجودی» یا JSON کامل. تصویر/ویدیو/مقالهٔ مشترک خودکار روی همه می‌خورد.</p>
+        <div class="grid grid-cols-3 gap-1.5 mb-4">${[['paste','چسباندن لیست'],['url','از آدرس'],['gen','تولید نمونه']].map(t => `<button type="button" class="h-9 rounded-xl text-[11px] font-bold inline-flex items-center justify-center whitespace-nowrap ${b.tab === t[0] ? 'bg-blue-600 text-white' : 'glass text-white/60'}" onclick="state.adminBulk.tab='${t[0]}'; state.adminBulk.preview=null; render()">${t[1]}</button>`).join('')}</div>
+        ${b.tab === 'paste' ? `<textarea class="input-style w-full font-mono text-[11px] leading-5" rows="6" dir="auto" placeholder='[{"title":"هدفون","price":850000,"original_price":990000,"stock":12}]\nیا CSV: نام، قیمت، قیمت‌قبلی، موجودی، دسته'  oninput="state.adminBulk.text=this.value">${escapeHtml(b.text || '')}</textarea>` : ''}
         ${b.tab === 'url' ? `<input class="input-style w-full font-mono text-xs" dir="ltr" placeholder="https://api.example.com/products.json" value="${escapeHtml(b.url || '')}" oninput="state.adminBulk.url=this.value">` : ''}
         ${b.tab === 'gen' ? `<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs text-white/60 mb-1 font-bold">تعداد (۱ تا ۳۰۰)</label><input type="number" min="1" max="300" class="input-style w-full" value="${b.genCount}" oninput="state.adminBulk.genCount=this.value"></div><div><label class="block text-xs text-white/60 mb-1 font-bold">دسته</label><select class="input-style w-full" onchange="state.adminBulk.genCat=this.value"><option value="">— بدون دسته —</option>${(state.categories || []).map(c => `<option value="${escapeHtml(String(c.id))}" ${String(b.genCat) === String(c.id) ? 'selected' : ''}>${escapeHtml(c.title)}</option>`).join('')}</select></div></div>` : ''}
-        ${b.tab !== 'url' ? `<div class="mt-3 flex items-center gap-3"><button type="button" class="btn-ghost px-4 py-2 rounded-xl text-xs font-bold" onclick="aryBulkParse()">پیش‌نمایش و اعتبارسنجی</button>${pvN ? `<span class="text-[11px] text-emerald-300 font-bold">✓ ${pvN} ردیف آمادهٔ افزودن</span>` : ''}</div>` : ''}
+
+        <div class="mt-3 rounded-2xl border ${m.image||m.video||m.article||b.mediaOpen ? 'border-blue-400/30 bg-blue-500/5' : 'border-white/10 bg-black/15'} p-3 sm:p-4">
+          <button type="button" class="w-full flex items-center justify-between gap-2 text-xs font-black" onclick="state.adminBulk.mediaOpen=!state.adminBulk.mediaOpen; render()">
+            <span class="inline-flex items-center gap-2">${ico('sparkles','w-4 h-4 text-blue-300')} پیش‌فرض مشترک: تصویر / ویدیو / مقاله</span>
+            <span class="text-[10px] text-white/40 inline-flex items-center gap-1">${(m.image||m.video||m.article) ? 'فعال · ' : ''}${b.mediaOpen ? 'بستن ▲' : 'بازکردن ▼'}</span>
+          </button>
+          ${b.mediaOpen ? `<div class="grid sm:grid-cols-2 gap-3 mt-3 text-start">
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] text-white/60 mb-1 font-bold">تصویر اصلی همه محصولات</label>
+              <div class="flex items-center gap-2">
+                ${setImg}
+                <input class="input-style flex-1 min-w-0 text-xs !py-2" dir="ltr" placeholder="https://…  یا از دستگاه انتخاب کنید" value="${String(m.image||'').startsWith('data:') ? '(فایل انتخاب‌شده از دستگاه)' : escapeHtml(m.image||'')}" oninput="aryBulkMediaToggle('image', this.value)">
+                <label class="btn-ghost h-9 px-3 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0">${ico('upload','w-3.5 h-3.5')}<span>فایل</span><input type="file" accept="image/*" class="hidden" onchange="aryBulkImgFile(this)"></label>
+              </div>
+            </div>
+            <div><label class="block text-[11px] text-white/60 mb-1 font-bold">ویدیو (لینک)</label><input class="input-style w-full text-xs !py-2" dir="ltr" placeholder="https://…/clip.mp4" value="${escapeHtml(m.video||'')}" oninput="aryBulkMediaToggle('video', this.value)"></div>
+            <div><label class="block text-[11px] text-white/60 mb-1 font-bold">مقالهٔ مشترک (اختیاری)</label><textarea class="input-style w-full text-xs leading-5" rows="2" dir="auto" placeholder="متن یا Markdown کوتاه که به همهٔ محصولات افزوده می‌شود…" oninput="aryBulkMediaToggle('article', this.value)">${escapeHtml(m.article||'')}</textarea></div>
+            <label class="sm:col-span-2 flex items-center gap-2 text-[11px] text-white/70 font-bold cursor-pointer w-fit">
+              <input type="checkbox" class="w-4 h-4 accent-blue-500" ${m.onlyEmpty !== false ? 'checked' : ''} onchange="state.adminBulk.media.onlyEmpty=this.checked; render()">
+              فقط برای محصولاتی که خودشان ندارند (پیشنهادی)
+            </label>
+          </div>` : ''}
+        </div>
+
+        ${b.tab !== 'url' ? `<div class="mt-3 flex items-center gap-3"><button type="button" class="btn-ghost h-9 px-4 rounded-xl text-xs font-bold inline-flex items-center gap-1.5 whitespace-nowrap" onclick="aryBulkParse()">${ico('search','w-3.5 h-3.5')}<span>پیش‌نمایش و اعتبارسنجی</span></button>${pvN ? `<span class="text-[11px] text-emerald-300 font-bold inline-flex items-center gap-1">${ico('check','w-3.5 h-3.5')} ${pvN} ردیف آماده</span>` : ''}</div>` : ''}
         ${b.err ? `<p class="mt-2 text-[11px] text-rose-300 font-bold">${escapeHtml(b.err)}</p>` : ''}
-        ${pvN ? `<div class="mt-3 rounded-xl border border-white/10 bg-black/20 max-h-40 overflow-y-auto divide-y divide-white/5">${b.preview.slice(0, 25).map(p => `<div class="flex items-center justify-between px-3 py-1.5 text-[11px]"><span class="truncate">${escapeHtml(p.title)}</span><span class="text-emerald-400 font-mono shrink-0" dir="ltr">${utils.formatPrice(p.price)}</span></div>`).join('')}${pvN > 25 ? `<p class="text-[10px] text-white/40 px-3 py-1.5">+${pvN - 25} ردیف دیگر…</p>` : ''}</div>` : ''}
-        <div class="flex gap-3 mt-5"><button type="button" class="flex-1 btn-ghost py-2.5 rounded-xl text-sm font-bold" onclick="closeAryaBulkImport()">انصراف</button><button type="button" class="flex-2 btn-primary py-2.5 rounded-xl text-sm font-bold disabled:opacity-40" ${pvN ? '' : 'disabled'} onclick="aryBulkApply()">افزودن ${pvN || ''} محصول</button></div>
+        ${pvN ? `<div class="mt-3 rounded-xl border border-white/10 bg-black/20 max-h-40 overflow-y-auto divide-y divide-white/5">${b.preview.slice(0, 25).map(p => `<div class="flex items-center justify-between gap-2 px-3 py-1.5 text-[11px]"><span class="truncate inline-flex items-center gap-2 min-w-0">${p.image ? `<img src="${String(p.image).slice(0,300)}" class="w-6 h-6 rounded-md object-cover bg-white/5 shrink-0" alt="" onerror="this.style.visibility='hidden'">` : `<span class="w-6 h-6 rounded-md bg-white/5 shrink-0 inline-flex items-center justify-center text-white/25">${ico('image','w-3.5 h-3.5')}</span>`}<span class="truncate">${escapeHtml(p.title)}</span></span><span class="text-emerald-400 font-mono shrink-0" dir="ltr">${utils.formatPrice(p.price)}</span></div>`).join('')}${pvN > 25 ? `<p class="text-[10px] text-white/40 px-3 py-1.5">+${pvN - 25} ردیف دیگر…</p>` : ''}</div>` : ''}
+        <div class="flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 mt-5"><button type="button" class="btn-ghost w-full sm:flex-1 h-11 sm:h-10 rounded-xl text-sm font-bold whitespace-nowrap" onclick="closeAryaBulkImport()">انصراف</button><button type="button" class="btn-primary w-full sm:flex-[2] h-11 sm:h-10 rounded-xl text-sm font-bold whitespace-nowrap inline-flex items-center justify-center gap-2 disabled:opacity-40" ${pvN ? '' : 'disabled'} onclick="aryBulkApply()">${ico('plus','w-4 h-4')}<span>افزودن ${pvN || ''} محصول</span></button></div>
       </div>
     </div>`;
 }
