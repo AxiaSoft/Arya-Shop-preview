@@ -1409,7 +1409,7 @@ function renderAdminCategoriesEditor() {
               <div class="text-xs text-white/40">${c.id}</div>
             </div>
             <div class="flex gap-2">
-              <button class="p-2 glass rounded-xl" type="button" onclick="openCategoryModal('edit', '${c.id}')"></button>
+              <button class="p-2 glass rounded-xl text-blue-200 hover:bg-blue-500/15" type="button" title="ویرایش دسته" aria-label="ویرایش دسته" onclick="openCategoryModal('edit', '${c.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
               <button class="p-2 glass rounded-xl text-rose-400 hover:bg-rose-500/20" type="button" onclick="deleteCategoryWithConfirm('${c.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg></button>
             </div>
           </div>
@@ -3176,11 +3176,11 @@ function renderAdminProductsEditor() {
         </div>
 
         <div class="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end gap-2 sm:gap-3 max-w-full w-full">
-          <button type="button" class="btn-ghost h-10 w-full sm:w-auto !py-0 px-3 rounded-xl text-[11px] font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()"> افزودن دسته‌جمعی</button>
           <div class="col-span-2 sm:col-auto flex items-center gap-2 min-w-0">
             <label class="text-xs text-white/55 font-bold shrink-0 hidden md:inline">فیلتر دسته:</label>
             <select onchange="setProductFilterCategory(this.value)" class="input-style !py-2 text-xs rounded-xl w-full sm:w-auto sm:min-w-[170px] min-w-0">${categoriesOptions}</select>
           </div>
+          <button type="button" class="btn-ghost h-10 w-full sm:w-auto !py-0 px-3 rounded-xl text-[11px] font-bold inline-flex items-center justify-center gap-1.5 whitespace-nowrap" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()"> افزودن دسته‌جمعی</button>
 
           <button onclick="
             state.editProduct = {}; 
@@ -4352,7 +4352,7 @@ function renderAdminBlogTab() {
                   <div class="text-[11px] text-white/40 mt-0.5">${p.created_at ? fmt(p.created_at) : ''}${p.author ? ' • ' + escapeHtml(p.author) : ''} • ${aryBlogParseMedia(p.media).length} رسانه</div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <button type="button" class="p-2 glass rounded-xl text-sm" title="ویرایش" onclick="aryAdminBlogEdit('${escapeHtml(String(p.id))}')"></button>
+                  <button type="button" class="p-2 glass rounded-xl text-sm text-blue-200 hover:bg-blue-500/15" title="ویرایش" aria-label="ویرایش مقاله" onclick="aryAdminBlogEdit('${escapeHtml(String(p.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>
                   <button type="button" class="p-2 glass rounded-xl text-rose-400 hover:bg-rose-500/20 text-sm" title="حذف" onclick="aryAdminBlogDelete('${escapeHtml(String(p.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg></button>
                 </div>
               </div>`).join('')}
