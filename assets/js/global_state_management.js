@@ -13,6 +13,7 @@
     'currentUser',   // 🔥 اضافه شد — برای حفظ لاگین بعد از رفرش
     'isAdmin',
     'productFilter',
+    'productView',
     'userSettings',
     'notifications'
   ];
@@ -64,6 +65,7 @@
       color: '',
       size: ''
     },
+    productView: 'grid',
     orderFilter: { status: '' },
 
     // UI States

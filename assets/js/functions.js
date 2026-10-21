@@ -328,7 +328,7 @@ function updateOtpTimerDisplay() {
     if (state.otpTimer > 0) {
       timerEl.innerHTML = `<span class="text-white/40">${Math.floor(state.otpTimer / 60)}:${String(state.otpTimer % 60).padStart(2, '0')}</span>`;
     } else {
-      timerEl.innerHTML = `<button type="button" onclick="resendOtp()" class="text-violet-400 hover:text-violet-300 transition-colors">ارسال مجدد کد</button>`;
+      timerEl.innerHTML = `<button type="button" onclick="resendOtp()" class="text-blue-400 hover:text-blue-300 transition-colors">ارسال مجدد کد</button>`;
     }
   }
 }
@@ -473,13 +473,15 @@ function logout() {
         case 'checkout':return renderCheckoutPage();
         case 'login':   return renderLoginPage();
         case 'profile': return renderProfilePage();
-        default:        return renderHomePage();
+        case 'blog':    return typeof renderBlogPage === 'function' ? renderBlogPage() : renderHomePage();
+        case 'article': return typeof renderArticlePage === 'function' ? renderArticlePage() : renderBlogPage();
+        default:        return (state.page && typeof renderNotFoundPage === 'function') ? renderNotFoundPage() : renderHomePage();
       }
     });
 
+    // فرم محصول دیگر پاپ‌آپ نیست: با پرچم productFormPage در خودِ تب محصولات رندر می‌شود
     const overlays = [
       state.confirmModal ? safe(() => renderConfirmModal()) : '',
-      state.editProduct  ? safe(() => renderProductModal()) : '',
       state.videoPlayer  ? safe(() => renderVideoPlayerModal()) : ''
     ].join('');
 
@@ -501,6 +503,73 @@ function logout() {
     }
   }
 
+  // ---------- حفظ اسکرول افقی بندهای کشیدنی + فوکوس فیلد (با هر رندر برنگردد) ----------
+  const KEEP_SCROLL_SEL = '.ary-hscroll, [data-keep-scroll], .overflow-x-auto';
+  function captureKeepState(root) {
+    const snaps = [];
+    try {
+      const els = root.querySelectorAll(KEEP_SCROLL_SEL);
+      for (let i = 0; i < els.length; i++) {
+        const el = els[i];
+        if (!el.scrollLeft && el.scrollTop !== undefined && !el.scrollTop) continue;
+        const key = el.id || el.getAttribute('data-keep-scroll') || (el.className && String(el.className).slice(0, 80)) || '';
+        snaps.push({ key: key, i: i, left: el.scrollLeft, top: el.scrollTop });
+      }
+    } catch (e) {}
+    let focus = null;
+    try {
+      const ae = document.activeElement;
+      if (ae && ae.id && root.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) {
+        focus = {
+          id: ae.id,
+          start: (() => { try { return ae.selectionStart; } catch (e) { return null; } })(),
+          end: (() => { try { return ae.selectionEnd; } catch (e) { return null; } })()
+        };
+      }
+    } catch (e) {}
+    const winY = window.scrollY || 0;
+    return { snaps: snaps, focus: focus, winY: winY };
+  }
+  function restoreKeepState(root, keep) {
+    if (!keep) return;
+    const apply = () => {
+      try {
+        const els = root.querySelectorAll(KEEP_SCROLL_SEL);
+        keep.snaps.forEach(sn => {
+          let el = null;
+          const simpleKey = sn.key && sn.key.indexOf(' ') === -1 && sn.key.indexOf('.') === -1 && sn.key.length < 60;
+          if (simpleKey) el = document.getElementById(sn.key) || root.querySelector('[data-keep-scroll="' + sn.key + '"]');
+          if (!el) {
+            const cand = els[sn.i];
+            if (cand && sn.left > 1 && cand.scrollWidth - cand.clientWidth >= 12) el = cand; // فقط همان‌جا که واقعاً افقی اسکرول‌شدنی است
+          }
+          if (!el) return;
+          const hScrollable = el.scrollWidth - el.clientWidth >= 12;
+          if (hScrollable) el.style.scrollSnapType = 'none';     // اسنپ را لحظه‌ای خاموش کن تا پرش ریز ایجاد نشود
+          const prevBehavior = el.style.scrollBehavior;
+          el.style.scrollBehavior = 'auto';
+          if (sn.left > 1 && Math.abs(el.scrollLeft - sn.left) > 1) el.scrollLeft = sn.left;
+          if (sn.top > 1 && el.scrollHeight - el.clientHeight >= 8 && Math.abs(el.scrollTop - sn.top) > 1) el.scrollTop = sn.top;
+          requestAnimationFrame(() => {
+            el.style.scrollSnapType = '';
+            el.style.scrollBehavior = prevBehavior || '';
+          });
+        });
+      } catch (e) {}
+      if (keep.focus && keep.focus.id) {
+        const nf = document.getElementById(keep.focus.id);
+        if (nf && root.contains(nf)) {
+          nf.focus({ preventScroll: true });
+          try { if (keep.focus.start != null) nf.setSelectionRange(keep.focus.start, keep.focus.end); } catch (e) {}
+        }
+      }
+      if (Math.abs(window.scrollY - keep.winY) > 2) {
+        try { window.scrollTo({ top: keep.winY, behavior: 'auto' }); } catch (e) {}
+      }
+    };
+    apply(); // هم‌فریم با رندر — بدون پرش دید
+  }
+
   // ---------- Core render (batched with rAF) ----------
   function doRender() {
     isScheduled = false;
@@ -515,9 +584,16 @@ function logout() {
 
     if (html === lastHTML) return;
 
+    const samePage = lastPage === state.page;
+    const keep = samePage ? captureKeepState(appEl) : null;
+
     writeHTML(appEl, html);
+    if (keep) restoreKeepState(appEl, keep);
     lastHTML = html;
     lastPage = state.page;
+
+    // رویداد عمومی پس از هر رندر (نشانک چت، مانت نقشهٔ آدرس و…)
+    try { document.dispatchEvent(new CustomEvent('ary:rendered', { detail: state.page })); } catch (e) {}
 
     // هماهنگ‌سازی آدرس نوار مرورگر با وضعیت فعلی (برای پشتیبانی از
     // دکمه بازگشت/جلو در هر دو سایت اصلی و پنل مدیریت)
@@ -525,7 +601,8 @@ function logout() {
       window.syncHistoryWithState();
     }
 
-    if (state.prevPage !== state.page) {
+    if (state.prevPage !== state.page && lastHTML !== '') {
+      // رندر اول صفحه: اسکرول را دست نزن تا بازیابی طبیعی مرورگر (رفرش) حفظ شود
       try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch {}
     }
   }
@@ -560,6 +637,16 @@ function logout() {
 // CART FUNCTIONS
 // File: assets/js/cart functions.js
 // ═══════════════════════════════════════════════════════════════
+function syncCartState() {
+  // هر تغییر سبد باید از AppState بگذرد تا در localStorage ذخیره شود
+  // (در غیر این صورت با رفرش، آیتم‌های حذف‌شده برمی‌گردند یا افزودنی‌ها می‌پرند)
+  if (window.AppState) {
+    AppState.set({ cart: (state.cart || []).map(it => ({ ...it })) });
+  } else if (typeof render === 'function') {
+    render();
+  }
+}
+
 function addToCart(product) {
   if (!product) return;
   
@@ -587,10 +674,10 @@ function addToCart(product) {
       image: product.image,
       qty: 1
     });
-    toast('به سبد خرید اضافه شد 🛒');
+    toast('به سبد خرید اضافه شد');
   }
-  
-  render();
+
+  syncCartState();
 }
 
 function updateCartQuantity(productId, newQty) {
@@ -608,15 +695,102 @@ function updateCartQuantity(productId, newQty) {
       }
       state.cart[index].qty = newQty;
     }
-    render();
+    syncCartState();
   }
 }
 
 function removeFromCart(productId) {
   state.cart = state.cart.filter(item => item.id !== productId);
   toast('محصول از سبد حذف شد', 'info');
-  render();
+  syncCartState();
 }
+
+// ════════════════════════════════════════════════════════════════
+// ARYA COUPONS — موتور کدهای تخفیف (سایت و پنل مشترک‌اند)
+// scope: all | category | products | shipping — type: percent | fixed | shipping
+// ════════════════════════════════════════════════════════════════
+function _couponNorm(s) { return String(s || '').trim().toLowerCase().replace(/\s+/g, ''); }
+function aryCoupons() { return Array.isArray(state.coupons) ? state.coupons : []; }
+function aryCouponFind(code) { const c = _couponNorm(code); if (!c) return null; return aryCoupons().find(x => _couponNorm(x.code) === c) || null; }
+function aryCouponScopeSubtotal(c) {
+  if (!c) return 0;
+  if (c.scope === 'category') return state.cart.reduce((s, it) => { const pc = it.category != null ? it.category : ((state.products.find(p => String(p.id) === String(it.id)) || {}).category || ''); return s + (String(pc) === String(c.categoryId) ? it.price * it.qty : 0); }, 0);
+  if (c.scope === 'products') { const ids = (c.productIds || []).map(String); return state.cart.reduce((s, it) => s + (ids.includes(String(it.id)) ? it.price * it.qty : 0), 0); }
+  return getCartTotal();
+}
+function aryCouponCheck(c) {
+  if (!c || c.active === false) return { ok: false, msg: 'کد تخفیف فعال نیست' };
+  const now = Date.now();
+  if (c.expires_at && now > new Date(c.expires_at).getTime()) return { ok: false, msg: 'تاریخ انقضای کد گذشته است' };
+  if (c.starts_at && now < new Date(c.starts_at).getTime()) return { ok: false, msg: 'کد هنوز شروع نشده است' };
+  if (c.max_uses && Number(c.used || 0) >= Number(c.max_uses)) return { ok: false, msg: 'ظرفیت استفاده از کد تکمیل شده است' };
+  return { ok: true };
+}
+function aryCouponCompute(code) {
+  const c = aryCouponFind(code);
+  if (!c) return { ok: false, msg: 'کد تخفیف نامعتبر است' };
+  const chk = aryCouponCheck(c); if (!chk.ok) return chk;
+  const base = aryCouponScopeSubtotal(c);
+  if (c.type !== 'shipping' && c.scope !== 'shipping' && !(base > 0)) return { ok: false, msg: c.scope === 'category' ? 'محصولی از دستهٔ مشمول این کد در سبد نیست' : (c.scope === 'products' ? 'محصول(های) مشمول این کد در سبد نیستند' : 'سبد خالی است') };
+  const min = Number(c.min_cart || 0);
+  if (min && getCartTotal() < min) return { ok: false, msg: 'برای این کد، مجموع سبد باید حداقل ' + (window.utils && utils.formatPrice ? utils.formatPrice(min) : min) + ' باشد' };
+  let discount = 0, freeShip = false;
+  if (c.type === 'percent') { discount = Math.round(base * (Math.min(95, Math.max(1, Number(c.value) || 0)) / 100)); if (Number(c.max_discount) > 0) discount = Math.min(discount, Number(c.max_discount)); }
+  else if (c.type === 'fixed') discount = Math.min(Number(c.value) || 0, base > 0 ? base : (Number(c.value) || 0));
+  if (c.type === 'shipping' || (c.scope === 'shipping' && !discount)) freeShip = true;
+  if (!discount && !freeShip) return { ok: false, msg: 'این کد برای سبد فعلی تخفیفی ندارد' };
+  return { ok: true, code: c.code, discount: discount, freeShip: freeShip, scope: c.scope, base: base };
+}
+function aryApplyCoupon(code) {
+  const r = aryCouponCompute(code);
+  if (!r.ok) { if (window.toast) toast(r.msg, 'warning'); return r; }
+  state.appliedCoupon = { code: r.code, discount: r.discount, freeShip: r.freeShip, scope: r.scope };
+  try { if (window.AppState) AppState.set({ appliedCoupon: state.appliedCoupon }); else if (window.render) render(); } catch (e) { if (window.render) render(); }
+  if (window.toast) toast('کد تخفیف «' + r.code + '» اعمال شد' + (r.discount ? ' — ' + utils.formatPrice(r.discount) + ' تومان تخفیف' : '') + (r.freeShip ? ' — ارسال رایگان!' : ''), 'success', 4200);
+  return r;
+}
+function aryClearCoupon() {
+  state.appliedCoupon = null;
+  try { if (window.AppState) AppState.set({ appliedCoupon: null }); else if (window.render) render(); } catch (e) { if (window.render) render(); }
+}
+// ── محتوای قابل‌ویرایش صفحهٔ اصلی (state.home + state.aboutBlocks) ──
+window.ARYA_ABOUT_DEFAULTS = [
+  { id: 'about1', title: 'اصالت کالا، خط قرمز ما', text: 'تمام محصولات از تأمین‌کنندهٔ رسمی و با گارانتی اصالت عرضه می‌شوند؛ هر کالایی که اصل نباشد، بدون قید و شرط پس گرفته می‌شود.', image: 'about1.jpg', stat_n: '۱۲+', stat_l: 'سال تجربه' },
+  { id: 'about2', title: 'ارسال سریع و شفاف', text: 'بسته‌بندی حرفه‌ای، کد رهگیری آنی و بازهٔ زمانی مشخص برای تحویل — وضعیت سفارش را در هر لحظه در پنل کاربری ببینید.', image: 'about2.jpg', stat_n: '۲۴س', stat_l: 'تحویل در تهران' },
+  { id: 'about3', title: 'پشتیبانی، تا بعد از خرید', text: 'تیم پشتیبانی آریا از انتخاب کالا تا پس از تحویل کنار شماست؛ ثبت تیکت، مرجوعی ۷ روزه و پاسخ کمتر از یک ساعت در ساعات کاری.', image: 'about3.jpg', stat_n: '۹۲٪', stat_l: 'رضایت مشتری' }
+];
+function aryHome() {
+  var CFG = (typeof config !== 'undefined') ? config : (window.config || {}); var d = { hero: { badge: '', title: CFG.hero_title || '', sub: CFG.hero_subtitle || '', cta: 'شروع خرید', ctaPage: 'shop', image: '', overlay: null }, deals_title: 'شگفت‌انگیزهای امروز', deals_sub: '', about_title: 'معرفی مجموعه' };
+  var h = (typeof state !== 'undefined' && state.home) || {};
+  var hero = Object.assign({}, d.hero);
+  if (h.hero) { Object.keys(h.hero).forEach(function (k) { if (h.hero[k] !== '' && h.hero[k] != null || k === 'image' || k === 'badge') hero[k] = h.hero[k]; }); }
+  if (h.hero && h.hero.overlay === '') hero.overlay = null;
+  if (h.hero && h.hero.image === '') hero.image = '';
+  return { hero: hero, deals_title: h.deals_title || d.deals_title, deals_sub: h.deals_sub != null ? h.deals_sub : d.deals_sub, about_title: h.about_title || d.about_title, about_blocks: (Array.isArray(state.aboutBlocks) && state.aboutBlocks.length) ? state.aboutBlocks : window.ARYA_ABOUT_DEFAULTS };
+}
+window.aryHome = aryHome;
+
+function aryCartPricing() {
+  const subtotal = getCartTotal();
+  const cfg = (typeof aryShopCfg === 'function') ? aryShopCfg() : { base_cost: 0, free_over: 1e15 };
+  let shipping = subtotal >= Number(cfg.free_over || 0) ? 0 : Number(cfg.base_cost || 0);
+  let discount = 0, couponCode = '';
+  const ap = state.appliedCoupon;
+  if (ap) {
+    const c = aryCouponFind(ap.code);
+    const chk = c ? aryCouponCheck(c) : { ok: false };
+    if (chk.ok && c) {
+      const re = aryCouponCompute(ap.code);
+      if (re.ok) { discount = re.discount || 0; if (re.freeShip) shipping = 0; couponCode = ap.code; }
+      else if (window.toast) toast('کد تخفیف دیگر معتبر نیست و حذف شد', 'warning');
+      state.appliedCoupon = couponCode ? state.appliedCoupon : null;
+    } else state.appliedCoupon = null;
+  }
+  const total = Math.max(0, subtotal - discount) + shipping;
+  return { subtotal, shipping, discount, total, couponCode };
+}
+window.aryApplyCoupon = aryApplyCoupon; window.aryClearCoupon = aryClearCoupon; window.aryCartPricing = aryCartPricing;
+window.aryCouponFind = aryCouponFind; window.aryCouponCheck = aryCouponCheck; window.aryCouponCompute = aryCouponCompute; window.aryCouponScopeSubtotal = aryCouponScopeSubtotal;
 
 function getCartTotal() {
   return state.cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
