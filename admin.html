@@ -1,6 +1,8 @@
 <!doctype html>
 <html lang="fa" dir="rtl" class="h-full" data-aria-admin="1">
 <head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' blob: data: https://nominatim.openstreetmap.org https://maps.googleapis.com; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.google.com; frame-ancestors 'self'; base-uri 'self'; form-action 'self'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <script>(function(){var D=document.documentElement,K="arya_theme";function sysLight(){try{return !!(window.matchMedia&&matchMedia("(prefers-color-scheme: light)").matches)}catch(e){return false}}function set(t){D.setAttribute("data-aria-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="light"?"#eef4fd":"#0b1630";try{document.dispatchEvent(new CustomEvent("arya:theme",{detail:t}))}catch(e){}}function cur(){return D.getAttribute("data-aria-theme")}var saved=null;try{saved=localStorage.getItem(K)}catch(e){}set(saved==="light"||saved==="dark"?saved:(sysLight()?"light":"dark"));window.AryaTheme={get:function(){return cur()||"dark"},set:function(t){t=t==="light"?"light":"dark";try{localStorage.setItem(K,t)}catch(e){}set(t)},toggle:function(){this.set(cur()==="light"?"dark":"light")},reset:function(){try{localStorage.removeItem(K)}catch(e){}set(sysLight()?"light":"dark")}};try{var mq=matchMedia("(prefers-color-scheme: light)");if(mq&&mq.addEventListener)mq.addEventListener("change",function(e){var t=null;try{t=localStorage.getItem(K)}catch(_){}if(t!=="light"&&t!=="dark")set(e.matches?"light":"dark")})}catch(e){}})();</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,8 +25,8 @@
     try { if(!window.elementSdk) window.elementSdk = null; } catch(e) {}
   </script>
 
-  <link rel="stylesheet" href="assets/css/style.css?v=20261019l">  <link rel="stylesheet" href="assets/css/ds.css?v=20261019l">
-  <link rel="stylesheet" href="assets/css/theme.css?v=20261019l">
+  <link rel="stylesheet" href="assets/css/style.css?v=20261022m">  <link rel="stylesheet" href="assets/css/ds.css?v=20261022m">
+  <link rel="stylesheet" href="assets/css/theme.css?v=20261022m">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
@@ -574,20 +576,20 @@
        بتواند پس‌زمینه تیره صفحه را فوراً نمایش دهد و صفحه قبلی (سایت اصلی)
        در حین بارگذاری این اسکریپت‌های حجیم (به‌خصوص tailwind-cdn.js) به
        چشم نیاید. -->
-  <script src="assets/js/Arya_api.js?v=20261019l"></script>
-  <script src="assets/js/Arya_db.js?v=20261019l"></script>
-  <script src="assets/js/configuration.js?v=20261019l"></script>
-  <script src="assets/js/global_state_management.js?v=20261019l"></script>
-  <script src="assets/js/functions.js?v=20261019l"></script>
-  <script src="assets/js/navigation.js?v=20261019l"></script>
-  <script src="assets/js/toast_notifications.js?v=20261019l"></script>
-  <script src="assets/js/crud_operations_products.js?v=20261019l"></script>
-  <script src="assets/js/crud_operations_orders.js?v=20261019l"></script>
-  <script src="assets/js/components.js?v=20261019l"></script>
-  <script src="assets/js/map_picker.js?v=20261019l"></script>
-  <script src="assets/js/confirm_modal.js?v=20261019l"></script>
-  <script src="assets/js/pages.js?v=20261019l"></script>
-  <script src="assets/js/adminP.js?v=20261019l"></script>
-  <script src="assets/js/tailwind-cdn.js?v=20261019l"></script>
+  <script src="assets/js/Arya_api.js?v=20261022m"></script>
+  <script src="assets/js/Arya_db.js?v=20261022m"></script>
+  <script src="assets/js/configuration.js?v=20261022m"></script>
+  <script src="assets/js/global_state_management.js?v=20261022m"></script>
+  <script src="assets/js/functions.js?v=20261022m"></script>
+  <script src="assets/js/navigation.js?v=20261022m"></script>
+  <script src="assets/js/toast_notifications.js?v=20261022m"></script>
+  <script src="assets/js/crud_operations_products.js?v=20261022m"></script>
+  <script src="assets/js/crud_operations_orders.js?v=20261022m"></script>
+  <script src="assets/js/components.js?v=20261022m"></script>
+  <script src="assets/js/map_picker.js?v=20261022m"></script>
+  <script src="assets/js/confirm_modal.js?v=20261022m"></script>
+  <script src="assets/js/pages.js?v=20261022m"></script>
+  <script src="assets/js/adminP.js?v=20261022m"></script>
+  <script src="assets/js/tailwind-cdn.js?v=20261022m"></script>
 </body>
 </html>

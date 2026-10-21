@@ -864,3 +864,22 @@ svg text { font-family: inherit; }
 .ary-donut-seg:hover, .ary-donut-seg:focus { stroke-width: 4.6; outline: none; }
 .ary-donut-row { cursor: pointer; transition: background .15s ease; }
 .ary-donut-row:hover, .ary-donut-row:focus { background: rgba(59,130,246,.12); outline: none; }
+/* ═══ ۲۹) r40 — هدر موبایل یک‌سایز + وسط‌چین بودن آیکن‌های تک ═══ */
+@media (max-width:1023px) {
+  html[data-aria-theme] header .as-hbtn,
+  html[data-aria-theme] header .gpt5-search-btn,
+  html[data-aria-theme] header .ary-theme-btn:not(.lg\:hidden) {
+    width: 2.65rem; height: 2.65rem; min-height: 0; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: .85rem;
+  }
+  html[data-aria-theme] header .gpt5-search-btn { left: 8px; border-radius: 50%; }
+  html[data-aria-theme] header .as-hbtn svg, html[data-aria-theme] header .gpt5-search-btn svg { width: 1.18rem; height: 1.18rem; }
+}
+/* آیکن تنها داخل دکمه — دقیقاً وسط (رفع نیم‌پیکسل بالا/پایین از baseline) */
+html[data-aria-theme] button > svg { display: inline-block; vertical-align: middle; }
+html[data-aria-theme] button:has(> svg:only-child),
+html[data-aria-theme] button:has(> span:only-child > svg:only-child),
+html[data-aria-theme] button:has(> i:only-child) { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+html[data-aria-theme] button:has(> span:only-child > svg:only-child) { display: inline-flex; align-items: center; justify-content: center; }
+html[data-aria-theme] button > span:only-child > svg:only-child { display: block; margin: auto; }

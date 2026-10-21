@@ -284,6 +284,10 @@ function ary_shop_config_validate(array $in): array {
         $o['lat'] = round($fLat, 6); $o['lng'] = round($fLng, 6);
     }
     $out['origin'] = $o;
+    $mp = strtolower(trim((string) ($in['map_provider'] ?? 'osm')));
+    $out['map_provider'] = in_array($mp, ['osm', 'google'], true) ? $mp : 'osm';
+    $gk = preg_replace('/[^A-Za-z0-9_-]/', '', trim((string) ($in['google_maps_key'] ?? '')));
+    $out['google_maps_key'] = mb_substr($gk, 0, 120);
     $rawOpts = isset($in['shipping_options']) && is_array($in['shipping_options']) ? $in['shipping_options'] : [];
     if (count($rawOpts) > 8) fail('حداکثر ۸ گزینه زمان ارسال مجاز است.');
     $seen = []; $opts = [];

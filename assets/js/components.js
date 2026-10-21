@@ -397,14 +397,14 @@ window.aryCatIcon = function (cat, extra) {
               </button>
 
               <!-- Cart -->
-              <button onclick="navigate('cart')" class="relative p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="سبد خرید" type="button">
+              <button onclick="navigate('cart')" class="relative as-hbtn p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="سبد خرید" type="button">
                 ${aryIcon('cart','w-5 h-5 lg:w-6 lg:h-6')}
                 ${cartCount>0?`<span class="absolute -top-1 -right-1 gpt5-badge">${cartCount>99?'99+':cartCount}</span>`:''}
               </button>
 
               <!-- Profile / Admin -->
               ${state.user?`
-                <button onclick="navigate('profile')" class="p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="پروفایل" type="button">${aryIcon('user','w-5 h-5')}</button>
+                <button onclick="navigate('profile')" class="as-hbtn p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="پروفایل" type="button">${aryIcon('user','w-5 h-5')}</button>
 
                 <button onclick="logout()" class="hidden lg:flex items-center gap-2 px-5 py-2.5 glass rounded-xl text-rose-400 hover:bg-rose-500/10" type="button">خروج</button>
               `:`
@@ -413,7 +413,7 @@ window.aryCatIcon = function (cat, extra) {
 
               <!-- Hamburger (mobile/tablet) -->
               <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn as-mob-theme" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
-              <button onclick="toggleMenu()" class="lg:hidden p-2.5 glass rounded-xl hover:bg-white/10" aria-label="منو" type="button">
+              <button onclick="toggleMenu()" class="lg:hidden as-hbtn p-2.5 glass rounded-xl hover:bg-white/10" aria-label="منو" type="button">
                 ☰
               </button>
             </div>

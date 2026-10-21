@@ -802,9 +802,33 @@ window.aryDealsScroll = function (dir) {
   function saveUsers(users) {
     try { localStorage.setItem(USERS_KEY, JSON.stringify(users)); } catch {}
   }
-  function hashPass(p) { return btoa(unescape(encodeURIComponent(p || ''))); }
-  function verifyPass(plain, hash) { return hashPass(plain) === hash; }
-  window.aryaUsers = { getUsers, saveUsers, hashPass, verifyPass };
+  async function sha256Hex(str) {
+    if (!(window.crypto && window.crypto.subtle)) throw new Error('crypto-subtle-unavailable');
+    const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+  async function hashPass(p) {
+    const salt = window.crypto && window.crypto.getRandomValues
+      ? Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('')
+      : Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+    try {
+      const hex = await sha256Hex('arya$1$' + salt + '$' + String(p || ''));
+      return 'a1$' + salt + '$' + hex;
+    } catch (e) { return 'legacy$' + btoa(unescape(encodeURIComponent(String(p || '')))); }
+  }
+  async function verifyPass(plain, hash) {
+    const h = String(hash || '');
+    if (h.indexOf('a1$') === 0) {
+      const parts = h.split('$');
+      try { const hex = await sha256Hex('arya$1$' + parts[1] + '$' + String(plain || '')); return hex === parts[2]; } catch (e) { return false; }
+    }
+    try {
+      const b64 = btoa(unescape(encodeURIComponent(String(plain || ''))));
+      return h === b64 || h === 'legacy$' + b64;
+    } catch (e) { return false; }
+  }
+  async function upgradeLegacyHash(user) { try { if (String(user.passwordHash || '').indexOf('legacy$') === 0 || (!/^a1\$/.test(String(user.passwordHash || '')))) { const np = await hashPass(String(user.passwordHash ? atob(String(user.passwordHash).replace(/^legacy\$/, '')) : '')); user.passwordHash = np; saveUsers(getUsers().map(x => String(x.id) === String(user.id) ? user : x)); } } catch (e) {} }
+  window.aryaUsers = { getUsers, saveUsers, hashPass, verifyPass, sha256Hex };
 
   // حالت سرور: وقتی Db.php پیکربندی است، همه‌ی مسیرهای احراز هویت سمت سرور می‌روند
   function serverAuth() { return !!(window.AryaServer && AryaServer.isConfigured()); }
@@ -874,7 +898,7 @@ window.aryDealsScroll = function (dir) {
   window.togglePassVis = togglePassVis;
 
   // ── LOGIN (مرحله ۱: شناسه + رمز عبور) ──
-  function handleUserLogin(form) {
+  async function handleUserLogin(form) {
     const id = (form.identifier?.value || '').trim();
     const pass = form.password?.value || '';
 
@@ -904,10 +928,11 @@ window.aryDealsScroll = function (dir) {
       state.authError = 'حسابی با این مشخصات یافت نشد. ابتدا ثبت‌نام کنید.';
       render(); return;
     }
-    if (!verifyPass(pass, user.passwordHash)) {
+    if (!(await verifyPass(pass, user.passwordHash))) {
       state.authError = 'رمز عبور اشتباه است.';
       render(); return;
     }
+    upgradeLegacyHash(user);
 
     const userObj = {
       id: user.id,
@@ -1084,7 +1109,7 @@ window.aryDealsScroll = function (dir) {
   window.cancelLoginOtpStep = cancelLoginOtpStep;
 
   // ── REGISTER ──
-  function handleUserRegister(form) {
+  async function handleUserRegister(form) {
     const name = (form.name?.value || '').trim();
     const email = (form.email?.value || '').trim().toLowerCase();
     const phone = (form.phone?.value || '').trim();
@@ -1128,7 +1153,7 @@ window.aryDealsScroll = function (dir) {
     const newUser = {
       id: 'user_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
       name, email, phone,
-      passwordHash: hashPass(pass),
+      passwordHash: await hashPass(pass),
       addresses: [], avatar: '', nationalId: '',
       createdAt: new Date().toISOString()
     };
@@ -1158,7 +1183,7 @@ window.aryDealsScroll = function (dir) {
   }
 
   // ── FORGOT PASSWORD ──
-  function handleUserForgot(form) {
+  async function handleUserForgot(form) {
     const id = (form.identifier?.value || '').trim();
     const newpass = form.newpass?.value || '';
     const newpass2 = form.newpass2?.value || '';
@@ -1187,7 +1212,7 @@ window.aryDealsScroll = function (dir) {
     );
     if (idx === -1) { state.authError = 'حسابی با این مشخصات یافت نشد.'; render(); return; }
 
-    users[idx].passwordHash = hashPass(newpass);
+    users[idx].passwordHash = await hashPass(newpass);
     saveUsers(users);
 
     state.authError = '';

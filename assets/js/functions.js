@@ -812,3 +812,34 @@ function getCartDiscount() {
   const current = getCartTotal();
   return original - current;
 }
+
+// ═══ r40: پاک‌سازی امنیتی HTML محتوا (بلاگ، مقالهٔ محصول، توضیحات) ═══
+window.arySanitizeHtml = function (html) {
+  const raw = String(html == null ? '' : html); if (!raw) return '';
+  try {
+    const doc = new DOMParser().parseFromString('<body id="ary-san-root">' + raw + '</body>', 'text/html');
+    const root = doc.getElementById('ary-san-root'); if (!root) return '';
+    root.querySelectorAll('script,style,iframe,object,embed,form,input,button,link,meta,base,svg,math,animate,animatetransform').forEach(function (n) { n.remove(); });
+    const ALLOW = 'A B STRONG I EM U BR P H2 H3 H4 H5 UL OL LI BLOCKQUOTE FIGCAPTION FIGURE SPAN DIV TABLE THEAD TBODY TR TD TH IMG HR CODE PRE SMALL SUB SUP MARK'.split(' ');
+    const urlOk = function (u) { u = String(u || '').trim().toLowerCase(); if (!u) return false; if (u.indexOf('javascript:') === 0 || u.indexOf('vbscript:') === 0 || u.indexOf('data:text/html') === 0) return false; return /^(https?:|mailto:|tel:|\/|\.\/|#)/.test(u) || /^data:image\/(png|jpeg|jpg|webp|gif);base64,/.test(u); };
+    (function walk(parent) {
+      Array.prototype.slice.call(parent.children).forEach(function (el) {
+        if (ALLOW.indexOf(el.tagName) === -1) { el.replaceWith(doc.createTextNode(el.textContent || '')); return; }
+        Array.prototype.slice.call(el.attributes).forEach(function (at) {
+          const n = at.name.toLowerCase(), v = at.value;
+          const keep = (n === 'href' && el.tagName === 'A' && urlOk(v)) || (n === 'src' && el.tagName === 'IMG' && urlOk(v)) || (n === 'alt') || (n === 'class' && /^(ary|align|img|text)/.test(v)) || (n === 'colspan' || n === 'rowspan');
+          if (!keep) el.removeAttribute(at.name);
+        });
+        if (el.tagName === 'A') { el.setAttribute('rel', 'noopener noreferrer nofollow'); if (!el.getAttribute('target')) { } else el.setAttribute('target', '_blank'); }
+        if (el.tagName === 'IMG') { el.setAttribute('loading', 'lazy'); el.setAttribute('decoding', 'async'); }
+        walk(el);
+      });
+    })(root);
+    return root.innerHTML;
+  } catch (e) {
+    return String(raw)
+      .replace(/<\s*\/?>\s*(script|style|iframe|object|embed|form|link|meta|base)[^>]*>/gi, '')
+      .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+      .replace(/(javascript:|vbscript:)\s*/gi, '$1_blocked:');
+  }
+};

@@ -918,6 +918,7 @@ function updateOrderStatus(order, nextStatus) {
 /* ========== تنظیمات ارسال و نقشه (مبدأ فروشگاه + گزینه‌های زمان) ========== */
 const ARY_SHIP_FALLBACK = {
   base_cost: 30000, free_over: 500000,
+  map_provider: 'osm', google_maps_key: '',
   origin: { lat: '', lng: '', label: 'مبدأ فروشگاه' },
   shipping_options: [
     { id: 'standard', label: 'ارسال عادی (پست پیشتاز)', min_days: 3, max_days: 5, extra_cost: 0, active: true, is_default: true },
@@ -937,6 +938,8 @@ function aryAdminShopCfg() {
   return {
     base_cost: Number(src.base_cost) || 0,
     free_over: Number(src.free_over) || 0,
+    map_provider: src.map_provider === 'google' ? 'google' : 'osm',
+    google_maps_key: String(src.google_maps_key || ''),
     origin: { lat: src.origin?.lat ?? '', lng: src.origin?.lng ?? '', label: src.origin?.label || 'مبدأ فروشگاه' },
     shipping_options: (Array.isArray(src.shipping_options) && src.shipping_options.length ? src.shipping_options : ARY_SHIP_FALLBACK.shipping_options).map(o => ({
       id: o.id, label: o.label, min_days: Number(o.min_days) || 0, max_days: Number(o.max_days) || 0,
@@ -1027,6 +1030,16 @@ function renderAdminShopSettings() {
             <input id="shop-origin-label" class="input-style w-full" value="${esc(cfg.origin.label)}" placeholder="انبار مرکزی تهران">
           </div>
         </div>
+        <div class="flex flex-wrap items-center gap-x-5 gap-y-2 mb-2 p-2.5 rounded-xl bg-white/[.04] border border-white/10">
+          <span class="text-[11px] font-bold text-white/60">موتور نقشه:</span>
+          <label class="inline-flex items-center gap-2 text-xs cursor-pointer"><input type="radio" name="shop-map-provider" value="osm" ${cfg.map_provider !== 'google' ? 'checked' : ''} onchange="document.getElementById('shop-gmaps-key-box').classList.toggle('opacity-50', this.value!=='google'); if(this.value==='google'&&document.getElementById('shop-gmaps-key')&&!document.getElementById('shop-gmaps-key').value.trim())document.getElementById('shop-gmaps-key').focus();"><span>مسیر باز — OSM/Leaflet</span></label>
+          <label class="inline-flex items-center gap-2 text-xs cursor-pointer"><input type="radio" name="shop-map-provider" value="google" ${cfg.map_provider === 'google' ? 'checked' : ''}><span>Google Maps</span></label>
+          <span class="text-[10px] text-white/40">(با گوگل، «موقعیت کنونی» و جستجو با Geocoder فارسی گوگل انجام می‌شود؛ بدون کلید معتبر خودکار به OSM برمی‌گردد)</span>
+        </div>
+        <div id="shop-gmaps-key-box" class="${cfg.map_provider === 'google' ? '' : 'opacity-50'} mb-2">
+          <label class="block text-[10px] text-white/50 mb-1">کلید API گوگل (Maps JavaScript API)</label>
+          <input id="shop-gmaps-key" dir="ltr" autocomplete="off" spellcheck="false" class="input-style w-full font-mono text-left text-xs" value="${esc(cfg.google_maps_key || '')}" placeholder="AIza…">
+        </div>
         <div id="ary-origin-map" class="ary-map rounded-xl border border-white/10 mb-2"></div>
         <div class="flex flex-wrap gap-2">
           <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 transition" onclick="aryAdminShopLocate()">📍 استفاده از موقعیت فعلی من</button>
@@ -1102,6 +1115,8 @@ function aryAdminShopSave() {
       lng: String(document.getElementById('shop-origin-lng')?.value || '').trim() || null,
       label: String(document.getElementById('shop-origin-label')?.value || '').trim() || 'مبدأ فروشگاه'
     },
+    map_provider: (document.querySelector('input[name="shop-map-provider"]:checked') || {}).value || 'osm',
+    google_maps_key: String(document.getElementById('shop-gmaps-key')?.value || '').trim().slice(0, 120),
     shipping_options: opts
   };
   AryaServer.call('shop_config_save', { body }).then(r => {
@@ -3156,9 +3171,9 @@ function renderAdminProductsEditor() {
           <p class="text-sm text-white/60 mt-1">مدیریت محصولات و مقالات</p>
         </div>
 
-        <div class="flex items-center gap-3">
-          <button type="button" class="btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" onclick="openAryaBulkImport()">⬇️ افزودن دسته‌جمعی</button>
-          <label class="text-sm text-white/70">فیلتر دسته:</label>
+        <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 max-w-full">
+          <button type="button" class="btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()">⬇️ افزودن دسته‌جمعی</button>
+          <label class="text-sm text-white/70 hidden md:inline">فیلتر دسته:</label>
           <select onchange="setProductFilterCategory(this.value)" class="input-style">${categoriesOptions}</select>
 
           <button onclick="
@@ -3174,7 +3189,7 @@ function renderAdminProductsEditor() {
             }; 
             render();
           " class="btn-primary px-4 py-2 rounded-xl flex items-center gap-2 text-sm font-semibold" type="button">
-            <i class="ri-add-line text-base"></i><span>افزودن محصول</span>
+            <i class="ri-add-line text-base"></i><span class="hidden sm:inline">افزودن محصول جدید</span><span class="sm:hidden">محصول +</span>
           </button>
         </div>
       </div>
@@ -3211,7 +3226,7 @@ function adminProductsListHtml(filteredProducts) {
             const hasDiscount = original > price && price > 0;
             const discountPercent = hasDiscount ? Math.round(((original - price) / original) * 100) : 0;
             return `
-              <div class="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 animate-fade min-w-0" style="animation-delay:${i * 0.05}s">
+              <div class="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 animate-fade min-w-0 cursor-pointer hover:bg-white/[.06] transition-colors" title="کلیک روی کارت = ویرایش محصول" style="animation-delay:${i * 0.05}s" onclick="openAryaProductEdit('${product.id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'){openAryaProductEdit('${product.id}')}">
                 <div class="w-full sm:w-16 h-24 sm:h-16 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
                   ${ hasImage ? `<img src="${imgSrc}" alt="${escapeHtml(product.title)}" class="w-full h-full object-cover">` : `<span class="text-3xl">📦</span>` }
                 </div>
@@ -3235,21 +3250,9 @@ function adminProductsListHtml(filteredProducts) {
                 </div>
 
                 <div class="flex gap-2 shrink-0 flex-wrap sm:flex-nowrap">
-                  <button onclick="
-                    state.editProduct = state.products.find(p => p.id === '${product.id}');
-                    state.productDraft = { 
-                      title:'', category:'', price:0, stock:0, description:'',
-                      mainImage:'', gallery:[], original_price:0, article:'', videos: [], _synced: null,
-                      seo_title:'', seo_description:'', seo_keywords:'', slug:'',
-                      seo_canonical:'', seo_robots:'index,follow',
-                      og_title:'', og_description:'', og_slug:'',
-                      twitter_title:'', twitter_description:'',
-                      redirect_old_url:'', schema_json:''
-                    };
-                    render();
-                  " class="p-3 glass rounded-xl hover:bg-white/10 transition-all" type="button"><i class="ri-edit-line text-base"></i></button>
+                  <button onclick="event.stopPropagation(); openAryaProductEdit('${product.id}')" class="p-3 glass rounded-xl hover:bg-white/10 transition-all" type="button" title="ویرایش"><i class="ri-edit-line text-base"></i></button>
 
-                  <button onclick="confirmDeleteProduct('${product.id}', '${escapeJs(product.title)}')" class="p-3 glass rounded-xl hover:bg-rose-500/20 text-rose-400 transition-all" type="button"><i class="ri-delete-bin-line text-base"></i></button>
+                  <button onclick="event.stopPropagation(); confirmDeleteProduct('${product.id}', '${escapeJs(product.title)}')" title="حذف" class="p-3 glass rounded-xl hover:bg-rose-500/20 text-rose-400 transition-all" type="button"><i class="ri-delete-bin-line text-base"></i></button>
                 </div>
               </div>
             `;
@@ -3374,8 +3377,8 @@ function renderProductModal() {
             </div>
 
             <div>
-              <label class="block text-sm text-white/70 mb-2">مقاله محصول</label>
-              <button type="button" onclick="openArticleEditor()" class="btn-primary w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><span>✏️</span><span>افزودن / ویرایش مقاله</span></button>
+              <label class="block text-sm text-white/70 mb-2">مقاله محصول <span class="text-[10px] text-white/40 font-normal">(جابه‌جا شده به تب بلاگ)</span></label>
+              <button type="button" onclick="event.stopPropagation(); aryBlogOpenForProduct('${state.editProduct?.id || 'new'}')" class="btn-primary w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><span>📝</span><span>${d.article ? 'ویرایش مقاله در بلاگ' : 'نگارش مقاله در بلاگ'}</span></button>
               ${ d.article ? `<p class="text-xs text-emerald-400 mt-2 truncate">مقاله ثبت شده ✔</p>` : `<p class="text-xs text-white/40 mt-2">مقاله‌ای ثبت نشده.</p>` }
             </div>
 
@@ -3482,7 +3485,7 @@ function submitProductForm(formEl) {
   const price = Number(formEl.price.value || 0);
   const original_price = Number(formEl.original_price.value || 0);
   const payload = {
-    article: state.productDraft.article || "",
+    article: (window.arySanitizeHtml ? arySanitizeHtml(state.productDraft.article) : String(state.productDraft.article || "")),
     videos: state.productDraft.videos || [],
     title: formEl.title.value.trim(), category: formEl.category.value || '', price,
     stock: Number(formEl.stock.value || 0), description: formEl.description ? formEl.description.value || '' : '',
@@ -4340,7 +4343,7 @@ function renderAdminBlogTab() {
                 <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${p.status === 'published' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' : 'bg-amber-500/15 text-amber-300 border border-amber-500/25'}">${p.status === 'published' ? 'منتشر ✓' : 'پیش‌نویس'}</span>
                 <div class="min-w-0 flex-1">
                   <div class="font-bold text-sm truncate">${escapeHtml(p.title || '(بدون عنوان)')}</div>
-                  <div class="text-[11px] text-white/40 mt-0.5">${p.created_at ? fmt(p.created_at) : ''}${p.author ? ' • ' + escapeHtml(p.author) : ''} • ${aryBlogParseMedia(p.media).length} رسانه</div>
+                  <div class="text-[11px] text-white/40 mt-0.5">${p.created_at ? fmt(p.created_at) : ''}${p.productId ? ' • 🔗 ' + escapeHtml(((state.products || []).find(x => String(x.id) === String(p.productId)) || {}).title || 'محصول حذف‌شده') : ''}${p.author ? ' • ' + escapeHtml(p.author) : ''} • ${aryBlogParseMedia(p.media).length} رسانه</div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button type="button" class="p-2 glass rounded-xl text-sm" title="ویرایش" onclick="aryAdminBlogEdit('${escapeHtml(String(p.id))}')">✏️</button>
@@ -4411,8 +4414,23 @@ function renderAdminBlogEditor() {
           <textarea class="input-style w-full resize-none" rows="2" maxlength="600" oninput="state.blogEdit.excerpt=this.value">${escAttr(m.excerpt)}</textarea>
         </div>
         <div>
-          <label class="block text-sm text-white/70 mb-1.5">متن مقاله — HTML ساده مجاز است <span class="text-white/40">(h2، h3، p، ul، li، strong، a)</span></label>
-          <textarea id="blog-body" class="input-style w-full resize-y font-mono text-[13px] leading-6" rows="12" style="min-height:18rem" oninput="state.blogEdit.body=this.value">${escAttr(m.body)}</textarea>
+          <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+            <label class="block text-sm text-white/70">متن مقاله</label>
+            <div class="flex flex-wrap items-center gap-1 mr-2" role="toolbar" aria-label="قالب‌بندی متن">
+              ${[['strong','B','پررنگ','<strong>متن</strong>'],['em','I','کج','<em>متن</em>'],['h2','H2','تیتر ۲','<h2>تیتر</h2>'],['h3','H3','تیتر ۳','<h3>تیتر</h3>'],['ul','• فهرست','لیست','<ul><li>مورد</li></ul>'],['a','🔗','لینک','<a href=\"https://…\">متن لینک</a>'],['blockquote','❝','نقل‌قول','<blockquote>نقل‌قول</blockquote>'],['p','¶','پاراگراف','<p>پاراگراف</p>']].map(b => `<button type="button" title="${b[2]}" class="px-2 py-1 rounded-lg text-[10px] font-black glass text-white/70 hover:bg-blue-500/15 hover:text-blue-200 transition" onclick="aryBlogTag('${b[1]}','${b[3].replace(/"/g, '&quot;')}')">${b[0] === 'ul' ? '≔ لیست' : b[0].toUpperCase()}</button>`).join('')}
+              <button type="button" title="خلاصه خودکار از متن" class="px-2 py-1 rounded-lg text-[10px] font-black bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryBlogExcerpt()">✨ چکیده خودکار</button>
+              <span data-blog-count class="text-[10px] text-white/40 mr-auto tabular-nums">${(String(m.body || '').replace(/<[^>]*>/g, '').match(/[\u0600-\uFBFFa-zA-Z0-9]+/g) || []).length} واژه</span>
+            </div>
+          </div>
+          <textarea id="blog-body" class="input-style w-full resize-y font-mono text-[13px] leading-6" rows="12" style="min-height:18rem" oninput="state.blogEdit.body=this.value; aryBlogCount()">${escAttr(m.body)}</textarea>
+          <p class="text-[10px] text-white/35 mt-1.5">HTML ساده مجاز است (h2، h3، p، ul، li، strong، a، blockquote) — هنگام ذخیره پاک‌سازی امنیتی می‌شود.</p>
+        </div>
+        <div>
+          <label class="block text-sm text-white/70 mb-1.5">پیوند به محصول <span class="text-[10px] text-white/40 font-normal">(مقاله به صفحه همان محصول هم اضافه می‌شود)</span></label>
+          <select class="input-style w-full" onchange="state.blogEdit.productId=this.value">
+            <option value="">— بدون پیوند —</option>
+            ${(state.products || []).map(pr => `<option value="${escapeHtml(String(pr.id))}" ${String(m.productId || '') === String(pr.id) ? 'selected' : ''}>${escapeHtml(pr.title || '')}</option>`).join('')}
+          </select>
         </div>
         <div>
           <div class="flex items-center justify-between mb-2">
@@ -4474,8 +4492,16 @@ window.aryAdminBlogSave = async function () {
     media: JSON.stringify((m.media || []).filter(x => x && x.url)),
     tags: String(m.tags || '').trim().slice(0, 255), status: m.status === 'published' ? 'published' : 'draft',
     author: String(m.author || 'تیم آریا').trim().slice(0, 80),
+    productId: String(m.productId || ''),
     created_at: m.created_at || now, updated_at: now
   };
+  try { row.body = arySanitizeHtml(row.body); } catch (e) {}
+  if (row.productId) {
+    try {
+      const _pr = (state.products || []).find(x => String(x.id) === String(row.productId));
+      if (_pr) { _pr.article = row.status === 'published' ? row.body : (_pr.article || ''); state.productDraft && (state.productDraft.article = _pr.article); }
+    } catch (e) {}
+  }
   let okLocal = true;
   try { if (window.AryaDB && AryaDB.isReady && AryaDB.isReady()) await AryaDB.upsert('blog', row); } catch (e) { okLocal = false; }
   let okServer = false;
@@ -5310,4 +5336,65 @@ function renderAdminHomeEditor() {
       <p class="text-[10px] text-white/40 mt-4 text-center">همهٔ تغییرات بلافاصله در سایت اعمال می‌شود — تصویر هیرو ۱۶:۹ و کمتر از ۵۰۰KB پیشنهاد می‌شود.</p>
     </div>`;
 }
+
+// ═══════════ راند ۴۰ — کارت کلیک‌پذیر محصول + ابزارهای ادیتور بلاگ ═══════════
+function openAryaProductEdit(id) {
+  const p = (state.products || []).find(x => String(x.id) === String(id)); if (!p) return;
+  state.editProduct = p;
+  state.productDraft = {
+    title: p.title || '', category: p.category || '', price: Number(p.price) || 0, stock: Number(p.stock) || 0,
+    description: p.description || '', mainImage: p.image || p.main_image || '', gallery: (p.gallery || []).slice(),
+    original_price: Number(p.original_price) || 0, article: p.article || '', videos: (p.videos || []).slice(), _synced: String(p.id),
+    seo_title: p.seo_title || '', seo_description: p.seo_description || '', seo_keywords: p.seo_keywords || '', slug: p.slug || '',
+    seo_canonical: p.seo_canonical || '', seo_robots: p.seo_robots || 'index,follow',
+    og_title: p.og_title || '', og_description: p.og_description || '', og_slug: p.og_slug || '',
+    twitter_title: p.twitter_title || '', twitter_description: p.twitter_description || '',
+    redirect_old_url: p.redirect_old_url || '', schema_json: p.schema_json || ''
+  };
+  render();
+}
+window.openAryaProductEdit = openAryaProductEdit;
+
+window.aryBlogTag = function (lab, snip) {
+  const ta = document.getElementById('blog-body'); if (!ta || !state.blogEdit) return;
+  const s0 = ta.selectionStart || 0, e0 = ta.selectionEnd || 0;
+  const sel = String(ta.value.slice(s0, e0) || '');
+  let text = String(snip || '');
+  if (sel) { try { text = text.replace(/>([^<]+)</, '>' + sel.replace(/</g, '&lt;') + '<'); } catch (e) {} }
+  ta.setRangeText(text, s0, e0, 'end');
+  state.blogEdit.body = ta.value;
+  ta.focus();
+  if (window.aryBlogCount) window.aryBlogCount();
+};
+window.aryBlogCount = function () {
+  const ta = document.getElementById('blog-body'); if (!ta) return;
+  const el = document.querySelector('[data-blog-count]'); if (!el) return;
+  const words = (String(ta.value).replace(/<[^>]*>/g, ' ').match(/[\u0600-\uFBFFa-zA-Z0-9]+/g) || []).length;
+  el.textContent = words.toLocaleString('fa-IR') + ' واژه · ' + ta.value.length.toLocaleString('fa-IR') + ' نویسه';
+  el.style.color = words >= 60 ? 'rgba(110,231,183,.9)' : '';
+};
+window.aryBlogExcerpt = function () {
+  const m = state.blogEdit; if (!m) return;
+  const plain = String(m.body || '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const ex = plain.length > 180 ? plain.slice(0, 177) + '…' : plain;
+  m.excerpt = ex;
+  const ta = document.querySelector('textarea[maxlength="600"]');
+  if (ta) { ta.value = ex; }
+  if (window.toast) toast(ex ? 'چکیده از متن ساخته شد ✓' : 'اول متن را بنویسید', ex ? 'success' : 'warning');
+  if (window.aryBlogCount) window.aryBlogCount();
+};
+window.aryBlogOpenForProduct = function (pid) {
+  state.adminTab = 'blog';
+  const pr = (state.products || []).find(x => String(x.id) === String(pid || ''));
+  const posts = Array.isArray(state.blog) ? state.blog : [];
+  const linked = pr ? posts.find(b => String(b.productId || '') === String(pr.id)) : null;
+  let media = [];
+  if (linked && linked.media) { try { media = JSON.parse(linked.media) || []; } catch (e) { media = []; } }
+  state.blogEdit = linked
+    ? { id: linked.id, title: linked.title || '', excerpt: linked.excerpt || '', body: linked.body || '', cover: linked.cover || '', tags: linked.tags || '', status: linked.status || 'published', author: linked.author || '', created_at: linked.created_at, productId: String(linked.productId || pr.id), media }
+    : { title: pr ? pr.title : '', body: pr && pr.article ? String(pr.article) : '', excerpt: '', cover: pr && pr.image ? pr.image : '', tags: '', status: 'published', media: [], productId: pr ? String(pr.id) : '' };
+  if (window.toast) toast(pr ? 'ادیتور مقاله برای «' + String(pr.title).slice(0, 24) + '» باز شد — پس از ذخیره به صفحه محصول هم وصل می‌شود' : 'ادیتور مقاله باز شد', 'info', 3600);
+  render();
+};
+window.aryBlogCancelSafe = function () { if (window.aryAdminBlogCancel) aryAdminBlogCancel(); };
 
