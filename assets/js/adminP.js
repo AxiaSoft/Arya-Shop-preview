@@ -177,20 +177,31 @@ function _arySeries30(orders, numeric) {
 
 function _aryAreaChart(days, values, gradId, c1, c2, fmt) {
   const max = Math.max(...values, 1);
-  const W = 300, H = 110, pad = 6;
+  const W = 320, H = 118, pad = 8;
+  const fa = k => { try { return new Date(k).toLocaleDateString('fa-IR', { day: 'numeric', month: 'long' }); } catch (e) { return k; } };
   const x = i => pad + (i / Math.max(days.length - 1, 1)) * (W - pad * 2);
-  const y = v => H - pad - (v / max) * (H - pad * 2);
+  const y = v => H - pad - 14 - (v / max) * (H - pad * 2 - 16);
   const line = values.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(v).toFixed(1)}`).join(' ');
-  const area = `${line} L${x(values.length - 1).toFixed(1)} ${H - pad} L${x(0).toFixed(1)} ${H - pad} Z`;
-  const dates = days;
-  const pts = values.map((v, i) => (v > 0 && (i % 2 === 0 || i === values.length - 1))
-    ? `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="2" fill="#fff" opacity=".9"><title>${days[i] || ''} — ${fmt(v)}</title></circle>` : '').join('');
-  const gridY = [0.25, 0.5, 0.75].map(f => `<line x1="${pad}" x2="${W - pad}" y1="${(H - pad - f * (H - pad * 2)).toFixed(1)}" y2="${(H - pad - f * (H - pad * 2)).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>`).join('');
+  const area = `${line} L${x(values.length - 1).toFixed(1)} ${H - pad - 14} L${x(0).toFixed(1)} ${H - pad - 14} Z`;
+  const gridY = [0.5, 1].map(f => `<line x1="${pad}" x2="${W - pad}" y1="${(H - pad - 14 - f * (H - pad * 2 - 16)).toFixed(1)}" y2="${(H - pad - 14 - f * (H - pad * 2 - 16)).toFixed(1)}" stroke="rgba(255,255,255,.06)" stroke-width=".5"/>`).join('');
+  const pts = values.map((v, i) => {
+    const showNum = v > 0 && (i === values.length - 1 || v === max || i % 7 === 0);
+    return `<g class="ary-cx-col" tabindex="0" role="button" aria-label="${fa(days[i])} — ${fmt(v)}" onclick="aryChartDrill('day','${days[i]}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aryChartDrill('day','${days[i]}')}">
+      <line class="gl" x1="${x(i).toFixed(1)}" x2="${x(i).toFixed(1)}" y1="${pad}" y2="${H - pad - 14}" stroke="rgba(255,255,255,.22)" stroke-width=".6" stroke-dasharray="2 3"/>
+      <circle class="dot" cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="${v === max ? 3.4 : 2.4}" fill="#fff" stroke="${c1}" stroke-width="1.2"/>
+      ${showNum ? `<text x="${x(i).toFixed(1)}" y="${(y(v) - 7).toFixed(1)}" text-anchor="middle" class="num" style="font-size:6.4px;font-weight:800;fill:${c1}">${utils.formatPriceShort(v)}</text>` : ''}
+      <g class="tip" transform="translate(${Math.max(46, Math.min(W - 46, x(i))).toFixed(1)}, ${Math.max(13, y(v) - 14).toFixed(1)})">
+        <rect x="-44" y="-13" width="88" height="19" rx="4" fill="rgba(6,14,32,.94)" stroke="rgba(148,187,255,.28)" stroke-width=".5"/>
+        <text x="0" y=".5" text-anchor="middle" style="font-size:6.6px;font-weight:800;fill:#fff">${fa(days[i])} · ${fmt(v)}</text>
+      </g>
+      <rect x="${(x(i) - (W - pad * 2) / Math.max(days.length - 1, 1) / 2).toFixed(1)}" y="0" width="${((W - pad * 2) / Math.max(days.length - 1, 1)).toFixed(1)}" height="${H - 14}" fill="transparent"/>
+    </g>`;
+  }).join('');
   return `
-    <svg viewBox="0 0 ${W} ${H}" class="w-full h-32 sm:h-36 lg:h-40" preserveAspectRatio="none" dir="ltr" aria-hidden="true">
+    <svg viewBox="0 0 ${W} ${H}" class="w-full" style="aspect-ratio:${W}/${H}" dir="ltr" role="img" aria-label="نمودار فروش روزانه">
       <defs>
         <linearGradient id="${gradId}" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stop-color="${c1}" stop-opacity=".45"/>
+          <stop offset="0%" stop-color="${c1}" stop-opacity=".42"/>
           <stop offset="100%" stop-color="${c2}" stop-opacity="0"/>
         </linearGradient>
         <linearGradient id="${gradId}s" x1="0" x2="1" y1="0" y2="0">
@@ -202,35 +213,51 @@ function _aryAreaChart(days, values, gradId, c1, c2, fmt) {
       <path d="${area}" fill="url(#${gradId})"/>
       <path d="${line}" fill="none" stroke="url(#${gradId}s)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       ${pts}
-    </svg>
-    <div class="flex justify-between text-[9px] text-white/30 mt-1 tabular-nums" dir="ltr">
-      <span>${dates[0] ? dates[0].slice(5) : ''}</span>
-      <span>${dates[Math.floor(dates.length / 2)] ? dates[Math.floor(dates.length / 2)].slice(5) : ''}</span>
-      <span>${dates[dates.length - 1] ? dates[dates.length - 1].slice(5) : ''}</span>
-    </div>`;
+      <line x1="${pad}" x2="${W - pad}" y1="${H - pad - 14}" y2="${H - pad - 14}" stroke="rgba(255,255,255,.12)" stroke-width=".6"/>
+      <text x="${pad}" y="${H - 3}" style="font-size:5.8px;fill:rgba(255,255,255,.4)">${days[0] ? days[0].slice(5) : ''}</text>
+      <text x="${W / 2}" y="${H - 3}" text-anchor="middle" style="font-size:5.8px;fill:rgba(255,255,255,.4)">${days[Math.floor(days.length / 2)] ? days[Math.floor(days.length / 2)].slice(5) : ''}</text>
+      <text x="${W - pad}" y="${H - 3}" text-anchor="end" style="font-size:5.8px;fill:rgba(255,255,255,.4)">${days[days.length - 1] ? days[days.length - 1].slice(5) : ''}</text>
+    </svg>`;
 }
 
-function _aryBarsChart(days, values, gradId, c1, c2, fmt) {
+
+function _aryBarsChart(days, values, gradId, c1, c2, fmt, drillKind) {
+  const kind = drillKind === 'month' ? 'month' : 'day';
   const max = Math.max(...values, 1);
-  const W = 300, H = 110, pad = 6, n = values.length;
-  const bw = (W - pad * 2) / n * .62;
-  const step = (W - pad * 2) / n;
+  const W = 320, H = 120, pad = 8, n = values.length;
+  const step = (W - pad * 2) / n, bw = step * .58;
+  const faD = k => { try { return new Date(k).toLocaleDateString('fa-IR', { day: 'numeric', month: 'long' }); } catch (e) { return k; } };
+  const faM = k => { const [y, m] = String(k).split('-'); return `${m}/${String(y).slice(2)}`; };
+  const labelOf = i => kind === 'month' ? faM(days[i]) : faD(days[i]);
   const bars = values.map((v, i) => {
-    const h = Math.max(v > 0 ? 2 : 0.8, (v / max) * (H - pad * 2 - 10));
-    return `<rect x="${(pad + i * step + (step - bw) / 2).toFixed(1)}" y="${(H - pad - 10 - h + 10).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.2" fill="url(#${gradId})" ${v > 0 ? '' : 'opacity=".25"'}><title>${escapeHtml(days[i])} — ${fmt(v)}</title></rect>`;
+    const h = Math.max(v > 0 ? 3 : 1, (v / max) * (H - pad - 30));
+    const bx = pad + i * step + (step - bw) / 2;
+    const by = H - pad - 14 - h;
+    return `<g class="ary-cx-col" tabindex="0" role="button" aria-label="${labelOf(i)} — ${fmt(v)}" onclick="aryChartDrill('${kind}','${days[i]}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aryChartDrill('${kind}','${days[i]}')}">
+      <rect class="bar" x="${bx.toFixed(1)}" y="${by.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="1.6" fill="url(#${gradId})" ${v > 0 ? '' : 'opacity=".3"'}/>
+      ${v > 0 ? `<text x="${(bx + bw / 2).toFixed(1)}" y="${(by - 3.2).toFixed(1)}" text-anchor="middle" class="num" style="font-size:${n > 16 ? 5.6 : 6.6}px;font-weight:800;fill:#dbeafe">${utils.formatPriceShort ? (kind === 'month' ? utils.formatPriceShort(v) : v) : v}</text>` : ''}
+      <g class="tip" transform="translate(${(bx + bw / 2).toFixed(1)}, ${Math.max(12, by - 16).toFixed(1)})">
+        <rect x="-46" y="-12" width="92" height="19" rx="4" fill="rgba(6,14,32,.94)" stroke="rgba(148,187,255,.28)" stroke-width=".5"/>
+        <text x="0" y="1.6" text-anchor="middle" style="font-size:6.6px;font-weight:800;fill:#fff">${labelOf(i)} · ${fmt(v)}</text>
+      </g>
+      <rect x="${(pad + i * step).toFixed(1)}" y="0" width="${step.toFixed(1)}" height="${H - 14}" fill="transparent"/>
+    </g>`;
   }).join('');
   return `
-    <svg viewBox="0 0 ${W} ${H}" class="w-full h-32 sm:h-36 lg:h-40" preserveAspectRatio="none" dir="ltr" aria-hidden="true">
+    <svg viewBox="0 0 ${W} ${H}" class="w-full" style="aspect-ratio:${W}/${H}" dir="ltr" role="img" aria-label="نمودار ستونی">
       <defs>
         <linearGradient id="${gradId}" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0%" stop-color="${c1}"/>
           <stop offset="100%" stop-color="${c2}"/>
         </linearGradient>
       </defs>
-      <line x1="${pad}" x2="${W - pad}" y1="${H - pad - 10}" y2="${H - pad - 10}" stroke="rgba(255,255,255,.1)" stroke-width=".6"/>
+      <line x1="${pad}" x2="${W - pad}" y1="${H - pad - 14}" y2="${H - pad - 14}" stroke="rgba(255,255,255,.12)" stroke-width=".6"/>
       ${bars}
+      <text x="${pad}" y="${H - 4}" style="font-size:6px;fill:rgba(255,255,255,.4)">${kind === 'month' ? faM(days[0]) : (days[0] || '').slice(5)}</text>
+      <text x="${W - pad}" y="${H - 4}" text-anchor="end" style="font-size:6px;fill:rgba(255,255,255,.4)">${kind === 'month' ? faM(days[n - 1]) : (days[n - 1] || '').slice(5)}</text>
     </svg>`;
 }
+
 
 function renderSalesChart(orders) {
   const { days, values } = _arySeries30(orders, true);
@@ -246,7 +273,7 @@ function renderSalesChart(orders) {
         </div>
       </div>
       ${_aryAreaChart(days, values, 'gArySales', '#4ade80', '#22c55e', v => utils.formatPrice(v))}
-      <p class="text-[10px] text-white/40 mt-2">راهنما: محور افقی روزِ ماه، عمودی مبلغ — روی نقاط نگه دارید</p>
+      <p class="text-[10px] text-white/40 mt-2">💡 برای دیدن جزئیات هر روز، روی نقطه/ستون کلیک کنید — اسکرول افقی ندارد</p>
     </div>
   `;
 }
@@ -261,7 +288,7 @@ function renderOrdersChart(orders) {
         <span class="px-2 py-1 rounded-lg bg-sky-500/10 text-sky-300 text-[10px] sm:text-xs">مجموع: ${total}</span>
       </div>
       ${_aryBarsChart(days, values, 'gAryOrders', '#38bdf8', '#0ea5e9', v => v + ' سفارش')}
-      <p class="text-[10px] text-white/40 mt-2">تعداد سفارش هر روز</p>
+      <p class="text-[10px] text-white/40 mt-2">تعداد سفارش هر روز — کلیک = فیلتر سفارشات همان روز</p>
     </div>
   `;
 }
@@ -282,8 +309,8 @@ function renderMonthlyRevenueChart(orders) {
         <h2 class="font-bold text-sm sm:text-lg flex items-center gap-2">${typeof aryIcon === 'function' ? aryIcon('coins', 'w-4 h-4 text-pink-400') : ''}درآمد ۱۲ ماه اخیر</h2>
         <span class="px-2 py-1 rounded-lg bg-pink-500/10 text-pink-300 text-[10px] sm:text-xs">میانگین ماهانه: ${utils.formatPriceShort(values.reduce((a, b) => a + b, 0) / 12)}</span>
       </div>
-      ${_aryBarsChart(months, values, 'gAryMonthly', '#f472b6', '#ec4899', v => utils.formatPrice(v))}
-      <p class="text-[10px] text-white/40 mt-2">ستون‌ها از چپ: ۱۲ ماه گذشته ← ماه جاری</p>
+      ${_aryBarsChart(months, values, 'gAryMonthly', '#f472b6', '#ec4899', v => utils.formatPrice(v), 'month')}
+      <p class="text-[10px] text-white/40 mt-2">کلیک روی هر ستون = فیلتر کل سفارشات آن ماه</p>
     </div>
   `;
 }
@@ -305,16 +332,16 @@ function renderStatusDonut(orders) {
     const dash = `${(frac * 87.96).toFixed(2)} ${(87.96 * (1 - frac)).toFixed(2)}`;
     const off = -acc * 87.96;
     acc += frac;
-    return `<circle r="14" cx="16" cy="16" fill="none" stroke="${defs[i][2]}" stroke-width="3.4" stroke-dasharray="${dash}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 16 16)"><title>${defs[i][1]}: ${v}</title></circle>`;
+    return `<circle class="ary-donut-seg" tabindex="0" role="button" aria-label="${defs[i][1]}: ${v} — کلیک برای فیلتر" onclick="aryChartDrill('status','${k}')" onkeydown="if(event.key==='Enter'){aryChartDrill('status','${k}')}" r="14" cx="16" cy="16" fill="none" stroke="${defs[i][2]}" stroke-width="3.4" stroke-dasharray="${dash}" stroke-dashoffset="${off.toFixed(2)}" transform="rotate(-90 16 16)"><title>${defs[i][1]}: ${v}</title></circle>`;
   }).join('');
   const legend = counts.map(([k, v], i) => `
-    <div class="flex items-center justify-between gap-2 text-xs">
+    <div class="flex items-center justify-between gap-2 text-xs rounded-lg px-2 py-1 -mx-2 ary-donut-row" tabindex="0" role="button" title="فیلتر سفارشات ${defs[i][1]}" onclick="aryChartDrill('status','${k}')" onkeydown="if(event.key==='Enter'){aryChartDrill('status','${k}')}">
       <span class="flex items-center gap-2 text-white/70"><span class="block w-2.5 h-2.5 rounded-full shrink-0" style="background:${defs[i][2]}"></span>${defs[i][1]}</span>
       <span class="font-bold tabular-nums">${v}<span class="text-white/40 font-normal mr-1">(${Math.round((v / total) * 100)}٪)</span></span>
     </div>`).join('');
   return `
     <div class="glass rounded-2xl p-4 sm:p-6 h-full flex flex-col">
-      <h2 class="font-bold text-sm sm:text-lg mb-4">توزیع وضعیت سفارش‌ها</h2>
+      <h2 class="font-bold text-sm sm:text-lg mb-4">توزیع وضعیت سفارش‌ها <span class="text-[9px] font-normal text-white/35 mr-1">کلیک = فیلتر</span></h2>
       <div class="flex items-center gap-4 sm:gap-6 min-w-0">
         <div class="relative shrink-0 w-28 h-28 sm:w-32 sm:h-32">
           <svg viewBox="0 0 32 32" class="w-full h-full" style="transform:scaleX(-1)" aria-hidden="true">
@@ -1708,10 +1735,17 @@ function renderAdminReviews() {
 function renderAdminOrdersSafe() {
   const orders = Array.isArray(state.orders) ? state.orders : [];
 
-  // فیلتر وضعیت
-  const filtered = state.orderFilter.status
-    ? orders.filter(o => o.status === state.orderFilter.status)
-    : orders;
+  // فیلتر وضعیت + روز/ماه (دریل از چارت‌ها)
+  const OF = state.orderFilter = Object.assign({ status: '', search: '' }, state.orderFilter || {});
+  let filtered = OF.status ? orders.filter(o => (o.status || 'pending') === OF.status) : orders.slice();
+  if (OF.day) filtered = filtered.filter(o => String(o.created_at || o.date || '').slice(0, 10) === OF.day);
+  if (OF.month) filtered = filtered.filter(o => String(o.created_at || o.date || '').slice(0, 7) === OF.month);
+  const dateChips = (OF.day || OF.month) ? `
+        <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/10">
+          ${OF.day ? `<span class="inline-flex items-center gap-2 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-blue-500/15 text-blue-200 border border-blue-400/25">📅 ${_aryFaDay(OF.day)}</span>` : ''}
+          ${OF.month ? `<span class="inline-flex items-center gap-2 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-pink-500/15 text-pink-200 border border-pink-400/25">🗓️ ماه ${OF.month.split('-').reverse().join('/')}</span>` : ''}
+          <button type="button" class="text-[10px] font-black px-2.5 py-1.5 rounded-lg glass text-white/60 hover:text-rose-300 hover:bg-rose-500/10 transition" onclick="aryClearDateFilters()">✕ حذف فیلتر تاریخ</button>
+        </div>` : '';
 
   return `
     <div class="animate-fade">
@@ -1730,6 +1764,7 @@ function renderAdminOrdersSafe() {
           ${renderOrderFilterButton("delivered", "✅ تحویل")}
 
         </div>
+        ${dateChips}
       </div>
 
       ${filtered.length === 0 ? renderOrdersEmpty() : renderOrdersList(filtered)}
@@ -4997,6 +5032,22 @@ window.AryaSelect = (function () {
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else setTimeout(boot, 1200);
 })();
+// ═══════════ چارت تعاملی: کلیک = دریل‌داون به لیست سفارشات ═══════════
+window.aryChartDrill = function (kind, key) {
+  if (!state.orderFilter) state.orderFilter = { status: '', search: '' };
+  const f = state.orderFilter;
+  let label = '';
+  if (kind === 'day') { f.day = (f.day === key ? '' : key); f.month = ''; label = f.day ? ('سفارش‌های ' + _aryFaDay(key)) : 'فیلتر روز حذف شد'; }
+  else if (kind === 'month') { f.month = (f.month === key ? '' : key); f.day = ''; label = f.month ? ('سفارشات ماه ' + key.split('-').reverse().join('/')) : 'فیلتر ماه حذف شد'; }
+  else if (kind === 'status') { f.status = (f.status === key ? '' : key); const L = { pending: 'در انتظار', processing: 'پردازش', shipped: 'ارسال‌شده', delivered: 'تحویل‌شده', canceled: 'لغوشده' }[key] || key; label = f.status ? ('وضعیت: ' + L) : 'فیلتر وضعیت حذف شد'; }
+  const cnt = (state.orders || []).filter(o => (!f.status || (o.status || 'pending') === f.status) && (!f.day || String(o.created_at || o.date || '').slice(0, 10) === f.day) && (!f.month || String(o.created_at || o.date || '').slice(0, 7) === f.month)).length;
+  state.adminTab = 'orders';
+  if (window.toast) toast(label + (f.status || f.day || f.month ? ' — ' + cnt + ' مورد یافت شد' : ''), 'info', 3200);
+  render();
+};
+function _aryFaDay(k) { try { return new Date(k).toLocaleDateString('fa-IR', { weekday: 'long', day: 'numeric', month: 'long' }); } catch (e) { return k; } }
+window.aryClearDateFilters = function () { if (state.orderFilter) { state.orderFilter.day = ''; state.orderFilter.month = ''; } render(); };
+
 // ════════════════════════════════════════════════════════════════
 // ARYA COUPONS ADMIN — ساخت/ویرایش کدهای تخفیف (کل سبد، دسته، محصولات، ارسال)
 // ════════════════════════════════════════════════════════════════

@@ -370,7 +370,7 @@ function setupHomeHeroSlider() {
   const root = document.getElementById('home-hero');
   const H = window._aryHero;
   const slides = root ? Array.from(root.querySelectorAll('.ary-hero-slide')) : [];
-  const dots = root && root.parentElement ? Array.from(root.parentElement.querySelectorAll('.ary-hero-dots button')) : [];
+  const dots = root ? Array.from(root.querySelectorAll('.ary-hero-dots button')) : [];
   if (H.timer) { clearInterval(H.timer); H.timer = null; }
   if (slides.length < 2) return;
   H.i = 0;
@@ -379,9 +379,9 @@ function setupHomeHeroSlider() {
     slides.forEach((el, k) => el.classList.toggle('is-on', k === H.i));
     dots.forEach((el, k) => el.classList.toggle('on', k === H.i));
   };
-  if (root.parentElement) {
-    root.parentElement.onmouseenter = () => { H.paused = true; };
-    root.parentElement.onmouseleave = () => { H.paused = false; };
+  if (root) {
+    root.onmouseenter = () => { H.paused = true; };
+    root.onmouseleave = () => { H.paused = false; };
   }
   H.timer = setInterval(() => { if (!H.paused && window.aryHeroGo) window.aryHeroGo(H.i + 1); }, 6000);
 }
