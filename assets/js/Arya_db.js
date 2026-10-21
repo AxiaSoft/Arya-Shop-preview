@@ -58,7 +58,7 @@
       req.onsuccess = (e) => {
         db = e.target.result;
         _ready = true;
-        console.log('[AryaDB] IndexedDB ready ✅');
+        console.log('[AryaDB] IndexedDB ready');
         _queue.forEach(fn => fn());
         _queue.length = 0;
         resolve();
@@ -418,7 +418,7 @@
       };
     }
 
-    console.log('[AryaDB] State hooks installed ✅');
+    console.log('[AryaDB] State hooks installed');
   }
 
   // ──────────────────────────────────────────

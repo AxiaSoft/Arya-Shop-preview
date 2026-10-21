@@ -273,7 +273,7 @@ function renderSalesChart(orders) {
         </div>
       </div>
       ${_aryAreaChart(days, values, 'gArySales', '#4ade80', '#22c55e', v => utils.formatPrice(v))}
-      <p class="text-[10px] text-white/40 mt-2">💡 برای دیدن جزئیات هر روز، روی نقطه/ستون کلیک کنید — اسکرول افقی ندارد</p>
+      <p class="text-[10px] text-white/40 mt-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Zm7 10 .9 2.1L22 16l-2.1.9L19 19l-.9-2.1L16 16l2.1-.9L19 13Z"/></svg> برای دیدن جزئیات هر روز، روی نقطه/ستون کلیک کنید — اسکرول افقی ندارد</p>
     </div>
   `;
 }
@@ -510,7 +510,7 @@ function renderAdminOrderCard(order, i) {
     <div class="glass rounded-2xl p-4 lg:p-5 animate-fade ${canceled ? 'border !border-rose-500/35' : ''}">
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <button type="button" class="inline-flex items-center gap-1.5 font-mono font-black text-sm px-2.5 py-1.5 rounded-xl bg-blue-500/15 text-blue-300 border border-blue-500/25 hover:bg-blue-500/25 transition" onclick="aryCopyText('${oid}')" title="کپی کد سفارش">#${escapeHtml(oid.slice(-8))}${ai('copy','w-3.5 h-3.5 opacity-60')}</button>
-        ${trk ? `<button type="button" class="text-[11px] font-bold mono inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/12 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition" onclick="aryCopyText('${escapeHtml(trk)}')" title="کپی کد رهگیری">📮 ${escapeHtml(trk)}</button>` : ''}
+        ${trk ? `<button type="button" class="text-[11px] font-bold mono inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/12 text-emerald-300 border border-emerald-500/20 hover:bg-emerald-500/20 transition" onclick="aryCopyText('${escapeHtml(trk)}')" title="کپی کد رهگیری"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4 20-7Z"/></svg> ${escapeHtml(trk)}</button>` : ''}
         <span class="text-[11px] text-white/50">${utils.formatDateTime(order.created_at)}</span>
         <div class="mr-auto flex items-center gap-2">
           <span class="text-[10px] font-black px-2 py-1 rounded-lg ${({pending:'bg-amber-500/15 text-amber-300',processing:'bg-blue-500/15 text-blue-300',shipped:'bg-sky-500/15 text-sky-300',delivered:'bg-emerald-500/15 text-emerald-300',canceled:'bg-rose-500/15 text-rose-300'})[st] || 'bg-white/10 text-white/60'}">${({pending:'در انتظار',processing:'پردازش',shipped:'ارسال شده',delivered:'تحویل شده',canceled:'لغوشده'})[st] || st}</span>
@@ -771,13 +771,13 @@ function renderAdminPanel() {
       <header class="lg:hidden glass-dark border-b border-white/5 p-4">
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-3 min-w-0">
-            <span class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-5 h-5') : '⚙️'}</span>
+            <span class="w-9 h-9 rounded-xl bg-blue-500/20 text-blue-300 flex items-center justify-center shrink-0">${typeof aryIcon === 'function' ? aryIcon('settings', 'w-5 h-5') : ''}</span>
             <h1 class="font-bold truncate">پنل مدیریت</h1>
           </div>
           <div class="flex gap-2 items-center">
             <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
-            <button onclick="AryaAdminPreview.open()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-500/15 border border-blue-400/25 text-blue-200 text-[11px] font-bold whitespace-nowrap active:scale-95 transition" type="button" title="پیش‌نمایش زندهٔ سایت در پنل" aria-label="پیش‌نمایش سایت">${typeof aryIcon === 'function' ? aryIcon('eye', 'w-4 h-4') : '👁'}<span>پیش‌نمایش</span></button>
-            <button onclick="adminLogout()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-500/12 border border-rose-400/25 text-rose-300 text-[11px] font-bold whitespace-nowrap active:scale-95 transition" type="button" title="خروج از پنل">${typeof aryIcon === 'function' ? aryIcon('logout', 'w-4 h-4') : '🚪'}<span>خروج</span></button>
+            <button onclick="AryaAdminPreview.open()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-blue-500/15 border border-blue-400/25 text-blue-200 text-[11px] font-bold whitespace-nowrap active:scale-95 transition" type="button" title="پیش‌نمایش زندهٔ سایت در پنل" aria-label="پیش‌نمایش سایت">${typeof aryIcon === 'function' ? aryIcon('eye', 'w-4 h-4') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>'}<span>پیش‌نمایش</span></button>
+            <button onclick="adminLogout()" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-rose-500/12 border border-rose-400/25 text-rose-300 text-[11px] font-bold whitespace-nowrap active:scale-95 transition" type="button" title="خروج از پنل">${typeof aryIcon === 'function' ? aryIcon('logout', 'w-4 h-4') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>'}<span>خروج</span></button>
           </div>
         </div>
       </header>
@@ -820,7 +820,7 @@ function renderAdminPanel() {
         class="admin-sheet-trigger lg:hidden ${sheetState.open ? 'hidden-trigger' : ''}"
         onclick="sheetToggle(true)"
       >
-        <span class="icon">⬆️</span>
+        <span class="icon"></span>
         <span>بخش‌های پنل مدیریت</span>
       </button>
 
@@ -1053,7 +1053,7 @@ function renderAdminShopSettings() {
         </div>
         <div id="ary-origin-map" class="ary-map rounded-xl border border-white/10 mb-2"></div>
         <div class="flex flex-wrap gap-2">
-          <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 transition" onclick="aryAdminShopLocate()">📍 استفاده از موقعیت فعلی من</button>
+          <button type="button" class="text-[11px] px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/70 transition" onclick="aryAdminShopLocate()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 21s7-6.1 7-11a7 7 0 1 0-14 0c0 4.9 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></svg> استفاده از موقعیت فعلی من</button>
           <span class="text-[10px] text-white/40 self-center">برای ثبت مبدأ، روی نقشه کلیک کنید.</span>
         </div>
       </div>
@@ -1241,7 +1241,7 @@ function deleteCategoryWithConfirm(id) {
     type: 'delete-category',
     title: 'حذف دسته',
     message: `آیا از حذف «${cat.title}» مطمئن هستید؟`,
-    icon: '🗑️',
+    icon: 'trash',
     confirmText: 'حذف',
     confirmClass: 'btn-danger',
     onConfirm: () => {
@@ -1269,7 +1269,7 @@ function renderCategoryModal() {
       <div class="glass-strong rounded-3xl p-6 lg:p-8 max-w-lg w-full max-h-[90%] overflow-y-auto animate-scale">
 
         <h2 class="text-xl font-black mb-6">
-          ${m.mode === 'add' ? '➕ دسته‌بندی جدید' : '✏️ ویرایش دسته‌بندی'}
+          ${m.mode === 'add' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> دسته‌بندی جدید' : ' ویرایش دسته‌بندی'}
         </h2>
 
         <div class="space-y-5">
@@ -1313,7 +1313,7 @@ function renderCategoryModal() {
                         ${
                           p.image || p.main_image
                             ? `<img src="${p.image || p.main_image}" class="w-full h-full object-cover">`
-                            : `<div class="w-full h-full flex items-center justify-center text-3xl">📦</div>`
+                            : `<div class="w-full h-full flex items-center justify-center text-3xl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.7rem;height:1.7rem;vertical-align:-0.15em" aria-hidden="true"><path d="m21 8-9-5-9 5v8l9 5 9-5V8Zm-9 5L3 8m18 0-9 5m-6-9 9 5 9-5m-9 13V13"/></svg></div>`
                         }
                       </div>
 
@@ -1409,8 +1409,8 @@ function renderAdminCategoriesEditor() {
               <div class="text-xs text-white/40">${c.id}</div>
             </div>
             <div class="flex gap-2">
-              <button class="p-2 glass rounded-xl" type="button" onclick="openCategoryModal('edit', '${c.id}')">✏️</button>
-              <button class="p-2 glass rounded-xl text-rose-400 hover:bg-rose-500/20" type="button" onclick="deleteCategoryWithConfirm('${c.id}')">🗑️</button>
+              <button class="p-2 glass rounded-xl" type="button" onclick="openCategoryModal('edit', '${c.id}')"></button>
+              <button class="p-2 glass rounded-xl text-rose-400 hover:bg-rose-500/20" type="button" onclick="deleteCategoryWithConfirm('${c.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg></button>
             </div>
           </div>
         `
@@ -1459,7 +1459,7 @@ window.aryAdminApproveAllPending = function (pid) {
   if (pid && pid !== '__all__') pend = pend.filter(r => String(getReviewProductId(r)) === String(pid));
   if (!pend.length) { if (window.toast) toast('نظر درانتظاری برای تأیید نیست', 'warning'); return; }
   state.confirmModal = {
-    icon: '✅',
+    icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.4 2.4 4.6-4.8"/></svg>',
     title: 'تأیید گروهی نظرات',
     message: pend.length + ' نظر در انتظار برای «' + (pid === '__all__' ? 'همه محصولات' : (getReviewProductTitle(pend[0]) || 'این محصول')) + '» تأیید و منتشر می‌شود.',
     confirmText: 'تأیید همه',
@@ -1477,7 +1477,7 @@ window.aryAdminDeleteReview = function (id) {
   const r = (state.reviews || []).find(x => x.id === id);
   if (!r) return;
   state.confirmModal = {
-    icon: '🗑️',
+    icon: 'trash',
     title: 'حذف دائمی نظر',
     message: 'نظر «' + String(r.text || r.comment || '').slice(0, 90) + '…» برای همیشه حذف می‌شود. برای تأیید، عبارت «حذف» را وارد کنید.',
     confirmText: 'حذف دائمی',
@@ -1587,7 +1587,7 @@ function renderAdminReviews() {
         <aside class="lg:w-72 glass rounded-2xl p-4 h-max max-h-[70vh] overflow-y-auto">
           <div class="flex items-center justify-between mb-3">
             <h2 class="text-sm font-bold flex items-center gap-2">
-              ${typeof aryIcon === 'function' ? aryIcon('star', 'w-4 h-4') : '📝'}
+              ${typeof aryIcon === 'function' ? aryIcon('star', 'w-4 h-4') : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h6" stroke-width="1.4"/></svg>'}
               <span>محصولات با نظر</span>
             </h2>
             ${
@@ -1701,14 +1701,14 @@ function renderAdminReviews() {
                               class="px-2 py-1 rounded-lg flex items-center gap-1 ${r._adminReaction === 'like' ? 'bg-emerald-500/20 text-emerald-300' : 'glass text-white/70 hover:bg-white/10'}"
                               onclick="reactToReview('${r.id}', 'like')"
                             >
-                              👍 <span>${r.likes}</span>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M7 10v12H4a1 1 0 0 1-1-1v-10a1 1 0 0 1 1-1h3Zm0 0 4.5-7a2.4 2.4 0 0 1 2 1.4c.3.7.2 1.4-.1 2L12.5 9H19a2 2 0 0 1 2 2.4l-1.4 7A2 2 0 0 1 17.6 20H7"/></svg> <span>${r.likes}</span>
                             </button>
                             <button
                               type="button"
                               class="px-2 py-1 rounded-lg flex items-center gap-1 ${r._adminReaction === 'dislike' ? 'bg-rose-500/20 text-rose-300' : 'glass text-white/70 hover:bg-white/10'}"
                               onclick="reactToReview('${r.id}', 'dislike')"
                             >
-                              👎 <span>${r.dislikes}</span>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M17 14V2h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-3Zm0 0-4.5 7a2.4 2.4 0 0 1-2-1.4c-.3-.7-.2-1.4.1-2L11.5 15H5a2 2 0 0 1-2-2.4l1.4-7A2 2 0 0 1 6.4 4H17"/></svg> <span>${r.dislikes}</span>
                             </button>
                           </div>
 
@@ -1716,10 +1716,10 @@ function renderAdminReviews() {
                             <span class="px-2 py-1 rounded-lg bg-white/5 text-white/70">
                               ${
                                 r.status === 'approved'
-                                  ? '✅ تایید شده'
+                                  ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.4 2.4 4.6-4.8"/></svg> تایید شده'
                                   : r.status === 'rejected'
-                                  ? '⛔ رد شده'
-                                  : '⏳ در انتظار'
+                                  ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg> رد شده'
+                                  : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg> در انتظار'
                               }
                             </span>
                             ${r.status !== 'approved' ? `<button
@@ -1768,8 +1768,8 @@ function renderAdminOrdersSafe() {
   if (OF.month) filtered = filtered.filter(o => String(o.created_at || o.date || '').slice(0, 7) === OF.month);
   const dateChips = (OF.day || OF.month) ? `
         <div class="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/10">
-          ${OF.day ? `<span class="inline-flex items-center gap-2 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-blue-500/15 text-blue-200 border border-blue-400/25">📅 ${_aryFaDay(OF.day)}</span>` : ''}
-          ${OF.month ? `<span class="inline-flex items-center gap-2 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-pink-500/15 text-pink-200 border border-pink-400/25">🗓️ ماه ${OF.month.split('-').reverse().join('/')}</span>` : ''}
+          ${OF.day ? `<span class="inline-flex items-center gap-2 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-blue-500/15 text-blue-200 border border-blue-400/25"> ${_aryFaDay(OF.day)}</span>` : ''}
+          ${OF.month ? `<span class="inline-flex items-center gap-2 text-[11px] font-black px-2.5 py-1.5 rounded-lg bg-pink-500/15 text-pink-200 border border-pink-400/25"> ماه ${OF.month.split('-').reverse().join('/')}</span>` : ''}
           <button type="button" class="text-[10px] font-black px-2.5 py-1.5 rounded-lg glass text-white/60 hover:text-rose-300 hover:bg-rose-500/10 transition" onclick="aryClearDateFilters()">✕ حذف فیلتر تاریخ</button>
         </div>` : '';
 
@@ -1784,10 +1784,10 @@ function renderAdminOrdersSafe() {
         <div class="flex flex-wrap gap-2">
 
           ${renderOrderFilterButton("", "همه")}
-          ${renderOrderFilterButton("pending", "⏳ در انتظار")}
-          ${renderOrderFilterButton("processing", "⚙️ پردازش")}
-          ${renderOrderFilterButton("shipped", "🚚 ارسال شده")}
-          ${renderOrderFilterButton("delivered", "✅ تحویل")}
+          ${renderOrderFilterButton("pending", "در انتظار")}
+          ${renderOrderFilterButton("processing", " پردازش")}
+          ${renderOrderFilterButton("shipped", " ارسال شده")}
+          ${renderOrderFilterButton("delivered", "تحویل")}
 
         </div>
         ${dateChips}
@@ -1822,7 +1822,7 @@ function renderOrderFilterButton(value, label) {
 function renderOrdersEmpty() {
   return `
     <div class="glass rounded-3xl p-16 text-center">
-      <div class="text-7xl mb-6">🛒</div>
+      <div class="text-7xl mb-6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:3.2rem;height:3.2rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/><path d="M3 4h2l2.4 11.1a1 1 0 0 0 1 .9h8.3a1 1 0 0 0 1-.8L21 8H6"/></svg></div>
       <h3 class="text-2xl font-bold">سفارشی یافت نشد</h3>
     </div>
   `;
@@ -1865,10 +1865,10 @@ function renderOrderCard(order) {
             onchange="updateOrder('${order.id}', { status: this.value })"
             class="bg-white/10 border border-white/20 rounded-xl py-2.5 px-4 text-white text-sm focus:outline-none focus:border-blue-500"
           >
-            ${renderOrderStatusOption("pending", "⏳ در انتظار", order.status)}
-            ${renderOrderStatusOption("processing", "⚙️ پردازش", order.status)}
-            ${renderOrderStatusOption("shipped", "🚚 ارسال شده", order.status)}
-            ${renderOrderStatusOption("delivered", "✅ تحویل", order.status)}
+            ${renderOrderStatusOption("pending", "در انتظار", order.status)}
+            ${renderOrderStatusOption("processing", " پردازش", order.status)}
+            ${renderOrderStatusOption("shipped", " ارسال شده", order.status)}
+            ${renderOrderStatusOption("delivered", "تحویل", order.status)}
           </select>
         </div>
       </div>
@@ -2164,7 +2164,7 @@ function renderAdminSupportSafe() {
           ${
             !activeTicket
               ? `<div class="flex-1 flex flex-col items-center justify-center text-center gap-3 py-14">
-                  <span class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-400/25 flex items-center justify-center text-2xl">💬</span>
+                  <span class="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-400/25 flex items-center justify-center text-blue-200"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.7rem;height:1.7rem;vertical-align:-0.15em" aria-hidden="true"><path d="M21 12a8 8 0 0 1-8.5 8 9.7 9.7 0 0 1-3.4-.6L4 20.5l1.2-4.4A7.8 7.8 0 0 1 4 12a8 8 0 0 1 8-8 8 8 0 0 1 9 8Z"/></svg></span>
                   <div class="text-sm font-bold text-white/75">گفتگوی تیکت را همین‌جا ببینید</div>
                   <div class="text-[11px] text-white/45 max-w-[36ch] leading-5">یک تیکت از فهرست کنار (یا زیر، در موبایل) انتخاب کنید تا پاسخ‌ها باز و همین‌جا پاسخ دهید — نیازی به پنجرهٔ جدا نیست.</div>
                 </div>`
@@ -2452,7 +2452,7 @@ function scheduleAutoSave() {
       editorState.lastSavedContent = content;
       editorState.isDirty = false;
       updateDirtyState(false);
-      toast('✅ مقاله به طور خودکار ذخیره شد', 'success', 2000);
+      toast(' مقاله به طور خودکار ذخیره شد', 'success', 2000);
     }
   }, AUTO_SAVE_DELAY);
 }
@@ -2531,7 +2531,7 @@ function openTableModal() {
   state.confirmModal = {
     type: 'insertTable',
     title: 'درج جدول',
-    icon: '📊',
+    icon: 'table',
     message: `
       <div class="space-y-4">
         <div class="grid grid-cols-2 gap-3">
@@ -2666,7 +2666,7 @@ function openLinkModal() {
   state.confirmModal = {
     type: 'insertLink',
     title: 'درج لینک',
-    icon: '🔗',
+    icon: 'link',
     message: `
       <div class="space-y-4">
         <div class="glass rounded-xl p-3 mb-2">
@@ -2860,7 +2860,7 @@ function renderAdminVideoPreviewModal() {
     <div class="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 video-player-overlay" onclick="if(event.target===this) closeAdminVideoPreview()">
       <div class="glass-strong rounded-3xl p-4 max-w-2xl w-full animate-scale">
         <div class="flex justify-between items-center mb-3">
-          <h3 class="text-lg font-bold">🎥 پخش ویدیو</h3>
+          <h3 class="text-lg font-bold"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/></svg> پخش ویدیو</h3>
           <button onclick="closeAdminVideoPreview()" class="text-white/70 hover:text-white text-xl" type="button"><i class="ri-close-line text-xl"></i></button>
         </div>
         <div class="w-full">
@@ -2890,14 +2890,7 @@ function renderAdminVideoPreviewModal() {
     return null;
   }
 
-  const ICON_FALLBACK = {
-    'ri-bold': 'B','ri-italic': '𝑖','ri-underline': 'U̲',
-    'ri-double-quotes-l': '❝','ri-link': '🔗','ri-align-left': '⬅️','ri-align-center': '↔️','ri-align-right': '➡️',
-    'ri-align-justify': '≡','ri-arrow-go-back-line': '↶','ri-arrow-go-forward-line': '↷',
-    'ri-separator': '─','ri-table-line': '📊', 'ri-eye-line': '👁️',
-    'ri-arrow-right-line': '→', 'ri-arrow-left-line': '←', 'ri-font-size': 'Aa',
-    'ri-box-3-line': '📦', 'ri-search-line': '🔍', 'ri-video-line': '🎥'
-  };
+  const ICON_FALLBACK = {}; // r44 — فالبک ایموجی حذف شد؛ آیکون‌ها از ARYA_ICONS
 
   function remixIconsAvailable() {
     try {
@@ -3183,7 +3176,7 @@ function renderAdminProductsEditor() {
         </div>
 
         <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 max-w-full">
-          <button type="button" class="btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()">⬇️ افزودن دسته‌جمعی</button>
+          <button type="button" class="btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" title="افزودن دسته‌جمعی محصولات" onclick="openAryaBulkImport()"> افزودن دسته‌جمعی</button>
           <label class="text-sm text-white/70 hidden md:inline">فیلتر دسته:</label>
           <select onchange="setProductFilterCategory(this.value)" class="input-style">${categoriesOptions}</select>
 
@@ -3239,7 +3232,7 @@ function adminProductsListHtml(filteredProducts) {
             return `
               <div class="glass rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 animate-fade min-w-0 cursor-pointer hover:bg-white/[.06] transition-colors" title="کلیک روی کارت = ویرایش محصول" style="animation-delay:${i * 0.05}s" onclick="openAryaProductEdit('${product.id}')" role="button" tabindex="0" onkeydown="if(event.key==='Enter'){openAryaProductEdit('${product.id}')}">
                 <div class="w-full sm:w-16 h-24 sm:h-16 bg-white/5 rounded-xl flex items-center justify-center overflow-hidden flex-shrink-0">
-                  ${ hasImage ? `<img src="${imgSrc}" alt="${escapeHtml(product.title)}" class="w-full h-full object-cover">` : `<span class="text-3xl">📦</span>` }
+                  ${ hasImage ? `<img src="${imgSrc}" alt="${escapeHtml(product.title)}" class="w-full h-full object-cover">` : `<span class="text-3xl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.7rem;height:1.7rem;vertical-align:-0.15em" aria-hidden="true"><path d="m21 8-9-5-9 5v8l9 5 9-5V8Zm-9 5L3 8m18 0-9 5m-6-9 9 5 9-5m-9 13V13"/></svg></span>` }
                 </div>
 
                 <div class="flex-1 min-w-0">
@@ -3272,7 +3265,7 @@ function adminProductsListHtml(filteredProducts) {
       ` : `
         <div class="glass rounded-3xl p-16 text-center">
           <div class="mb-6 animate-float flex items-center justify-center text-white/25">
-            ${typeof aryIcon === 'function' ? aryIcon('box', 'w-20 h-20') : '<span class="text-7xl">📦</span>'}
+            ${typeof aryIcon === 'function' ? aryIcon('box', 'w-20 h-20') : '<span class="text-7xl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:3.2rem;height:3.2rem;vertical-align:-0.15em" aria-hidden="true"><path d="m21 8-9-5-9 5v8l9 5 9-5V8Zm-9 5L3 8m18 0-9 5m-6-9 9 5 9-5m-9 13V13"/></svg></span>'}
           </div>
           <h3 class="text-2xl font-bold mb-4">محصولی ثبت نشده است</h3>
           <p class="text-white/60 mb-6">اولین محصول خود را اضافه کنید</p>
@@ -3308,7 +3301,7 @@ function renderProductModal() {
     <div class="animate-fade w-full" data-pf-root>
       <div class="glass-strong rounded-3xl p-5 lg:p-8 max-w-4xl mx-auto">
         <div class="flex items-center justify-between gap-3 mb-6">
-          <h2 class="text-xl font-black">${isEdit ? '✏️ ویرایش محصول' : '➕ محصول جدید'}</h2>
+          <h2 class="text-xl font-black">${isEdit ? ' ویرایش محصول' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.15rem;height:1.15rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> محصول جدید'}</h2>
           <button type="button" class="btn-ghost px-4 py-2 rounded-xl text-xs font-bold inline-flex items-center gap-1.5" onclick="state.editProduct=null; state.productDraft=null; render()">↩ بازگشت به لیست محصولات</button>
         </div>
         <form onsubmit="event.preventDefault(); submitProductForm(this);">
@@ -3363,7 +3356,7 @@ function renderProductModal() {
                   <div class="flex gap-2">
                     <button type="button" class="btn-ghost px-4 py-2 rounded-xl text-sm" onclick="event.stopPropagation(); state.productDraft.mainImage=''; renderProductModalOnly();">حذف</button>
                     <button type="button" class="btn-primary px-4 py-2 rounded-xl text-sm" onclick="event.stopPropagation(); document.getElementById('main-image-input').click()">تغییر تصویر</button>
-                  </div>` : `<div class="text-4xl">📷</div><p class="text-sm text-white/70 text-center">برای انتخاب تصویر کلیک کنید</p>` }
+                  </div>` : `<div class="text-4xl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:2.3rem;height:2.3rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.4"/></svg></div><p class="text-sm text-white/70 text-center">برای انتخاب تصویر کلیک کنید</p>` }
                 <input id="main-image-input" type="file" accept="image/*" class="hidden" onchange="handleMainImageFiles(this.files)">
               </div>
             </div>
@@ -3381,7 +3374,7 @@ function renderProductModal() {
               </div>
 
               <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-blue-400 transition" onclick="document.getElementById('gallery-image-input').click()">
-                <div class="text-3xl">🖼️</div>
+                <div class="text-3xl"></div>
                 <p class="text-sm text-white/70 text-center">برای افزودن تصاویر کلیک کنید</p>
                 <input id="gallery-image-input" type="file" accept="image/*" multiple class="hidden" onchange="handleGalleryFiles(this.files)">
               </div>
@@ -3389,7 +3382,7 @@ function renderProductModal() {
 
             <div>
               <label class="block text-sm text-white/70 mb-2">مقالهٔ خودِ محصول <span class="text-[10px] text-white/40 font-normal">(فقط در صفحهٔ همین محصول — مستقل از تب بلاگ)</span></label>
-              <button type="button" onclick="openArticleEditor()" class="btn-primary w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2">${window.aryWpIco ? aryWpIco('edit-line') : '<span>✍️</span>'}<span>${d.article ? 'ویرایش مقالهٔ محصول' : 'نوشتن مقالهٔ محصول'}</span></button>
+              <button type="button" onclick="openArticleEditor()" class="btn-primary w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2">${window.aryWpIco ? aryWpIco('edit-line') : '<span></span>'}<span>${d.article ? 'ویرایش مقالهٔ محصول' : 'نوشتن مقالهٔ محصول'}</span></button>
               ${ d.article ? `<p class="text-xs text-emerald-400 mt-2 truncate">مقاله ثبت شده ✔</p>` : `<p class="text-xs text-white/40 mt-2">مقاله‌ای ثبت نشده.</p>` }
             </div>
 
@@ -3415,7 +3408,7 @@ function renderProductModal() {
               </div>
 
               <div class="glass rounded-2xl p-4 mt-3 flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/20 hover:border-blue-400 transition" onclick="document.getElementById('video-upload-input').click()">
-                <div class="text-3xl">🎥</div>
+                <div class="text-3xl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.7rem;height:1.7rem;vertical-align:-0.15em" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="m22 8-6 4 6 4V8Z"/></svg></div>
                 <p class="text-sm text-white/70 text-center">برای افزودن ویدیو کلیک کنید</p>
                 <input id="video-upload-input" type="file" accept="video/*" multiple class="hidden" onchange="handleVideoFilesUpload(this.files)">
               </div>
@@ -3424,9 +3417,9 @@ function renderProductModal() {
           </div>
 
           <div class="flex gap-4 mt-8">
-            ${ isEdit ? `<button type="button" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center gap-2" onclick="confirmDeleteProductFromModal('${product.id}', '${escapeJs(product.title)}')">🗑️<span>حذف محصول</span></button>` : '' }
+            ${ isEdit ? `<button type="button" class="flex-1 btn-danger py-4 rounded-xl font-semibold flex items-center justify-center gap-2" onclick="confirmDeleteProductFromModal('${product.id}', '${escapeJs(product.title)}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg><span>حذف محصول</span></button>` : '' }
             <button type="button" onclick="clearProductDraft()" class="flex-1 btn-ghost py-4 rounded-xl font-semibold">انصراف</button>
-            <button type="submit" class="flex-1 btn-primary py-4 rounded-xl font-semibold" ${state.loading ? 'disabled' : ''}>${state.loading ? '⏳' : isEdit ? 'بروزرسانی' : 'ذخیره'}</button>
+            <button type="submit" class="flex-1 btn-primary py-4 rounded-xl font-semibold" ${state.loading ? 'disabled' : ''}>${state.loading ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg>' : isEdit ? 'بروزرسانی' : 'ذخیره'}</button>
           </div>
         </form>
       </div>
@@ -3440,7 +3433,7 @@ function confirmDeleteProduct(id, title) {
     type: 'delete-product', 
     title: 'حذف محصول', 
     message: `آیا از حذف «${title}» مطمئن هستید؟`, 
-    icon: '🗑️',
+    icon: 'trash',
     confirmText: 'حذف', 
     confirmClass: 'btn-danger',
     onConfirm: () => { 
@@ -3465,7 +3458,7 @@ function confirmDeleteProductFromModal(id, title) {
     type: 'delete-product', 
     title: 'حذف محصول', 
     message: `آیا از حذف «${title}» مطمئن هستید؟`, 
-    icon: '🗑️',
+    icon: 'trash',
     confirmText: 'حذف', 
     confirmClass: 'btn-danger',
     onConfirm: () => { 
@@ -3505,11 +3498,11 @@ function submitProductForm(formEl) {
   };
   if (state.editProduct && state.editProduct.id) {
     const updated = updateProduct(state.editProduct.id, payload);
-    if (updated) toast('تغییرات محصول ذخیره شد ✨', 'success');
+    if (updated) toast('تغییرات محصول ذخیره شد ', 'success');
     state.editProduct = null; state.productDraft = null; render(); return;
   }
   const created = createProduct(payload);
-  if (created) toast('محصول ذخیره شد ✅', 'success');
+  if (created) toast('محصول ذخیره شد ', 'success');
   state.editProduct = null; state.productDraft = null; render();
 }
 function clearProductDraft() { 
@@ -3621,7 +3614,7 @@ function saveSeoSettings() {
     state.productDraft.redirect_old_url = editorState.seo.redirect_old_url;
     state.productDraft.schema_json = editorState.seo.schema_json;
     
-    toast('✅ تنظیمات سئو ذخیره شد', 'success');
+    toast(' تنظیمات سئو ذخیره شد', 'success');
   }
 }
 
@@ -3859,7 +3852,7 @@ function saveArticleOnly() {
   editorState.isDirty = false;
   updateDirtyState(false);
   
-  toast('✅ مقاله ذخیره شد', 'success'); 
+  toast(' مقاله ذخیره شد', 'success'); 
   render();
 }
 
@@ -3943,7 +3936,7 @@ function renderArticleEditor() {
             <span id="article-dirty-indicator" class="${isDirty ? 'text-amber-400' : 'text-emerald-400'} text-xs mr-2 whitespace-nowrap">
               ${isDirty ? '● ویرایش نشده' : '✓ ذخیره شده'}
             </span>
-            ${previewMode ? '<span class="preview-mode-active">🔍 حالت پیش‌نمایش</span>' : ''}
+            ${previewMode ? '<span class="preview-mode-active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20.5 20.5-4-4"/></svg> حالت پیش‌نمایش</span>' : ''}
           </div>
           <div class="flex gap-2 flex-wrap">
             <button class="btn-ghost px-3 py-2 rounded-lg text-sm flex items-center gap-1" type="button" onclick="undo()" title="بازگردانی">
@@ -4214,26 +4207,26 @@ function renderAdminDatabasePage() {
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
         <button type="button" onclick="downloadDbSQL()" class="glass rounded-2xl p-5 hover:bg-white/10 transition-colors text-center">
-          <div class="text-2xl mb-2">🗃️</div>
+          <div class="text-2xl mb-2"></div>
           <div class="font-bold">دانلود SQL</div>
           <div class="text-xs text-white/50 mt-1">قابل Import در phpMyAdmin</div>
         </button>
         <button type="button" onclick="downloadDbJSON()" class="glass rounded-2xl p-5 hover:bg-white/10 transition-colors text-center">
-          <div class="text-2xl mb-2">📋</div>
+          <div class="text-2xl mb-2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.4rem;height:1.4rem;vertical-align:-0.15em" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a2 2 0 0 1 6 0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1"/></svg></div>
           <div class="font-bold">دانلود JSON</div>
           <div class="text-xs text-white/50 mt-1">فرمت استاندارد</div>
         </button>
       </div>
 
       <div class="glass rounded-2xl p-5 mb-4">
-        <div class="font-bold mb-3 flex items-center gap-2"><span>📊</span><span>آمار جداول</span></div>
+        <div class="font-bold mb-3 flex items-center gap-2"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/></svg></span><span>آمار جداول</span></div>
         <div id="db-stats-container" class="space-y-2">
           <div class="text-white/50 text-xs animate-pulse">در حال بارگذاری…</div>
         </div>
       </div>
 
       <div class="glass rounded-2xl p-5 mb-4" style="background:rgba(59,130,246,.07);border-color:rgba(59,130,246,.25)">
-        <div class="font-bold mb-2 flex items-center gap-2"><span>🔗</span><span>وضعیت سرور و دیتابیس</span></div>
+        <div class="font-bold mb-2 flex items-center gap-2"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l2.5-2.5a5 5 0 0 0-7-7L11.5 6.5"/><path d="M14 11a5 5 0 0 0-7.5-.5L4 13a5 5 0 0 0 7 7l2.5-2.5"/></svg></span><span>وضعیت سرور و دیتابیس</span></div>
         <div id="sys-status-box" class="text-xs text-white/60">در حال دریافت…</div>
         <p class="text-[11px] text-white/40 mt-2 leading-relaxed">
           اتصال از طریق ویزارد نصب صفحه اصلی انجام می‌شود (MySQL/MariaDB، PostgreSQL، SQLite، SQL Server — و راهنمای سریع XAMPP/phpMyAdmin)
@@ -4243,7 +4236,7 @@ function renderAdminDatabasePage() {
       </div>
 
       <div class="glass rounded-2xl p-5">
-        <div class="font-bold mb-2 text-emerald-300 flex items-center gap-2"><span>📥</span><span>راهنمای بازیابی در phpMyAdmin</span></div>
+        <div class="font-bold mb-2 text-emerald-300 flex items-center gap-2"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span><span>راهنمای بازیابی در phpMyAdmin</span></div>
         <ol class="text-xs text-white/60 space-y-1.5 list-decimal list-inside">
           <li>فایل SQL را از همین صفحه دانلود کنید</li>
           <li>وارد phpMyAdmin هاست شوید</li>
@@ -4268,7 +4261,7 @@ window.aryAdminDbLoadPanels = async function () {
           const d = j.data;
           const ext = Object.entries(d.extensions || {}).map(([k, v]) => `<span class="${v ? 'text-emerald-400' : 'text-rose-400'}">${escapeHtml(k)}:${v ? '✓' : '✗'}</span>`).join(' · ');
           box.innerHTML = `موتور فعال: <b class="text-white/85">${escapeHtml(String(d.label || d.driver || '—'))}</b> · نسخه: ${escapeHtml(String(d.version || '—'))}${ext ? '<br>' + ext : ''}`
-            + (d.demo_mode ? '<br><span class="text-amber-300">⚠️ DEMO_MODE روشن است — کدهای OTP در پاسخ API برگردانده می‌شوند.</span>' : '');
+            + (d.demo_mode ? '<br><span class="text-amber-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg> DEMO_MODE روشن است — کدهای OTP در پاسخ API برگردانده می‌شوند.</span>' : '');
         } else box.textContent = 'دریافت وضعیت ناموفق بود.';
       } catch (e) { box.textContent = 'دریافت وضعیت ناموفق بود.'; }
     }
@@ -4279,11 +4272,11 @@ window.aryAdminDbLoadPanels = async function () {
     if (window.AryaDB && AryaDB.isReady && AryaDB.isReady()) {
       await AryaDB.syncState();
       const stats = await AryaDB.getStats();
-      const icons = { products: '📦', orders: '🛒', users: '👥', categories: '🗂️', tickets: '💬', reviews: '⭐', admins: '⚙️', blog: '📝', settings: '🧭' };
+      const icons = { products: 'box', orders: 'cart', users: 'users', categories: 'archive', tickets: 'chat', reviews: 'star', admins: 'settings', blog: 'filetext', settings: 'compass' };
       const labels = { products: 'محصولات', orders: 'سفارشات', users: 'کاربران', categories: 'دسته‌بندی‌ها', tickets: 'تیکت‌ها', reviews: 'نظرات', admins: 'مدیران', blog: 'مقالات بلاگ', settings: 'تنظیمات' };
       container.innerHTML = Object.entries(stats).filter(([k]) => k !== 'settings').map(([k, v]) => `
         <div class="flex items-center justify-between text-xs">
-          <span class="flex items-center gap-2"><span>${icons[k] || '•'}</span><span>${labels[k] || k}</span></span>
+          <span class="flex items-center gap-2"><span>${aryIcon(icons[k] || 'info', 'w-4 h-4')}</span><span>${labels[k] || k}</span></span>
           <span class="font-bold text-blue-400">${v} رکورد</span>
         </div>`).join('') || '<div class="text-xs text-white/45">موردی یافت نشد.</div>';
     } else {
@@ -4357,8 +4350,8 @@ function renderAdminBlogTab() {
                   <div class="text-[11px] text-white/40 mt-0.5">${p.created_at ? fmt(p.created_at) : ''}${p.author ? ' • ' + escapeHtml(p.author) : ''} • ${aryBlogParseMedia(p.media).length} رسانه</div>
                 </div>
                 <div class="flex items-center gap-2">
-                  <button type="button" class="p-2 glass rounded-xl text-sm" title="ویرایش" onclick="aryAdminBlogEdit('${escapeHtml(String(p.id))}')">✏️</button>
-                  <button type="button" class="p-2 glass rounded-xl text-rose-400 hover:bg-rose-500/20 text-sm" title="حذف" onclick="aryAdminBlogDelete('${escapeHtml(String(p.id))}')">🗑️</button>
+                  <button type="button" class="p-2 glass rounded-xl text-sm" title="ویرایش" onclick="aryAdminBlogEdit('${escapeHtml(String(p.id))}')"></button>
+                  <button type="button" class="p-2 glass rounded-xl text-rose-400 hover:bg-rose-500/20 text-sm" title="حذف" onclick="aryAdminBlogDelete('${escapeHtml(String(p.id))}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m3 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7m4 4v6m4-6v6"/></svg></button>
                 </div>
               </div>`).join('')}
           </div>`}
@@ -4404,7 +4397,7 @@ function renderAdminBlogEditor() {
         </div>
         <div class="ary-wp-tools" role="toolbar" aria-label="قالب‌بندی">
           <select class="ary-wp-blocksel" title="نوع بلوک" onchange="aryBlogWpBlock(this)">
-            <option value="">¶ پاراگراف</option><option value="h2">H2 تیتر بخش</option><option value="h3">H3 تیتر فرعی</option><option value="h4">H4 ریزتیتر</option><option value="blockquote">❝ نقل‌قول</option><option value="pre">⌨ کد</option>
+            <option value="">¶ پاراگراف</option><option value="h2">H2 تیتر بخش</option><option value="h3">H3 تیتر فرعی</option><option value="h4">H4 ریزتیتر</option><option value="blockquote"> نقل‌قول</option><option value="pre"> کد</option>
           </select>
           ${sep}
           ${tb("AryaWp.exec('bold')", 'پررنگ', 'bold')}${tb("AryaWp.exec('italic')", 'کج', 'italic')}${tb("AryaWp.exec('underline')", 'زیرخط', 'underline')}${tb("AryaWp.exec('strikeThrough')", 'خط‌خورده', 'strikethrough')}
@@ -4433,7 +4426,7 @@ function renderAdminBlogEditor() {
         </article>
         <div class="ary-wp-under">
           <details class="glass-strong rounded-2xl p-4 lg:p-5">
-            <summary class="cursor-pointer text-sm font-bold text-white/80 select-none">⚙️ تنظیمات مقاله — وضعیت، نویسنده، چکیده، تصویر جلد، رسانه‌ها</summary>
+            <summary class="cursor-pointer text-sm font-bold text-white/80 select-none"> تنظیمات مقاله — وضعیت، نویسنده، چکیده، تصویر جلد، رسانه‌ها</summary>
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
               <div>
                 <label class="block text-xs text-white/60 mb-1.5 font-bold">وضعیت</label>
@@ -4456,7 +4449,7 @@ function renderAdminBlogEditor() {
               <div>
                 <label class="block text-xs text-white/60 mb-1.5 font-bold">چکیده (نمایش در کارت فهرست)</label>
                 <textarea id="blog-excerpt" class="input-style w-full resize-none" rows="2" maxlength="600" oninput="state.blogEdit.excerpt=this.value">${escAttr(m.excerpt || '')}</textarea>
-                <button type="button" class="text-[10px] font-bold mt-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryBlogExcerpt()">✨ چکیده خودکار از متن</button>
+                <button type="button" class="text-[10px] font-bold mt-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryBlogExcerpt()"> چکیده خودکار از متن</button>
               </div>
             </div>
             <div class="mt-4">
@@ -4472,7 +4465,7 @@ function renderAdminBlogEditor() {
             </div>
           </details>
           <div class="flex flex-wrap items-center gap-3 pt-1 pb-2">
-            <button type="button" class="btn-primary px-6 py-3 rounded-xl font-bold text-sm" onclick="aryBlogWpSave()">💾 ذخیرهٔ مقاله</button>
+            <button type="button" class="btn-primary px-6 py-3 rounded-xl font-bold text-sm" onclick="aryBlogWpSave()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M5 4h11l3 3v13H5Z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/></svg> ذخیرهٔ مقاله</button>
             <button type="button" class="btn-ghost px-4 py-3 rounded-xl text-sm whitespace-nowrap" onclick="aryBlogWpCancel()">انصراف</button>
             <span class="text-[11px] text-white/40 mr-auto">${m.id ? 'ویرایش «' + escAttr((m.title || '').slice(0, 40)) + '»' : 'مقالهٔ تازه'} — Ctrl+S ذخیره می‌کند</span>
           </div>
@@ -4642,7 +4635,7 @@ window.aryAdminBlogDelete = function (id) {
   state.confirmModal = {
     type: 'delete-blog', title: 'حذف مقاله',
     message: `آیا از حذف «${escapeHtml(p.title || '')}» مطمئن هستید؟`,
-    icon: '🗑️', confirmText: 'حذف', confirmClass: 'btn-danger',
+    icon: 'trash', confirmText: 'حذف', confirmClass: 'btn-danger',
     onConfirm: async () => {
       state.blog = (state.blog || []).filter(x => String(x.id) !== String(id));
       try { if (window.AryaDB && AryaDB.isReady && AryaDB.isReady()) await AryaDB.remove('blog', id); } catch (e) {}
@@ -4673,7 +4666,7 @@ async function downloadDbSQL() {
     document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('✅ فایل SQL دانلود شد');
+    toast(' فایل SQL دانلود شد');
   } catch(e) {
     toast('خطا: ' + e.message, 'error');
   }
@@ -4704,7 +4697,7 @@ async function downloadDbJSON() {
     document.body.appendChild(a); a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast('✅ فایل JSON دانلود شد');
+    toast(' فایل JSON دانلود شد');
   } catch(e) {
     toast('خطا: ' + e.message, 'error');
   }
@@ -4850,7 +4843,7 @@ function renderAdminUsersManagement() {
     <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
       <h1 class="text-2xl font-black">کاربران مدیر</h1>
       <div class="flex gap-2">
-        <button onclick="loadAdminUsersList()" type="button" class="btn-ghost px-4 py-2.5 rounded-xl text-sm">🔄 بروزرسانی</button>
+        <button onclick="loadAdminUsersList()" type="button" class="btn-ghost px-4 py-2.5 rounded-xl text-sm"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg> بروزرسانی</button>
         <button onclick="state.adminUserFormOpen = !state.adminUserFormOpen; render()" type="button" class="btn-primary px-5 py-2.5 rounded-xl text-sm font-bold">
           ${state.adminUserFormOpen ? 'بستن فرم' : '+ حساب مدیر جدید'}
         </button>
@@ -4858,7 +4851,7 @@ function renderAdminUsersManagement() {
     </div>
 
     <div class="glass rounded-xl p-3 mb-5 text-xs text-white/50">
-      ℹ️ حساب‌های مدیر فقط از همین بخش (یا مستقیماً از phpMyAdmin) قابل ایجاد هستند.
+      ℹ حساب‌های مدیر فقط از همین بخش (یا مستقیماً از phpMyAdmin) قابل ایجاد هستند.
       هیچ فرم ثبت‌نام عمومی‌ای در سایت وجود ندارد.
     </div>
 
@@ -4911,8 +4904,8 @@ function renderAdminUsersManagement() {
                 <td class="p-3">${escapeHtml(u.name || '')}</td>
                 <td class="p-3 text-white/60">${u.email || ''}</td>
                 <td class="p-3 text-white/60">${u.phone || '-'}</td>
-                <td class="p-3">${u.role === 'superadmin' ? '👑 مدیر اصلی' : 'مدیر'}</td>
-                <td class="p-3">${Number(u.two_factor_enabled) === 1 ? '✅ فعال' : '—'}</td>
+                <td class="p-3">${u.role === 'superadmin' ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="m2 8 4.5 3.5L12 5l5.5 6.5L22 8l-2 11H4L2 8Z"/></svg> مدیر اصلی' : 'مدیر'}</td>
+                <td class="p-3">${Number(u.two_factor_enabled) === 1 ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.4 2.4 4.6-4.8"/></svg> فعال' : '—'}</td>
                 <td class="p-3">
                   <div class="flex gap-2">
                     <button onclick="openEditAdminUserModal('${u.id}')" type="button" class="btn-ghost px-3 py-1.5 rounded-lg text-xs">ویرایش</button>
@@ -4942,7 +4935,7 @@ async function submitNewAdminUser(event) {
   try {
     const json = await adminApiCall('admin_create', payload);
     if (!json.ok) { toast(json.msg || 'ایجاد حساب ناموفق بود', 'error'); return; }
-    toast('✅ حساب مدیر جدید ایجاد شد');
+    toast(' حساب مدیر جدید ایجاد شد');
     state.adminUserFormOpen = false;
     loadAdminUsersList();
   } catch (e) {
@@ -4956,7 +4949,7 @@ function openEditAdminUserModal(id) {
 
   state.confirmModal = {
     title: 'ویرایش حساب مدیر',
-    icon: '✏️',
+    icon: '',
     message: `
       <div class="space-y-3 text-right text-sm">
         <div>
@@ -5000,7 +4993,7 @@ async function saveEditedAdminUser(id) {
     const json = await adminApiCall('admin_update', payload);
     state.confirmModal = null;
     if (!json.ok) { toast(json.msg || 'ویرایش ناموفق بود', 'error'); render(); return; }
-    toast('✅ حساب بروزرسانی شد');
+    toast(' حساب بروزرسانی شد');
     loadAdminUsersList();
   } catch (e) {
     state.confirmModal = null;
@@ -5012,7 +5005,7 @@ async function saveEditedAdminUser(id) {
 function deleteAdminUserConfirm(id, name) {
   state.confirmModal = {
     title: 'حذف حساب مدیر',
-    icon: '🗑️',
+    icon: 'trash',
     message: `آیا از حذف حساب «${escapeHtml(name)}» مطمئن هستید؟`,
     confirmText: 'حذف',
     confirmClass: 'btn-danger',
@@ -5240,7 +5233,7 @@ function closeAryaCouponModal() { state.adminCouponModal = null; render(); }
 function toggleAryaCoupon(id) { const c = (state.coupons || []).find(x => String(x.id) === String(id)); if (!c) return; c.active = c.active === false; if (window.AppState) AppState.set({ coupons: state.coupons }); render(); }
 function deleteAryaCoupon(id) {
   const c = (state.coupons || []).find(x => String(x.id) === String(id)); if (!c) return;
-  state.confirmModal = { title: 'حذف کد تخفیف', message: 'کد «' + c.code + '» حذف شود؟', icon: '🏷️', confirmText: 'حذف', confirmClass: 'btn-danger', onConfirm: () => { state.coupons = (state.coupons || []).filter(x => String(x.id) !== String(id)); state.confirmModal = null; if (window.AppState) AppState.set({ coupons: state.coupons }); if (window.toast) toast('کد تخفیف حذف شد', 'info'); render(); } };
+  state.confirmModal = { title: 'حذف کد تخفیف', message: 'کد «' + c.code + '» حذف شود؟', icon: 'tag', confirmText: 'حذف', confirmClass: 'btn-danger', onConfirm: () => { state.coupons = (state.coupons || []).filter(x => String(x.id) !== String(id)); state.confirmModal = null; if (window.AppState) AppState.set({ coupons: state.coupons }); if (window.toast) toast('کد تخفیف حذف شد', 'info'); render(); } };
   render();
 }
 function saveAryaCoupon() {
@@ -5269,7 +5262,7 @@ function renderAdminCouponModal() {
   return `
     <div class="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay" onclick="if(event.target===this)closeAryaCouponModal()">
       <div class="glass-strong rounded-3xl p-6 lg:p-7 max-w-xl w-full max-h-[92%] overflow-y-auto animate-scale">
-        <h2 class="text-xl font-black mb-5">${m.mode === 'add' ? '🏷️ کد تخفیف جدید' : 'ویرایش کد تخفیف'}</h2>
+        <h2 class="text-xl font-black mb-5">${m.mode === 'add' ? ' کد تخفیف جدید' : 'ویرایش کد تخفیف'}</h2>
         <div class="grid gap-4">
           <div class="grid grid-cols-2 gap-4">
             <div><label class="block text-xs text-white/60 mb-1.5 font-bold">کد</label><input class="input-style w-full font-mono uppercase tracking-wider" dir="ltr" value="${escapeHtml(m.code)}" maxlength="20" oninput="state.adminCouponModal.code=this.value"></div>
@@ -5363,7 +5356,7 @@ function renderAdminBulkImport() {
   return `
     <div class="fixed inset-0 z-[200] flex items-center justify-center p-4 modal-overlay" onclick="if(event.target===this)closeAryaBulkImport()">
       <div class="glass-strong rounded-3xl p-6 max-w-2xl w-full max-h-[92%] overflow-y-auto animate-scale">
-        <h2 class="text-xl font-black mb-1">➕ افزودن دسته‌جمعی محصولات</h2>
+        <h2 class="text-xl font-black mb-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.15rem;height:1.15rem;vertical-align:-0.15em" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg> افزودن دسته‌جمعی محصولات</h2>
         <p class="text-[11px] text-white/50 mb-4">برای حجم بالا (مثلاً ۱۰۰+ محصول) به‌جای ثبت تک‌تک — JSON یا CSV بچسبانید، آدرس API بدهید، یا تولید خودکار بزنید.</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">${[['paste','چسباندن JSON/CSV'],['url','از آدرس (URL)'],['gen','تولید خودکار']].map(t => `<button type="button" class="py-2 rounded-xl text-[11px] font-black ${b.tab === t[0] ? 'bg-blue-600 text-white' : 'glass text-white/60'}" onclick="state.adminBulk.tab='${t[0]}'; state.adminBulk.preview=null; render()">${t[1]}</button>`).join('')}</div>
         ${b.tab === 'paste' ? `<textarea class="input-style w-full font-mono text-[11px] leading-5" rows="7" dir="auto" placeholder='[{"title":"هدفون","price":850000,"original_price":990000,"stock":12}]\nیا CSV: نام، قیمت، قیمت‌قبلی، موجودی، دسته'  oninput="state.adminBulk.text=this.value">${escapeHtml(b.text || '')}</textarea>` : ''}
@@ -5392,7 +5385,7 @@ function aryHomeBlk(i, key, val) { var blocks = aryHome().about_blocks.map(funct
 function aryHomeBlkAdd() { var b = aryHome().about_blocks.slice(); b.push({ id: 'about' + (b.length + 1), title: 'بلوک جدید', text: '', image: '', stat_n: '', stat_l: '' }); aryAboutSave(b); }
 function aryHomeBlkDel(i) { var b = aryHome().about_blocks.slice(); b.splice(i, 1); if (!b.length) b = (window.ARYA_ABOUT_DEFAULTS || []).map(function (x) { return Object.assign({}, x); }); aryAboutSave(b); }
 function aryHomeReset() {
-  state.confirmModal = { title: 'بازگشت هوم به حالت اولیه', message: 'همهٔ تغییرات محتوای صفحهٔ اصلی (هیرو/شگفت‌انگیز/معرفی) حذف و پیش‌فرض‌ها بازنشانی شوند؟', icon: '♻️', confirmText: 'بازنشانی', confirmClass: 'btn-danger', onConfirm: function () { state.home = null; state.aboutBlocks = null; state.confirmModal = null; try { if (window.AppState) AppState.set({ home: null, aboutBlocks: null }); } catch (e) {} if (window.toast) toast('محتوای هوم به پیش‌فرض برگشت', 'info'); render(); } };
+  state.confirmModal = { title: 'بازگشت هوم به حالت اولیه', message: 'همهٔ تغییرات محتوای صفحهٔ اصلی (هیرو/شگفت‌انگیز/معرفی) حذف و پیش‌فرض‌ها بازنشانی شوند؟', icon: '', confirmText: 'بازنشانی', confirmClass: 'btn-danger', onConfirm: function () { state.home = null; state.aboutBlocks = null; state.confirmModal = null; try { if (window.AppState) AppState.set({ home: null, aboutBlocks: null }); } catch (e) {} if (window.toast) toast('محتوای هوم به پیش‌فرض برگشت', 'info'); render(); } };
   render();
 }
 function renderAdminHomeEditor() {
@@ -5405,7 +5398,7 @@ function renderAdminHomeEditor() {
       <div class="flex flex-wrap items-center gap-3 mb-6">
         <h1 class="text-2xl lg:text-3xl font-black">ویرایش صفحهٔ اصلی</h1>
         <span class="text-[10px] font-black px-2.5 py-1 rounded-lg bg-emerald-500/15 text-emerald-300">ذخیرهٔ خودکار</span>
-        <button type="button" class="mr-auto btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" onclick="aryHomeReset()">♻️ بازنشانی</button>
+        <button type="button" class="mr-auto btn-ghost !py-2 px-3.5 rounded-xl text-[11px] font-bold inline-flex items-center gap-1.5" onclick="aryHomeReset()"> بازنشانی</button>
       </div>
 
       <section class="glass rounded-2xl p-5 mb-5">

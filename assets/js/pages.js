@@ -502,8 +502,8 @@ window.AryaSupportChat = (function () {
     const msgs = [];
     ts.slice(0, 3).forEach(t => {
       let smsNote = '';
-      if (t.sms_last && t.sms_last.at) smsNote = ' · 📱 پاسخ به ' + (window.AryaSMS ? AryaSMS.mask(t.sms_last.to || t.user_phone) : 'موبایل شما') + ' ' + (t.sms_last.via === 'queued' ? 'در صف ارسال پیامک است' : 'پیامک شد');
-      else if (t.user_phone && !state.user) smsNote = ' · 📱 پاسخ نهایی با پیامک به ' + (window.AryaSMS ? AryaSMS.mask(t.user_phone) : 'موبایل شما') + ' اطلاع داده می‌شود';
+      if (t.sms_last && t.sms_last.at) smsNote = ' · پاسخ به ' + (window.AryaSMS ? AryaSMS.mask(t.sms_last.to || t.user_phone) : 'موبایل شما') + ' ' + (t.sms_last.via === 'queued' ? 'در صف ارسال پیامک است' : 'پیامک شد');
+      else if (t.user_phone && !state.user) smsNote = ' · پاسخ نهایی با پیامک به ' + (window.AryaSMS ? AryaSMS.mask(t.user_phone) : 'موبایل شما') + ' اطلاع داده می‌شود';
       msgs.push({ sys: true, text: 'تیکت «' + (t.subject || 'پشتیبانی') + '» — وضعیت: ' + (t.status === 'open' ? 'باز' : (t.status === 'answered' ? 'پاسخ داده شده' : t.status)) + smsNote });
       msgsOf(t).forEach(m => msgs.push(m));
     });
@@ -1797,8 +1797,8 @@ function renderShopPage() {
               <span class="af-label">مرتب‌سازی</span>
               <div class="af-sorts">
                 ${[
-                  { value: 'newest', label: 'جدیدترین', ic: '🕐' },
-                  { value: 'popular', label: 'پرفروش', ic: '🔥' },
+                  { value: 'newest', label: 'جدیدترین', ic: '<span class="inline-flex "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/></svg></span>' },
+                  { value: 'popular', label: 'پرفروش', ic: '<span class="inline-flex text-orange-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;vertical-align:-2px"><path d="M12 22c4 0 7-2.7 7-6.5 0-4.5-4-6-4.5-10.5C11 6 9.5 8.5 9.5 11c0-1-.8-2.2-1.8-3C6.4 9.7 5 12 5 15.5 5 19.3 8 22 12 22Z"/></svg></span>' },
                   { value: 'price-low', label: 'ارزان‌ترین', ic: '↓' },
                   { value: 'price-high', label: 'گران‌ترین', ic: '↑' }
                 ].map(opt => `
@@ -2573,7 +2573,7 @@ function renderThumbnail(img, i, idx, product, galleryLength) {
         alt="${product.title} - تصویر ${i + 1}"
         class="w-full h-full object-cover"
         loading="lazy"
-        onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'w-full h-full flex items-center justify-center text-xl\\'>📦</div>';"
+        onerror="this.onerror=null; this.parentElement.innerHTML=(window.ARYA_BOX_SVG || '');"
       >
     </button>
   `;
@@ -2621,7 +2621,7 @@ function renderProductGalleryLightbox(product, gallery) {
               data-gallery-main
               class="max-h-full max-w-full object-contain transition-opacity duration-200"
               style="opacity: 1;"
-              onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-6xl text-white/60\\'>📦</div>';"
+              onerror="this.onerror=null; this.parentElement.innerHTML=(window.ARYA_BOX_SVG || '');"
             >
           ` : `
             <div class="flex items-center justify-center text-white/30">${aryIcon('box', 'w-16 h-16')}</div>
@@ -3075,9 +3075,9 @@ function renderProductPage() {
             ${product.description || ''}
           </p>
           <div class="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
-            ${[['🚚','ارسال سریع','بر اساس گزینهٔ انتخابی'], ['↩️','۷ روز مرجوعی','طبق سیاست فروشگاه'], ['🛡️','ضمانت اصالت','مستقیم از فروشگاه آریا']].map(t => `
+            ${[['truck','ارسال سریع','بر اساس گزینهٔ انتخابی'], ['return','۷ روز مرجوعی','طبق سیاست فروشگاه'], ['shield','ضمانت اصالت','مستقیم از فروشگاه آریا']].map(t => `
               <div class="glass rounded-2xl px-1.5 sm:px-2 py-3 min-w-0 overflow-hidden">
-                <div class="text-lg mb-1">${t[0]}</div>
+                <div class="text-lg mb-1 flex items-center justify-center gap-1.5">${aryIcon(t[0], 'w-5 h-5')}</div>
                 <div class="text-[11px] font-bold text-white/80">${t[1]}</div>
                 <div class="text-[10px] text-white/45 mt-0.5 hidden sm:block">${t[2]}</div>
               </div>`).join('')}
@@ -3148,7 +3148,7 @@ function renderProductPage() {
         <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
           <div class="flex items-center gap-3">
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-xl shadow-lg shadow-amber-500/30">
-              ⭐
+              <span class="inline-flex text-amber-200"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.4rem;height:1.4rem;vertical-align:-2px"><path d="m12 2 3.1 6.3 7 1-5 4.9 1.2 6.9-6.3-3.3-6.2 3.3L7 14.2l-5.1-4.9 7-1L12 2Z"/></svg></span>
             </div>
             <div>
               <h2 class="text-2xl font-black">نظرات کاربران</h2>
@@ -3765,7 +3765,7 @@ function renderProductPage() {
             <textarea id="edit-full" class="input-style w-full resize-none" rows="3">${addr.full}</textarea>
             <div class="flex flex-wrap items-center gap-2 mt-1.5">
               <button type="button" class="btn-ghost px-3 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5"
-                onclick="aryAddrMapPick('edit')"><span>🗺️</span><span>انتخاب/ویرایش نقطه روی نقشه</span></button>
+                onclick="aryAddrMapPick('edit')"><span><span class="inline-flex "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;vertical-align:-2px"><path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/></svg></span></span><span>انتخاب/ویرایش نقطه روی نقشه</span></button>
               <span id="edit-geo-note" class="text-[11px] text-emerald-300/80"></span>
             </div>
             <input type="hidden" id="edit-lat" value="${addr.lat ?? ''}"><input type="hidden" id="edit-lng" value="${addr.lng ?? ''}">
@@ -4429,7 +4429,7 @@ function renderProductPage() {
                           <div class="flex items-center gap-2 flex-wrap">
                             <span class="badge ${s.badge} inline-flex items-center gap-1">${s.icon} ${s.label}</span>
                             ${rs ? `<span class="badge ${rs === 'approved' || rs === 'completed' ? 'badge-delivered' : (rs === 'rejected' ? 'badge-canceled' : 'badge-processing')} inline-flex items-center gap-1">${aryIcon('return', 'w-3.5 h-3.5')}${retLabels[rs] || ('مرجوعی: ' + rs)}</span>` : ''}
-                            ${order.delivery_slot ? `<span class="text-[10px] text-sky-200/80 glass rounded-lg px-2 py-1 inline-flex items-center gap-1">🚚 ${aryEsc(String(order.delivery_slot))}</span>` : ''}
+                            ${order.delivery_slot ? `<span class="text-[10px] text-sky-200/80 glass rounded-lg px-2 py-1 inline-flex items-center gap-1"><span class="inline-flex "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.75rem;height:.75rem;vertical-align:-2px"><path d="M10 17V5H2v12m8 0h8m-8 0h-1m9 0h1v-5l-3-4h-4v9M6 8h.01"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg></span> ${aryEsc(String(order.delivery_slot))}</span>` : ''}
                           </div>
                         </div>
                         <div class="flex items-center justify-between gap-3 text-sm">
@@ -4723,7 +4723,7 @@ function renderProductPage() {
                         <input type="radio" name="savedAddress" value="${i}" ${i === 0 ? 'checked' : ''}>
                         <span class="text-sm text-start">
                           ${aryEsc(txt)}
-                          ${hasPt ? `<span class="block text-[10px] text-emerald-300/80 mt-0.5">🧭 روی نقشه انتخاب شده${window.AryaMap && AryaMap.origin() ? ' — فاصله تا مبدأ: ' + (AryaMap.haversineKm(AryaMap.origin(), { lat: Number(a.lat), lng: Number(a.lng) }) ?? '؟') + ' کیلومتر' : ''}</span>` : ''}
+                          ${hasPt ? `<span class="block text-[10px] text-emerald-300/80 mt-0.5 inline-flex items-center gap-1"><span class="inline-flex text-emerald-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.85rem;height:.85rem;vertical-align:-2px"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/></svg></span> روی نقشه انتخاب شده${window.AryaMap && AryaMap.origin() ? ' — فاصله تا مبدأ: ' + (AryaMap.haversineKm(AryaMap.origin(), { lat: Number(a.lat), lng: Number(a.lng) }) ?? '؟') + ' کیلومتر' : ''}</span>` : ''}
                         </span>
                         <button type="button" class="ml-auto btn-ghost text-rose-400 px-2 py-1 rounded-lg"
                           onclick="event.preventDefault(); removeSavedAddress(${i})">حذف</button>
@@ -4778,7 +4778,7 @@ function renderProductPage() {
                     <span class="text-[11px] ${Number(o.extra_cost) > 0 ? 'text-amber-300/90' : 'text-emerald-300/80'}">${Number(o.extra_cost) > 0 ? 'هزینه اضافه: ' + utils.formatPrice(Number(o.extra_cost)) : 'بدون هزینه اضافه'}</span>
                   </label>`).join('')}
               </div>` : `<p class="text-sm text-amber-300/85">مدیر فروشگاه هنوز گزینهٔ زمانی تعریف نکرده است؛ سفارش با زمان‌بندی پیش‌فرض پردازش می‌شود.</p>`}
-              <p class="text-[11px] text-white/40 mt-3">⏱ زمان تحویل، روزهای کاری پس از تأیید پرداخت است. بازهٔ «۳ تا ۵ روزه» یعنی احتمال تحویل در هر روز این بازه.</p>
+              <p class="text-[11px] text-white/40 mt-3 inline-flex items-center gap-1"><span class="inline-flex "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.9rem;height:.9rem;vertical-align:-2px"><circle cx="12" cy="14" r="7"/><path d="M12 11v3l2 2M9 2h6"/></svg></span> <span>زمان تحویل، روزهای کاری پس از تأیید پرداخت است. بازهٔ «۳ تا ۵ روزه» یعنی احتمال تحویل در هر روز این بازه.</p>
             </div>
 
             <!-- Order summary -->
@@ -4812,7 +4812,7 @@ function renderProductPage() {
                 </div>` : CPC && CPC.couponCode && CPC.shipping === 0 ? `
                 <div class="flex justify-between text-sm">
                   <span class="text-white/60">کد تخفیف <b class="font-mono text-emerald-300" dir="ltr">${CPC.couponCode}</b></span>
-                  <span class="text-emerald-400">ارسال رایگان 🎉</span>
+                  <span class="text-emerald-400 inline-flex items-center gap-1"><span class="inline-flex "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem;vertical-align:-2px"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8C10 8 7.5 6.8 7.5 5.2 7.5 3.6 9 3 10 3.6c1.5.9 2 4.4 2 4.4Zm0 0c2 0 4.5-1.2 4.5-2.8C16.5 3.6 15 3 14 3.6c-1.5.9-2 4.4-2 4.4Z"/></svg></span> ارسال رایگان</span>
                 </div>` : ''}
                 <div class="flex justify-between text-sm">
                   <span class="text-white/60">هزینه ارسال</span>
@@ -5118,7 +5118,7 @@ function renderCartPage() {
               <div class="mb-5 -mt-1">
                 ${CP && CP.couponCode ? `
                   <div class="flex items-center justify-between gap-2 text-xs font-black px-3 py-2.5 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    <span class="inline-flex items-center gap-2 font-mono" dir="ltr">🏷️ ${CP.couponCode}${CP.discount > 0 ? ' <span class="font-sans opacity-80">−' + utils.formatPrice(CP.discount) + '</span>' : (CP.shipping === 0 ? ' <span class="font-sans opacity-80">ارسال رایگان</span>' : '')}</span>
+                    <span class="inline-flex items-center gap-2 font-mono" dir="ltr"><span class="inline-flex text-emerald-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.95rem;height:.95rem;vertical-align:-2px"><path d="M12.6 2.6 21 11a2 2 0 0 1 0 2.8l-7.2 7.2a2 2 0 0 1-2.8 0L2.6 12.6A2 2 0 0 1 2 11.2V4a2 2 0 0 1 2-2h7.2a2 2 0 0 1 1.4.6Z"/><circle cx="7" cy="7" r="1.2"/></svg></span> <span>${CP.couponCode}${CP.discount > 0 ? ' <span class="font-sans opacity-80">−' + utils.formatPrice(CP.discount) + '</span>' : (CP.shipping === 0 ? ' <span class="font-sans opacity-80">ارسال رایگان</span>' : '')}</span>
                     <button type="button" class="text-white/50 hover:text-rose-300 transition-colors" onclick="aryClearCoupon()" title="حذف کد">✕</button>
                   </div>` : `
                   <div class="flex items-center gap-2">
@@ -5430,7 +5430,7 @@ function renderProfileSecurityTab(user) {
       <p class="text-[11px] text-white/45 mb-5 leading-5">برای امنیت بیشتر، ابتدا به موبایل یا ایمیل شما <b class="text-white/70">کد یکبارمصرفِ تغییر رمز</b> ارسال می‌شود؛ پس از تأیید کد، فرم تعیین رمز جدید باز می‌شود.</p>
       ${done ? `
         <div class="rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm text-emerald-200 flex items-start gap-2">
-          <span class="mt-0.5">✅</span><span>رمز عبور با موفقیت تغییر کرد. اگر دستگاه دیگری باز است، با رمز قبلی کار نخواهد کرد.</span>
+          <span class="mt-0.5 inline-flex" style="color:#34d399"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:1rem;height:1rem"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.4 2.4 4.6-4.8"/></svg></span><span>رمز عبور با موفقیت تغییر کرد. اگر دستگاه دیگری باز است، با رمز قبلی کار نخواهد کرد.</span>
         </div>` : `
       ${stepOtp ? `
         <form class="space-y-4" onsubmit="event.preventDefault(); aryPwSubmit(this);">
@@ -5464,12 +5464,12 @@ function renderProfileSecurityTab(user) {
         </form>` : `
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button type="button" ${user && user.phone ? '' : 'disabled'} onclick="aryPwSend('sms')" class="glass rounded-2xl p-4 text-right hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed">
-            <div class="text-lg mb-1.5">📱</div>
+            <div class="mb-1.5"><span class="inline-flex"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" style="width:1.35rem;height:1.35rem;color:#93c5fd"><rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18.5h2"/></svg></span></div>
             <div class="font-bold text-sm mb-0.5">ارسال کد به موبایل</div>
             <div class="text-[11px] text-white/45 font-mono" dir="ltr">${aryEsc(phone)}</div>
           </button>
           <button type="button" ${user && user.email ? '' : 'disabled'} onclick="aryPwSend('email')" class="glass rounded-2xl p-4 text-right hover:bg-white/10 transition disabled:opacity-40 disabled:cursor-not-allowed">
-            <div class="text-lg mb-1.5">✉️</div>
+            <div class="mb-1.5"><span class="inline-flex text-sky-300"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.1rem;height:1.1rem;vertical-align:-2px"><rect x="2" y="5" width="20" height="14" rx="2.5"/><path d="m3 6.5 8.1 6a1.5 1.5 0 0 0 1.8 0l8.1-6"/></svg></span></div>
             <div class="font-bold text-sm mb-0.5">ارسال کد به ایمیل</div>
             <div class="text-[11px] text-white/45 font-mono" dir="ltr" style="overflow-wrap:anywhere">${aryEsc(email)}</div>
           </button>

@@ -867,14 +867,14 @@ svg text { font-family: inherit; }
 /* ═══ ۲۹) r40 — هدر موبایل یک‌سایز + وسط‌چین بودن آیکن‌های تک ═══ */
 @media (max-width:1023px) {
   html[data-aria-theme] header .as-hbtn,
-  html[data-aria-theme] header .gpt5-search-btn,
   html[data-aria-theme] header .ary-theme-btn:not(.lg\:hidden) {
     width: 2.65rem; height: 2.65rem; min-height: 0; padding: 0;
     display: inline-flex; align-items: center; justify-content: center;
     border-radius: .85rem;
   }
-  html[data-aria-theme] header .gpt5-search-btn { left: 8px; border-radius: 50%; }
-  html[data-aria-theme] header .as-hbtn svg, html[data-aria-theme] header .gpt5-search-btn svg { width: 1.18rem; height: 1.18rem; }
+  html[data-aria-theme] header .as-hbtn svg { width: 1.18rem; height: 1.18rem; }
+  /* r44: دکمهٔ «جستجو» داخل نوار بازشو — پیِل متنی می‌ماند (دایره/مربع نشود) */
+  html[data-aria-theme] header .gpt5-search-btn { border-radius: 11px; }
 }
 /* آیکن تنها داخل دکمه — دقیقاً وسط (رفع نیم‌پیکسل بالا/پایین از baseline) */
 html[data-aria-theme] button > svg { display: inline-block; vertical-align: middle; }

@@ -54,10 +54,10 @@ const utils = {
   // Order status info
   getStatusInfo: (status) => {
     const statuses = {
-      pending: { label: 'در انتظار تایید', badge: 'badge-pending', icon: '⏳' },
-      processing: { label: 'در حال پردازش', badge: 'badge-processing', icon: '⚙️' },
-      shipped: { label: 'ارسال شده', badge: 'badge-shipped', icon: '🚚' },
-      delivered: { label: 'تحویل داده شده', badge: 'badge-delivered', icon: '✅' }
+      pending: { label: 'در انتظار تایید', badge: 'badge-pending', icon: 'clock' },
+      processing: { label: 'در حال پردازش', badge: 'badge-processing', icon: 'settings' },
+      shipped: { label: 'ارسال شده', badge: 'badge-shipped', icon: 'truck' },
+      delivered: { label: 'تحویل داده شده', badge: 'badge-delivered', icon: 'check' }
     };
     return statuses[status] || statuses.pending;
   },
@@ -361,7 +361,7 @@ function verifyOtp(code) {
   state.user = { phone: state.loginPhone, name: 'کاربر' };
   state.isAdmin = false;
   goTo('home');
-  toast('🎉 ورود موفقیت‌آمیز!');
+  toast('ورود موفق بود');
 
   resetLoginState();
   render(); // مهم: بعد از ورود دوباره رندر بشه
@@ -380,7 +380,7 @@ function logout() {
     type: 'logout',
     title: 'خروج از حساب کاربری',
     message: 'با خروج، از حساب خود خارج می‌شوید. سبد خرید و علاقه‌مندی‌های شما ذخیره می‌مانند و با ورود دوباره بازمی‌گردند.',
-    icon: (typeof aryIcon === 'function' ? '<span class="inline-flex text-rose-300">' + aryIcon('logout', 'w-12 h-12') + '</span>' : '🚪'),
+    icon: (typeof aryIcon === 'function' ? '<span class="inline-flex text-rose-300">' + aryIcon('logout', 'w-12 h-12') + '</span>' : ''),
     confirmText: 'بله، خروج',
     confirmClass: 'btn-danger',
     onConfirm: () => {
@@ -448,7 +448,7 @@ function logout() {
       console.error('[Render Error]', err);
       return `
         <div class="max-w-lg mx-auto p-6 glass rounded-2xl mt-8">
-          <div class="text-4xl mb-3">⚠️</div>
+          <span class="inline-flex text-amber-300 mb-1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:2.2rem;height:2.2rem;vertical-align:-0.15em" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4M12 17h.01"/></svg></span>
           <h2 class="font-bold mb-2">خطا در رندر صفحه</h2>
           <p class="text-white/70 text-sm">لطفاً دوباره تلاش کنید یا صفحه را رفرش کنید.</p>
         </div>

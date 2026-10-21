@@ -9,7 +9,7 @@ function renderConfirmModal() {
   return `
     <div class="fixed inset-0 z-[100] flex items-center justify-center p-4 modal-overlay">
       <div class="glass-strong rounded-3xl p-8 max-w-md w-full animate-scale text-center">
-        <div class="text-6xl mb-5">${modal.icon || '❓'}</div>
+        <div class="flex items-center justify-center mb-5">${(m => !m ? '<span class="inline-flex text-blue-300">' + (window.aryIcon ? aryIcon('info','w-12 h-12') : '') + '</span>' : (String(m).trim().charAt(0)==='<' ? m : (window.aryIcon ? '<span class="inline-flex text-rose-300">' + aryIcon(m,'w-12 h-12') + '</span>' : '')))(modal.icon)}</div>
         <h2 class="text-xl font-bold mb-3">${modal.title}</h2>
         <p class="text-white/70 text-sm mb-8 leading-relaxed">${modal.message}</p>
         ${modal.requirePhrase ? `

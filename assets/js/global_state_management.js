@@ -10,7 +10,7 @@
     'cart',
     'wishlist',
     'user',
-    'currentUser',   // 🔥 اضافه شد — برای حفظ لاگین بعد از رفرش
+    'currentUser',   // برای حفظ لاگین بعد از رفرش اضافه شد
     'isAdmin',
     'productFilter',
     'productView',
@@ -42,7 +42,7 @@
 
     // Auth
     user: null,
-    currentUser: null,   // 🔥 اضافه شد
+    currentUser: null,   // نشست مدیر
     isAdmin: false,
     loginStep: 'phone',
     loginPhone: '',
