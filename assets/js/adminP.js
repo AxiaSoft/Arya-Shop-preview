@@ -2909,7 +2909,7 @@ function renderAdminVideoPreviewModal() {
     try {
       const icons = root.querySelectorAll('i[class*="ri-"]');
       icons.forEach(i => {
-        if (i.getAttribute('data-fallback-applied') === '1') return;
+        if (i.getAttribute('data-fallback-applied') === '1' || i.getAttribute('data-aryico') === '1') return;
         const cs = window.getComputedStyle(i);
         const fontFamily = cs.getPropertyValue('font-family') || '';
         const isRemix = /remix/i.test(fontFamily);
@@ -3377,8 +3377,8 @@ function renderProductModal() {
             </div>
 
             <div>
-              <label class="block text-sm text-white/70 mb-2">مقاله محصول <span class="text-[10px] text-white/40 font-normal">(جابه‌جا شده به تب بلاگ)</span></label>
-              <button type="button" onclick="event.stopPropagation(); aryBlogOpenForProduct('${state.editProduct?.id || 'new'}')" class="btn-primary w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2"><span>📝</span><span>${d.article ? 'ویرایش مقاله در بلاگ' : 'نگارش مقاله در بلاگ'}</span></button>
+              <label class="block text-sm text-white/70 mb-2">مقالهٔ خودِ محصول <span class="text-[10px] text-white/40 font-normal">(فقط در صفحهٔ همین محصول — مستقل از تب بلاگ)</span></label>
+              <button type="button" onclick="openArticleEditor()" class="btn-primary w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2">${window.aryWpIco ? aryWpIco('edit-line') : '<span>✍️</span>'}<span>${d.article ? 'ویرایش مقالهٔ محصول' : 'نوشتن مقالهٔ محصول'}</span></button>
               ${ d.article ? `<p class="text-xs text-emerald-400 mt-2 truncate">مقاله ثبت شده ✔</p>` : `<p class="text-xs text-white/40 mt-2">مقاله‌ای ثبت نشده.</p>` }
             </div>
 
@@ -4322,7 +4322,7 @@ window.aryAdminBlogRefresh = async function () {
 
 function renderAdminBlogTab() {
   setTimeout("typeof aryAdminBlogRefresh==='function' && (!state.blog || !state.blog.length) && aryAdminBlogRefresh()", 40);
-  if (state.blogEdit) return renderAdminBlogEditor();
+  if (state.blogEdit) { setTimeout('window.aryBlogWpMount && window.aryBlogWpMount()', 30); return renderAdminBlogEditor(); }
   const posts = (Array.isArray(state.blog) ? state.blog.slice() : [])
     .sort((a, b) => String(b.updated_at || b.created_at || '').localeCompare(String(a.updated_at || a.created_at || '')));
   const fmt = v => { try { return new Date(v).toLocaleDateString('fa-IR', { year: 'numeric', month: 'short', day: 'numeric' }); } catch (e) { return ''; } };
@@ -4343,7 +4343,7 @@ function renderAdminBlogTab() {
                 <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold ${p.status === 'published' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' : 'bg-amber-500/15 text-amber-300 border border-amber-500/25'}">${p.status === 'published' ? 'منتشر ✓' : 'پیش‌نویس'}</span>
                 <div class="min-w-0 flex-1">
                   <div class="font-bold text-sm truncate">${escapeHtml(p.title || '(بدون عنوان)')}</div>
-                  <div class="text-[11px] text-white/40 mt-0.5">${p.created_at ? fmt(p.created_at) : ''}${p.productId ? ' • 🔗 ' + escapeHtml(((state.products || []).find(x => String(x.id) === String(p.productId)) || {}).title || 'محصول حذف‌شده') : ''}${p.author ? ' • ' + escapeHtml(p.author) : ''} • ${aryBlogParseMedia(p.media).length} رسانه</div>
+                  <div class="text-[11px] text-white/40 mt-0.5">${p.created_at ? fmt(p.created_at) : ''}${p.author ? ' • ' + escapeHtml(p.author) : ''} • ${aryBlogParseMedia(p.media).length} رسانه</div>
                 </div>
                 <div class="flex items-center gap-2">
                   <button type="button" class="p-2 glass rounded-xl text-sm" title="ویرایش" onclick="aryAdminBlogEdit('${escapeHtml(String(p.id))}')">✏️</button>
@@ -4358,6 +4358,8 @@ function renderAdminBlogTab() {
 function renderAdminBlogEditor() {
   const m = state.blogEdit;
   const escAttr = v => escapeHtml(String(v ?? ''));
+  const ico = (n) => (window.aryWpIco ? window.aryWpIco(n) : '');
+  const hasDraft = !!(window.AryaWp && AryaWp.draft('blog_' + (m.id || 'new')));
   const mediaRows = m.media.map((md, i) => `
     <div class="glass rounded-xl p-3 space-y-2">
       <div class="flex flex-wrap items-center gap-2">
@@ -4365,93 +4367,196 @@ function renderAdminBlogEditor() {
         <select class="input-style text-xs py-1.5" onchange="state.blogEdit.media[${i}].size=this.value">${[['full', 'عرض کامل'], ['half', 'نصف'], ['third', 'یک‌سوم']].map(t => `<option value="${t[0]}"${(md.size || 'full') === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('')}</select>
         <select class="input-style text-xs py-1.5" onchange="state.blogEdit.media[${i}].align=this.value">${[['center', 'وسط'], ['start', 'راست'], ['end', 'چپ']].map(t => `<option value="${t[0]}"${(md.align || 'center') === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('')}</select>
         <label class="inline-flex items-center gap-1.5 text-[11px] text-white/60"><input type="checkbox" ${md.radius !== false ? 'checked' : ''} onchange="state.blogEdit.media[${i}].radius=this.checked" class="accent-blue-500"><span>گِرد</span></label>
-        <span class="mr-auto flex items-center gap-1">
-          <button type="button" class="p-1.5 rounded-lg glass text-xs" onclick="aryAdminBlogMediaMove(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
-          <button type="button" class="p-1.5 rounded-lg glass text-xs" onclick="aryAdminBlogMediaMove(${i},1)" ${i === m.media.length - 1 ? 'disabled' : ''}>↓</button>
-          <button type="button" class="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/15 text-xs" onclick="aryAdminBlogMediaDel(${i})">✕</button>
+        <span class="mr-auto flex items-center gap-1 shrink-0">
+          <button type="button" class="p-1.5 rounded-lg glass text-xs" title="بالا" onclick="aryAdminBlogMediaMove(${i},-1)" ${i === 0 ? 'disabled' : ''}>↑</button>
+          <button type="button" class="p-1.5 rounded-lg glass text-xs" title="پایین" onclick="aryAdminBlogMediaMove(${i},1)" ${i === m.media.length - 1 ? 'disabled' : ''}>↓</button>
+          <button type="button" class="p-1.5 rounded-lg glass text-blue-300 hover:bg-blue-500/15" title="درج در انتهای متن مقاله" onclick="aryBlogWpMediaInsert(${i})">${ico('image-line')}</button>
+          <button type="button" class="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/15 text-xs" title="حذف" onclick="aryAdminBlogMediaDel(${i})">✕</button>
         </span>
       </div>
       <input class="input-style w-full text-xs" dir="ltr" placeholder="آدرس فایل (https://…) یا URL ویدیو" value="${escAttr(md.url || '')}" oninput="state.blogEdit.media[${i}].url=this.value">
       <input class="input-style w-full text-xs" placeholder="زیرنویس (اختیاری)" value="${escAttr(md.caption || '')}" oninput="state.blogEdit.media[${i}].caption=this.value">
     </div>`).join('');
+  const tb = (fn, title, icon) => `<button type="button" class="ary-wp-tbtn" title="${title}" aria-label="${title}" onmousedown="event.preventDefault()" onclick="${fn}">${ico(icon)}</button>`;
+  const sep = '<span class="ary-wp-sep"></span>';
   return `
-    <div class="animate-fade max-w-4xl">
-      <div class="flex items-center justify-between gap-3 mb-5">
-        <h1 class="text-xl lg:text-2xl font-black">${m.id ? '✏️ ویرایش مقاله' : '➕ مقالهٔ جدید'}</h1>
-        <button type="button" class="btn-ghost px-4 py-2 rounded-xl text-xs font-bold" onclick="aryAdminBlogCancel()">↩ بازگشت به فهرست</button>
-      </div>
-      <div class="glass rounded-3xl p-5 lg:p-7 space-y-5">
-        <div>
-          <label class="block text-sm text-white/70 mb-1.5">عنوان مقاله *</label>
-          <input id="blog-title" class="input-style w-full font-bold" value="${escAttr(m.title)}" oninput="state.blogEdit.title=this.value" placeholder="مثال: راهنمای انتخاب هدفون مناسب">
+    <div class="ary-wp-root">
+      <div class="ary-wp-bar">
+        <div class="ary-wp-toprow">
+          <button type="button" class="ary-wp-back" title="بازگشت" onmousedown="event.preventDefault()" onclick="aryBlogWpCancel()">${ico('close-line')}<span>خروج از ویرایش</span></button>
+          <span class="ary-wp-doctitle">${m.id ? 'ویرایش مقاله' : 'مقالهٔ تازه'}</span>
+          <span class="ary-wp-saved mr-auto hidden sm:inline" id="ary-wp-saved">${hasDraft ? 'پیش‌نویس خودکار بازیابی‌شدنی است' : ''}</span>
+          <span class="text-[10px] tabular-nums text-white/45" id="ary-wp-wcount">—</span>
+          <span class="text-[10px] tabular-nums text-white/30" id="ary-wp-ccount"></span>
+          ${m.id ? '' : (hasDraft ? '<button type="button" class="btn-ghost !py-1.5 px-3 rounded-lg text-[11px] font-bold whitespace-nowrap" onclick="aryBlogWpRecoverDraft()">⟳ بازیابی پیش‌نویس</button>' : '')}
+          <button type="button" class="btn-primary !py-1.5 px-3.5 rounded-lg text-[11px] font-black whitespace-nowrap inline-flex items-center gap-1.5" onclick="aryBlogWpSave()">${ico('save-line')}<span>ذخیره</span></button>
         </div>
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <div>
-            <label class="block text-sm text-white/70 mb-1.5">وضعیت</label>
-            <select class="input-style w-full" onchange="state.blogEdit.status=this.value">
-              <option value="draft"${m.status !== 'published' ? ' selected' : ''}>پیش‌نویس (فقط ادمین)</option>
-              <option value="published"${m.status === 'published' ? ' selected' : ''}>انتشار در سایت ✓</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm text-white/70 mb-1.5">نویسنده</label>
-            <input class="input-style w-full text-sm" value="${escAttr(m.author)}" oninput="state.blogEdit.author=this.value" placeholder="تیم آریا">
-          </div>
-          <div>
-            <label class="block text-sm text-white/70 mb-1.5">برچسب‌ها (با ویرگول)</label>
-            <input class="input-style w-full text-sm" value="${escAttr(m.tags)}" oninput="state.blogEdit.tags=this.value" placeholder="هدفون، راهنمای خرید">
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm text-white/70 mb-1.5">تصویر جلد (URL — اختیاری)</label>
-          <div class="flex gap-2 items-start">
-            <input class="input-style w-full text-sm" dir="ltr" value="${escAttr(m.cover)}" oninput="state.blogEdit.cover=this.value; document.getElementById('blog-cover-prev').src=this.value" placeholder="https://…/cover.jpg">
-            <img id="blog-cover-prev" src="${escAttr(m.cover || '')}" class="w-16 h-16 object-cover rounded-xl border border-white/10 ${m.cover ? '' : 'hidden'}" onerror="this.classList.add('hidden')" onload="if(this.naturalWidth)this.classList.remove('hidden')">
-          </div>
-        </div>
-        <div>
-          <label class="block text-sm text-white/70 mb-1.5">چکیده (نمایش در کارت فهرست)</label>
-          <textarea class="input-style w-full resize-none" rows="2" maxlength="600" oninput="state.blogEdit.excerpt=this.value">${escAttr(m.excerpt)}</textarea>
-        </div>
-        <div>
-          <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
-            <label class="block text-sm text-white/70">متن مقاله</label>
-            <div class="flex flex-wrap items-center gap-1 mr-2" role="toolbar" aria-label="قالب‌بندی متن">
-              ${[['strong','B','پررنگ','<strong>متن</strong>'],['em','I','کج','<em>متن</em>'],['h2','H2','تیتر ۲','<h2>تیتر</h2>'],['h3','H3','تیتر ۳','<h3>تیتر</h3>'],['ul','• فهرست','لیست','<ul><li>مورد</li></ul>'],['a','🔗','لینک','<a href=\"https://…\">متن لینک</a>'],['blockquote','❝','نقل‌قول','<blockquote>نقل‌قول</blockquote>'],['p','¶','پاراگراف','<p>پاراگراف</p>']].map(b => `<button type="button" title="${b[2]}" class="px-2 py-1 rounded-lg text-[10px] font-black glass text-white/70 hover:bg-blue-500/15 hover:text-blue-200 transition" onclick="aryBlogTag('${b[1]}','${b[3].replace(/"/g, '&quot;')}')">${b[0] === 'ul' ? '≔ لیست' : b[0].toUpperCase()}</button>`).join('')}
-              <button type="button" title="خلاصه خودکار از متن" class="px-2 py-1 rounded-lg text-[10px] font-black bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryBlogExcerpt()">✨ چکیده خودکار</button>
-              <span data-blog-count class="text-[10px] text-white/40 mr-auto tabular-nums">${(String(m.body || '').replace(/<[^>]*>/g, '').match(/[\u0600-\uFBFFa-zA-Z0-9]+/g) || []).length} واژه</span>
-            </div>
-          </div>
-          <textarea id="blog-body" class="input-style w-full resize-y font-mono text-[13px] leading-6" rows="12" style="min-height:18rem" oninput="state.blogEdit.body=this.value; aryBlogCount()">${escAttr(m.body)}</textarea>
-          <p class="text-[10px] text-white/35 mt-1.5">HTML ساده مجاز است (h2، h3، p، ul، li، strong، a، blockquote) — هنگام ذخیره پاک‌سازی امنیتی می‌شود.</p>
-        </div>
-        <div>
-          <label class="block text-sm text-white/70 mb-1.5">پیوند به محصول <span class="text-[10px] text-white/40 font-normal">(مقاله به صفحه همان محصول هم اضافه می‌شود)</span></label>
-          <select class="input-style w-full" onchange="state.blogEdit.productId=this.value">
-            <option value="">— بدون پیوند —</option>
-            ${(state.products || []).map(pr => `<option value="${escapeHtml(String(pr.id))}" ${String(m.productId || '') === String(pr.id) ? 'selected' : ''}>${escapeHtml(pr.title || '')}</option>`).join('')}
+        <div class="ary-wp-tools" role="toolbar" aria-label="قالب‌بندی">
+          <select class="ary-wp-blocksel" title="نوع بلوک" onchange="aryBlogWpBlock(this)">
+            <option value="">¶ پاراگراف</option><option value="h2">H2 تیتر بخش</option><option value="h3">H3 تیتر فرعی</option><option value="h4">H4 ریزتیتر</option><option value="blockquote">❝ نقل‌قول</option><option value="pre">⌨ کد</option>
           </select>
+          ${sep}
+          ${tb("AryaWp.exec('bold')", 'پررنگ', 'bold')}${tb("AryaWp.exec('italic')", 'کج', 'italic')}${tb("AryaWp.exec('underline')", 'زیرخط', 'underline')}${tb("AryaWp.exec('strikeThrough')", 'خط‌خورده', 'strikethrough')}
+          ${sep}
+          ${tb("AryaWp.exec('justifyRight')", 'راست‌چین', 'align-right')}${tb("AryaWp.exec('justifyCenter')", 'وسط‌چین', 'align-center')}${tb("AryaWp.exec('justifyLeft')", 'چپ‌چین', 'align-left')}${tb("AryaWp.exec('justifyFull')", 'دوکشیده', 'align-justify')}
+          ${sep}
+          ${tb("AryaWp.exec('insertUnorderedList')", 'لیست نشانه‌دار', 'list-unordered')}${tb("AryaWp.exec('insertOrderedList')", 'لیست عددی', 'list-ordered')}
+          ${sep}
+          ${tb("AryaWp.exec('formatBlock','blockquote')", 'نقل‌قول', 'double-quotes-l')}${tb("AryaWp.linkPop()", 'درج لینک', 'link')}${tb("AryaWp.exec('unlink')", 'حذف لینک', 'unlink')}${tb("aryBlogWpInsertTable()", 'جدول', 'table-line')}${tb("AryaWp.insertHTML('<hr>')", 'خط جداکننده', 'separator')}
+          ${sep}
+          ${tb("aryBlogWpMediaAdd('image')", 'تصویر (پایین صفحه)', 'image-line')}${tb("aryBlogWpMediaAdd('video')", 'ویدیو', 'video-line')}
+          ${sep}
+          ${tb("AryaWp.undo()", 'بازگشت (Ctrl+Z)', 'arrow-go-back-line')}${tb("AryaWp.redo()", 'جلو (Ctrl+Y)', 'arrow-go-forward-line')}${tb("AryaWp.exec('removeFormat')", 'پاک‌کردن قالب‌بندی', 'eraser')}
+          ${sep}
+          <button type="button" class="ary-wp-tbtn ${m._code ? 'is-on' : ''}" title="${m._code ? 'نمایش دیداری' : 'ویرایش کد HTML'}" onmousedown="event.preventDefault()" onclick="aryBlogWpToggleCode()">${ico('code-line')}</button>
         </div>
-        <div>
-          <div class="flex items-center justify-between mb-2">
-            <label class="block text-sm text-white/70">بلوک‌های رسانه (درشت‌نما بین متن)</label>
-            <div class="flex gap-1.5">
-              <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('image')">+ تصویر</button>
-              <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('video')">+ ویدیو</button>
-              <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('embed')">+ iframe</button>
+      </div>
+      <div class="ary-wp-scroll">
+        <article class="ary-wp-paper">
+          ${m._code ? `
+            <textarea id="ary-wp-code" class="ary-wp-code" dir="ltr" spellcheck="false" oninput="state.blogEdit.body=this.value">${escAttr(m.body || '')}</textarea>
+          ` : `
+            <input id="ary-wp-title" class="ary-wp-title" placeholder="عنوان مقاله…" value="${escAttr(m.title || '')}" oninput="state.blogEdit.title=this.value">
+            <div id="ary-wp-body" class="ary-wp-content" contenteditable="true" data-ph="بدنهٔ مقاله را همین‌جا بنویسید — از منوی بالا تیتر، لیست، لینک و رسانه اضافه کنید…" data-oninput="aryBlogWpSync" oninput="state.blogEdit.body=this.innerHTML; AryaWp.refreshState()" onkeydown="if((event.ctrlKey||event.metaKey)&amp;&amp;event.key.toLowerCase()==='s'){event.preventDefault();aryBlogWpSave();}">${m.body || ''}</div>
+          `}
+        </article>
+        <div class="ary-wp-under">
+          <details class="glass-strong rounded-2xl p-4 lg:p-5">
+            <summary class="cursor-pointer text-sm font-bold text-white/80 select-none">⚙️ تنظیمات مقاله — وضعیت، نویسنده، چکیده، تصویر جلد، رسانه‌ها</summary>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+              <div>
+                <label class="block text-xs text-white/60 mb-1.5 font-bold">وضعیت</label>
+                <select class="input-style w-full" onchange="state.blogEdit.status=this.value">
+                  <option value="draft"${m.status !== 'published' ? ' selected' : ''}>پیش‌نویس (فقط ادمین)</option>
+                  <option value="published"${m.status === 'published' ? ' selected' : ''}>انتشار در سایت ✓</option>
+                </select>
+              </div>
+              <div><label class="block text-xs text-white/60 mb-1.5 font-bold">نویسنده</label><input class="input-style w-full text-sm" value="${escAttr(m.author || '')}" oninput="state.blogEdit.author=this.value" placeholder="تیم آریا"></div>
+              <div><label class="block text-xs text-white/60 mb-1.5 font-bold">برچسب‌ها (با ویرگول)</label><input class="input-style w-full text-sm" value="${escAttr(m.tags || '')}" oninput="state.blogEdit.tags=this.value" placeholder="هدفون، راهنمای خرید"></div>
             </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+              <div>
+                <label class="block text-xs text-white/60 mb-1.5 font-bold">تصویر جلد (URL)</label>
+                <div class="flex gap-2 items-start">
+                  <input class="input-style w-full text-sm" dir="ltr" value="${escAttr(m.cover || '')}" oninput="state.blogEdit.cover=this.value; document.getElementById('blog-cover-prev').src=this.value; document.getElementById('blog-cover-prev').classList.remove('hidden')" placeholder="https://…/cover.jpg">
+                  <img id="blog-cover-prev" src="${escAttr(m.cover || '')}" class="w-16 h-16 object-cover rounded-xl border border-white/10 shrink-0 ${m.cover ? '' : 'hidden'}" onerror="this.classList.add('hidden')" alt="">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs text-white/60 mb-1.5 font-bold">چکیده (نمایش در کارت فهرست)</label>
+                <textarea id="blog-excerpt" class="input-style w-full resize-none" rows="2" maxlength="600" oninput="state.blogEdit.excerpt=this.value">${escAttr(m.excerpt || '')}</textarea>
+                <button type="button" class="text-[10px] font-bold mt-1 px-2 py-1 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryBlogExcerpt()">✨ چکیده خودکار از متن</button>
+              </div>
+            </div>
+            <div class="mt-4">
+              <div class="flex flex-wrap items-center gap-2 mb-2">
+                <label class="text-xs text-white/60 font-bold">بلوک‌های رسانه (بین متن مقاله)</label>
+                <span class="mr-auto flex gap-1.5 shrink-0">
+                  <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('image')">+ تصویر</button>
+                  <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('video')">+ ویدیو</button>
+                  <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('embed')">+ iframe</button>
+                </span>
+              </div>
+              ${mediaRows ? `<div class="space-y-2.5">${mediaRows}</div>` : '<div class="text-[11px] text-white/40 glass rounded-xl px-4 py-3">فعلاً بلوک رسانه‌ای ندارید — تصویر یا ویدیوی درشت، مقاله را زنده می‌کند.</div>'}
+            </div>
+          </details>
+          <div class="flex flex-wrap items-center gap-3 pt-1 pb-2">
+            <button type="button" class="btn-primary px-6 py-3 rounded-xl font-bold text-sm" onclick="aryBlogWpSave()">💾 ذخیرهٔ مقاله</button>
+            <button type="button" class="btn-ghost px-4 py-3 rounded-xl text-sm whitespace-nowrap" onclick="aryBlogWpCancel()">انصراف</button>
+            <span class="text-[11px] text-white/40 mr-auto">${m.id ? 'ویرایش «' + escAttr((m.title || '').slice(0, 40)) + '»' : 'مقالهٔ تازه'} — Ctrl+S ذخیره می‌کند</span>
           </div>
-          ${mediaRows ? `<div class="space-y-2.5">${mediaRows}</div>` : '<div class="text-[11px] text-white/40 glass rounded-xl px-4 py-3">فعلاً بلوک رسانه‌ای ندارید — تصویر یا ویدیوی درشت، مقاله را حرفه‌ای‌تر می‌کند.</div>'}
-        </div>
-        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-white/10">
-          <button type="button" class="btn-primary px-6 py-3 rounded-xl font-bold text-sm" onclick="aryAdminBlogSave()">💾 ذخیرهٔ مقاله</button>
-          <button type="button" class="btn-ghost px-4 py-3 rounded-xl text-sm" onclick="aryAdminBlogCancel()">انصراف</button>
-          <span class="text-[11px] text-white/40 mr-auto">${m.id ? 'ویرایش «' + escAttr((m.title || '').slice(0, 40)) + '»' : 'مقالهٔ تازه'}</span>
         </div>
       </div>
     </div>
   `;
 }
+window.aryBlogWpSync = function (html) { if (state.blogEdit) state.blogEdit.body = String(html || ''); };
+window.aryBlogWpBlock = function (sel) { const v = sel.value; sel.value = ''; if (v) window.AryaWp && AryaWp.block(v); };
+window.aryBlogWpInsertTable = function () {
+  if (!window.AryaWp) return;
+  AryaWp.insertHTML('<table><tbody><tr><th>سرستون ۱</th><th>سرستون ۲</th></tr><tr><td>مقدار</td><td>مقدار</td></tr></tbody></table><p><br></p>');
+};
+window.aryBlogWpMediaAdd = function (t) {
+  if (!state.blogEdit) return;
+  state.blogEdit.media = state.blogEdit.media || [];
+  state.blogEdit.media.push({ type: t, url: '', caption: '', size: 'full', align: 'center', radius: true });
+  render();
+  const d = document.querySelector('.ary-wp-under details'); if (d) d.open = true;
+  setTimeout(() => { const rows = document.querySelectorAll('.ary-wp-under .glass.rounded-xl'); const last = rows[rows.length - 1]; last && last.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 80);
+};
+window.aryBlogWpMediaInsert = function (i) {
+  const m = state.blogEdit; const md = m && m.media && m.media[i];
+  if (!md || !String(md.url || '').trim()) { toast('اول آدرس فایل این رسانه را پر کنید', 'warning'); return; }
+  if (!window.AryaWp) return;
+  if (md.type === 'code') {}
+  AryaWp.block('p');
+  const u = String(md.url).replace(/"/g, '&quot;');
+  const cap = String(md.caption || '').replace(/</g, '');
+  let html;
+  if (md.type === 'video') html = '<figure><video controls preload="metadata" src="' + u + '" style="width:100%;' + (md.radius !== false ? 'border-radius:16px' : '') + '"></video>' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
+  else if (md.type === 'embed') html = '<figure><div class="ary-wp-embed" data-embed-src="' + u + '" style="aspect-ratio:16/9;background:#0b1526;color:#93c5fd;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:12px">جا‌سازی رسانه — پس از ذخیره در سایت نمایش داده می‌شود</div></figure>';
+  else html = '<figure><img src="' + u + '" alt="' + cap + '" style="width:100%;' + (md.radius !== false ? 'border-radius:16px' : '') + '">' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
+  AryaWp.insertHTML(html + '<p><br></p>');
+  toast('رسانه در متن درج شد ✓', 'success');
+};
+window.aryBlogWpToggleCode = function () {
+  const m = state.blogEdit; if (!m) return;
+  const live = document.getElementById('ary-wp-body'); if (live) m.body = live.innerHTML;
+  const ta = document.getElementById('ary-wp-code'); if (ta) m.body = ta.value;
+  const ti = document.getElementById('ary-wp-title'); if (ti) m.title = ti.value;
+  m._code = !m._code; render();
+};
+window.aryBlogWpSave = async function () {
+  const m = state.blogEdit; if (!m) return;
+  const live = document.getElementById('ary-wp-body'); if (live) m.body = live.innerHTML;
+  const ta = document.getElementById('ary-wp-code'); if (ta) m.body = ta.value;
+  const ti = document.getElementById('ary-wp-title'); if (ti) m.title = ti.value;
+  window.AryaWp && AryaWp.stopAutosave();
+  await aryAdminBlogSave();
+  window.AryaWp && AryaWp.clearDraft('blog_' + ((m && m.id) || 'new'));
+};
+window.aryBlogWpCancel = function () {
+  const open = state.blogEdit && (state.blogEdit.title || state.blogEdit.body);
+  if (open) {
+    state.confirmModal = {
+      type: 'warning',
+      title: 'خروج از ویرایش مقاله',
+      message: '<p class="text-xs text-white/60 leading-6 text-start">تغییرات ذخیره‌نشدهٔ این مقاله دور ریخته شود؟ (پیش‌نویس خودکار برای بازیابی نگه داشته می‌شود)</p>',
+      confirmText: 'بله، خروج',
+      confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+      onConfirm: () => { state.confirmModal = null; window.AryaWp && AryaWp.stopAutosave(); state.blogEdit = null; render(); },
+    };
+    render(); return;
+  }
+  window.AryaWp && AryaWp.stopAutosave();
+  state.blogEdit = null; render();
+};
+window.aryBlogWpRecoverDraft = function () {
+  const m = state.blogEdit; if (!m || !window.AryaWp) return;
+  const d = AryaWp.draft('blog_' + (m.id || 'new'));
+  if (!d || !d.o) { toast('پیش‌نویسی پیدا نشد', 'warning'); return; }
+  Object.assign(m, d.o); render();
+  toast('پیش‌نویس خودکار بازیابی شد ✓', 'success');
+};
+window.aryBlogWpMount = function () {
+  const b = document.getElementById('ary-wp-body');
+  if (b) {
+    if (!b.dataset.bound) {
+      b.dataset.bound = '1';
+      b.addEventListener('paste', function (e) {
+        try { e.preventDefault(); const t = ((e.clipboardData || window.clipboardData).getData('text/plain') || '').slice(0, 200000); document.execCommand('insertText', false, t); } catch (err) { try { document.execCommand('insertText', false, ''); } catch (e2) {} }
+      });
+    }
+    if (window.AryaWp) AryaWp.refreshState();
+  }
+  const m = state.blogEdit; if (!m || !window.AryaWp) return;
+  AryaWp.autosave('blog_' + (m.id || 'new'), function () {
+    const el = document.getElementById('ary-wp-body'); const code = document.getElementById('ary-wp-code'); const ti = document.getElementById('ary-wp-title');
+    if (ti) m.title = ti.value;
+    if (el) m.body = el.innerHTML; if (code) m.body = code.value;
+    return { id: m.id || '', title: m.title, body: m.body, excerpt: m.excerpt, cover: m.cover, tags: m.tags, author: m.author, status: m.status, media: m.media };
+  });
+};
 
 window.aryAdminBlogNew = function () {
   state.blogEdit = { id: null, title: '', excerpt: '', body: '', cover: '', tags: '', author: 'تیم آریا', status: 'draft', media: [], created_at: new Date().toISOString() };
@@ -4492,15 +4597,12 @@ window.aryAdminBlogSave = async function () {
     media: JSON.stringify((m.media || []).filter(x => x && x.url)),
     tags: String(m.tags || '').trim().slice(0, 255), status: m.status === 'published' ? 'published' : 'draft',
     author: String(m.author || 'تیم آریا').trim().slice(0, 80),
-    productId: String(m.productId || ''),
     created_at: m.created_at || now, updated_at: now
   };
   try { row.body = arySanitizeHtml(row.body); } catch (e) {}
-  if (row.productId) {
-    try {
-      const _pr = (state.products || []).find(x => String(x.id) === String(row.productId));
-      if (_pr) { _pr.article = row.status === 'published' ? row.body : (_pr.article || ''); state.productDraft && (state.productDraft.article = _pr.article); }
-    } catch (e) {}
+  {
+    const live = document.getElementById('ary-wp-body'); if (live) row.body = live.innerHTML;
+    try { row.body = arySanitizeHtml(row.body); } catch (e2) {}
   }
   let okLocal = true;
   try { if (window.AryaDB && AryaDB.isReady && AryaDB.isReady()) await AryaDB.upsert('blog', row); } catch (e) { okLocal = false; }
@@ -5163,10 +5265,10 @@ function renderAdminCouponModal() {
             <div><label class="block text-xs text-white/60 mb-1.5 font-bold">نوع</label><select class="input-style w-full" onchange="state.adminCouponModal.type=this.value; render()">${[['percent','درصدی'],['fixed','مبلغ ثابت'],['shipping','ارسال رایگان']].map(t => `<option value="${t[0]}" ${m.type === t[0] ? 'selected' : ''}>${t[1]}</option>`).join('')}</select></div>
           </div>
           ${m.type !== 'shipping' ? `<div class="grid grid-cols-2 gap-4"><div><label class="block text-xs text-white/60 mb-1.5 font-bold">${m.type === 'percent' ? 'درصد (۱ تا ۹۵)' : 'مبلغ تخفیف (تومان)'}</label><input type="number" min="1" class="input-style w-full" value="${m.value}" oninput="state.adminCouponModal.value=this.value"></div>${m.type === 'percent' ? `<div><label class="block text-xs text-white/60 mb-1.5 font-bold">سقف تخفیف (اختیاری)</label><input type="number" min="0" class="input-style w-full" value="${m.max_discount}" oninput="state.adminCouponModal.max_discount=this.value"></div>` : '<div></div>'}</div>` : ''}
-          <div><label class="block text-xs text-white/60 mb-1.5 font-bold">شامل چه چیزهایی شود؟</label><div class="grid grid-cols-4 gap-2">${[['all','کل سبد'],['category','دسته خاص'],['products','محصولات خاص'],['shipping','هزینه ارسال']].map(x => `<button type="button" class="py-2 rounded-xl text-[11px] font-black transition ${m.scope === x[0] ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'glass text-white/60 hover:bg-white/10'}" onclick="state.adminCouponModal.scope='${x[0]}'; render()">${x[1]}</button>`).join('')}</div></div>
+          <div><label class="block text-xs text-white/60 mb-1.5 font-bold">شامل چه چیزهایی شود؟</label><div class="grid grid-cols-2 md:grid-cols-4 gap-2">${[['all','کل سبد'],['category','دسته خاص'],['products','محصولات خاص'],['shipping','هزینه ارسال']].map(x => `<button type="button" class="py-2 rounded-xl text-[11px] font-black transition ${m.scope === x[0] ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30' : 'glass text-white/60 hover:bg-white/10'}" onclick="state.adminCouponModal.scope='${x[0]}'; render()">${x[1]}</button>`).join('')}</div></div>
           ${m.scope === 'category' ? `<div><label class="block text-xs text-white/60 mb-1.5 font-bold">دسته</label><select class="input-style w-full" onchange="state.adminCouponModal.categoryId=this.value">${cats.map(c => `<option value="${escapeHtml(String(c.id))}" ${String(m.categoryId) === String(c.id) ? 'selected' : ''}>${escapeHtml(c.title)}</option>`).join('')}</select></div>` : ''}
           ${m.scope === 'products' ? `<div><div class="flex items-center justify-between gap-2 mb-1.5"><label class="text-xs text-white/60 font-bold">محصولات (${(m.productIds || []).length} انتخاب‌شده)</label><input class="input-style !py-1.5 w-36 text-xs" placeholder="جست‌وجو…" value="${escapeHtml(m.q || '')}" oninput="state.adminCouponModal.q=this.value; render()"></div><div class="max-h-44 overflow-y-auto rounded-xl border border-white/10 bg-black/20 p-2 grid grid-cols-1 gap-1">${prods.map(p => `<label class="flex items-center gap-2 text-[11px] px-2 py-1.5 rounded-lg hover:bg-white/5 cursor-pointer ${m.productIds.includes(p.id) ? 'bg-blue-500/10 text-blue-200' : 'text-white/70'}"><input type="checkbox" ${m.productIds.includes(p.id) ? 'checked' : ''} onchange="if(this.checked){if(!state.adminCouponModal.productIds.includes('${p.id}'))state.adminCouponModal.productIds.push('${p.id}')}else{state.adminCouponModal.productIds=state.adminCouponModal.productIds.filter(x=>String(x)!=='${p.id}');} render()"><span class="truncate">${escapeHtml(p.title)}</span></label>`).join('') || '<p class="text-[11px] text-white/40 p-2">محصولی نیست</p>'}</div></div>` : ''}
-          <div class="grid grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div><label class="block text-xs text-white/60 mb-1.5 font-bold">حداقل سبد</label><input type="number" min="0" class="input-style w-full" value="${m.min_cart}" oninput="state.adminCouponModal.min_cart=this.value"></div>
             <div><label class="block text-xs text-white/60 mb-1.5 font-bold">انقضا</label><input type="date" dir="ltr" class="input-style w-full" value="${m.expires_at}" onchange="state.adminCouponModal.expires_at=this.value"></div>
             <div><label class="block text-xs text-white/60 mb-1.5 font-bold">سقف استفاده</label><input type="number" min="0" class="input-style w-full" value="${m.max_uses}" oninput="state.adminCouponModal.max_uses=this.value" placeholder="بی‌نهایت"></div>
@@ -5252,7 +5354,7 @@ function renderAdminBulkImport() {
       <div class="glass-strong rounded-3xl p-6 max-w-2xl w-full max-h-[92%] overflow-y-auto animate-scale">
         <h2 class="text-xl font-black mb-1">➕ افزودن دسته‌جمعی محصولات</h2>
         <p class="text-[11px] text-white/50 mb-4">برای حجم بالا (مثلاً ۱۰۰+ محصول) به‌جای ثبت تک‌تک — JSON یا CSV بچسبانید، آدرس API بدهید، یا تولید خودکار بزنید.</p>
-        <div class="grid grid-cols-3 gap-2 mb-4">${[['paste','چسباندن JSON/CSV'],['url','از آدرس (URL)'],['gen','تولید خودکار']].map(t => `<button type="button" class="py-2 rounded-xl text-[11px] font-black ${b.tab === t[0] ? 'bg-blue-600 text-white' : 'glass text-white/60'}" onclick="state.adminBulk.tab='${t[0]}'; state.adminBulk.preview=null; render()">${t[1]}</button>`).join('')}</div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">${[['paste','چسباندن JSON/CSV'],['url','از آدرس (URL)'],['gen','تولید خودکار']].map(t => `<button type="button" class="py-2 rounded-xl text-[11px] font-black ${b.tab === t[0] ? 'bg-blue-600 text-white' : 'glass text-white/60'}" onclick="state.adminBulk.tab='${t[0]}'; state.adminBulk.preview=null; render()">${t[1]}</button>`).join('')}</div>
         ${b.tab === 'paste' ? `<textarea class="input-style w-full font-mono text-[11px] leading-5" rows="7" dir="auto" placeholder='[{"title":"هدفون","price":850000,"original_price":990000,"stock":12}]\nیا CSV: نام، قیمت، قیمت‌قبلی، موجودی، دسته'  oninput="state.adminBulk.text=this.value">${escapeHtml(b.text || '')}</textarea>` : ''}
         ${b.tab === 'url' ? `<input class="input-style w-full font-mono text-xs" dir="ltr" placeholder="https://api.example.com/products.json" value="${escapeHtml(b.url || '')}" oninput="state.adminBulk.url=this.value">` : ''}
         ${b.tab === 'gen' ? `<div class="grid grid-cols-2 gap-3"><div><label class="block text-xs text-white/60 mb-1 font-bold">تعداد (۱ تا ۳۰۰)</label><input type="number" min="1" max="300" class="input-style w-full" value="${b.genCount}" oninput="state.adminBulk.genCount=this.value"></div><div><label class="block text-xs text-white/60 mb-1 font-bold">دسته</label><select class="input-style w-full" onchange="state.adminBulk.genCat=this.value"><option value="">— بدون دسته —</option>${(state.categories || []).map(c => `<option value="${escapeHtml(String(c.id))}" ${String(b.genCat) === String(c.id) ? 'selected' : ''}>${escapeHtml(c.title)}</option>`).join('')}</select></div></div>` : ''}
@@ -5383,18 +5485,6 @@ window.aryBlogExcerpt = function () {
   if (window.toast) toast(ex ? 'چکیده از متن ساخته شد ✓' : 'اول متن را بنویسید', ex ? 'success' : 'warning');
   if (window.aryBlogCount) window.aryBlogCount();
 };
-window.aryBlogOpenForProduct = function (pid) {
-  state.adminTab = 'blog';
-  const pr = (state.products || []).find(x => String(x.id) === String(pid || ''));
-  const posts = Array.isArray(state.blog) ? state.blog : [];
-  const linked = pr ? posts.find(b => String(b.productId || '') === String(pr.id)) : null;
-  let media = [];
-  if (linked && linked.media) { try { media = JSON.parse(linked.media) || []; } catch (e) { media = []; } }
-  state.blogEdit = linked
-    ? { id: linked.id, title: linked.title || '', excerpt: linked.excerpt || '', body: linked.body || '', cover: linked.cover || '', tags: linked.tags || '', status: linked.status || 'published', author: linked.author || '', created_at: linked.created_at, productId: String(linked.productId || pr.id), media }
-    : { title: pr ? pr.title : '', body: pr && pr.article ? String(pr.article) : '', excerpt: '', cover: pr && pr.image ? pr.image : '', tags: '', status: 'published', media: [], productId: pr ? String(pr.id) : '' };
-  if (window.toast) toast(pr ? 'ادیتور مقاله برای «' + String(pr.title).slice(0, 24) + '» باز شد — پس از ذخیره به صفحه محصول هم وصل می‌شود' : 'ادیتور مقاله باز شد', 'info', 3600);
-  render();
-};
-window.aryBlogCancelSafe = function () { if (window.aryAdminBlogCancel) aryAdminBlogCancel(); };
+
+
 

@@ -3074,9 +3074,9 @@ function renderProductPage() {
           <p class="text-white/70 leading-relaxed text-sm md:text-base">
             ${product.description || ''}
           </p>
-          <div class="grid grid-cols-3 gap-2.5 text-center">
+          <div class="grid grid-cols-3 gap-2 sm:gap-2.5 text-center">
             ${[['🚚','ارسال سریع','بر اساس گزینهٔ انتخابی'], ['↩️','۷ روز مرجوعی','طبق سیاست فروشگاه'], ['🛡️','ضمانت اصالت','مستقیم از فروشگاه آریا']].map(t => `
-              <div class="glass rounded-2xl px-2 py-3">
+              <div class="glass rounded-2xl px-1.5 sm:px-2 py-3 min-w-0 overflow-hidden">
                 <div class="text-lg mb-1">${t[0]}</div>
                 <div class="text-[11px] font-bold text-white/80">${t[1]}</div>
                 <div class="text-[10px] text-white/45 mt-0.5 hidden sm:block">${t[2]}</div>
