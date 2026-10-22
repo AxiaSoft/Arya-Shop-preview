@@ -54,6 +54,11 @@ async function boot(htmlFile, extra) {
   t('wizard logo has db icon', /<div class="sw-logo"><svg/.test(rd('index.html')));
   t('no empty one-line buttons in adminP', !/<button[^<>]*><\/button>/.test(A));
   t('category filter precedes buttons', A.indexOf('col-span-2 sm:col-auto flex items-center gap-2 min-w-0') < A.indexOf('openAryaBulkImport()">'));
+  t('shop list row: mobile stacks price/stock then full-width cart btn',
+    /mt-auto pt-2 flex flex-col gap-2 sm:block/.test(P) &&
+    /flex items-end justify-between gap-3 min-w-0/.test(P) &&
+    /h-10 sm:h-9 w-full sm:w-auto rounded-xl inline-flex items-center justify-center/.test(P) &&
+    !/flex flex-wrap items-end justify-between gap-2 mt-auto/.test(P));
   for (const f of ['index.html','admin.html']) t(f + ': frame-src self + cache', /frame-src 'self' https:\/\/www\.youtube\.com/.test(rd(f)) && /v=20261022[a-z]/.test(rd(f)));
   t('CSP in .htaccess too', /frame-src 'self' https:\/\/www\.youtube\.com/.test(rd('.htaccess')));
 

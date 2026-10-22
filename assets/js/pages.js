@@ -1515,14 +1515,16 @@ function renderProductRow(p, i) {
       <div class="flex-1 min-w-0 py-0.5 flex flex-col">
         <h3 class="font-bold text-sm sm:text-base line-clamp-1 cursor-pointer hover:text-blue-300 transition-colors" onclick="openProductById('${aryEsc(String(p.id))}')">${aryEsc(p.title || '')}</h3>
         ${shortDesc ? `<p class="text-white/50 text-xs mt-1 line-clamp-2 leading-5 hidden sm:block">${aryEsc(shortDesc.slice(0, 180))}</p>` : ''}
-        <div class="flex flex-wrap items-end justify-between gap-2 mt-auto pt-2">
-          <div>
-            ${p.original_price > p.price ? `<div class="text-white/35 text-[11px] line-through">${utils.formatPrice(p.original_price)}</div>` : ''}
-            <div class="text-emerald-400 font-black text-sm sm:text-base">${utils.formatPrice(p.price)}<span class="text-[10px] font-normal text-white/50"> تومان</span></div>
+        <div class="mt-auto pt-2 flex flex-col gap-2 sm:block">
+          <div class="flex items-end justify-between gap-3 min-w-0">
+            <div class="min-w-0">
+              ${p.original_price > p.price ? `<div class="text-white/35 text-[11px] line-through">${utils.formatPrice(p.original_price)}</div>` : ''}
+              <div class="text-emerald-400 font-black text-sm sm:text-base">${utils.formatPrice(p.price)}<span class="text-[10px] font-normal text-white/50"> تومان</span></div>
+            </div>
+            <span class="text-[11px] ${inStock ? 'text-emerald-300/80' : 'text-rose-300/80'} inline-flex items-center gap-1 shrink-0">${aryIcon(inStock ? 'check' : 'x','w-3.5 h-3.5')}${inStock ? 'موجود' : 'ناموجود'}<\/span>
           </div>
-          <div class="flex items-center gap-2">
-            <span class="text-[11px] ${inStock ? 'text-emerald-300/80' : 'text-rose-300/80'} inline-flex items-center gap-1">${aryIcon(inStock ? 'check' : 'x','w-3.5 h-3.5')}${inStock ? 'موجود' : 'ناموجود'}</span>
-            <button type="button" class="btn-primary text-xs px-3.5 py-2 rounded-xl inline-flex items-center gap-1.5 disabled:opacity-40" ${inStock ? '' : 'disabled'} onclick="addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-4 h-4')}افزودن به سبد</button>
+          <div class="sm:flex sm:items-center sm:justify-end sm:mt-1">
+            <button type="button" class="btn-primary text-xs px-3.5 h-10 sm:h-9 w-full sm:w-auto rounded-xl inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-40" ${inStock ? '' : 'disabled'} onclick="addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-4 h-4')}افزودن به سبد</button>
           </div>
         </div>
       </div>
