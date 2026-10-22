@@ -160,6 +160,19 @@ async function boot(htmlFile, extra) {
     const od2 = (a.state.orders || []).find(o => o.id === 'rf1orderXX');
     t('r51 order refund synced from ticket', od2.refund.state === 'refunded' && od2.refund.ref === 'ST-987');
     t('r51 ticket cancel still blocked for admin', (() => { const o = { id: 'zz2', status: 'pending' }; a.updateOrderStatus(o, 'canceled'); return o.status === 'pending'; })());
+    // ثبت تیکت بازگشت وجه مستقیم از کارت سفارش (حالت لغوشده بدون تیکت)
+    a.state.orders = [{ id: 'legacycancel1', user_phone: '09120000001', user_name: 'سارا', status: 'canceled', total: 90000, cancel_reason: 'مدیر: لغو اداری', created_at: new Date().toISOString(), items: [] }];
+    a.state.tickets = [];
+    a.state.adminTab = 'orders'; a.render(); await flush(a);
+    t('r51 order card offers refund ticket when none exists', /ثبت تیکت بازگشت وجه برای کاربر/.test(a.document.body.innerHTML) && /پروندهٔ بازگشت وجه ثبت نشده/.test(a.document.body.innerHTML));
+    a.window.aryAdminCreateRefundTicket('legacycancel1'); await flush(a);
+    t('r51 create-ticket modal shown', !!(a.state.confirmModal && /ثبت تیکت بازگشت وجه/.test(String(a.state.confirmModal.title))));
+    await a.state.confirmModal.onConfirm(); await new Promise(r => setTimeout(r, 150)); await flush(a);
+    const tk2 = (a.state.tickets || []).find(x => String(x.type) === 'refund' && String(x.order_id) === 'legacycancel1');
+    t('r51 admin-created ticket lands with admin message + refund meta', !!tk2 && /پروندهٔ بازگشت وجه/.test(tk2.messages[0].text) && tk2.refund_state === 'requested' && Number(tk2.refund_amount) === 90000 && !!a.state.orders.find(o => o.id === 'legacycancel1').refund);
+    a.render(); await flush(a);
+    t('r51 after ticket, order card links to it', /مشاهدهٔ تیکت بازگشت وجه/.test(a.document.body.innerHTML) && /در جریانِ تیکت/.test(a.document.body.innerHTML));
+    a.state.orders = []; a.state.tickets = [];
     a.state.orders = []; a.state.tickets = []; a.state.activeTicketId = null; a.render();
   }
   /* ═══ r49 — حذف لغو سفارش (ادمین) ═══ */
@@ -276,6 +289,7 @@ async function boot(htmlFile, extra) {
   t('r51 refund ticket meta + chips', /payload.meta/.test(P) && /order.refund.state/.test(P) && /بازگشت وجه واریز شد/.test(P));
   t('r51 admin refund via ticket only', /aryAdminRefundApply/.test(A) && /aryAdminRefundPanel/.test(A) && /addTicketMessage\(t, \{ from: 'admin', text: msg \}\)/.test(A));
   t('r51 admin still cannot cancel orders', /if \(String\(nextStatus\) === 'canceled'\)/.test(A));
+  t('r51 admin can open refund ticket from order card', /aryAdminCreateRefundTicket/.test(A) && /ثبت تیکت بازگشت وجه برای کاربر/.test(A) && /مشاهدهٔ تیکت بازگشت وجه/.test(A));
   t('edit icon on category/blog rows', /aria-label="ویرایش دسته"[^>]*>\s*<svg/.test(A) && /aria-label="ویرایش مقاله"[^>]*>\s*<svg/.test(A));
   // مودال ولش‌لیست ادمین ربطی ندارد — ادیتور چک نشد؛ تست bulk flow کوتاه:
   a.openAryaBulkImport && a.openAryaBulkImport();

@@ -521,6 +521,18 @@ function renderAdminOrderCard(order, i) {
       </div>
 
       ${order.cancel_reason && canceled ? `<div class="mb-3 rounded-xl bg-rose-500/10 border border-rose-500/25 px-3 py-2 text-[11px] text-rose-200 flex items-start gap-2">${ai('x','w-4 h-4 shrink-0 mt-0.5')}<span><b>لغوشده —</b> ${escapeHtml(String(order.cancel_reason))}</span><button type="button" class="mr-auto shrink-0 text-[10px] font-black px-2 py-1 rounded-lg bg-white/10 hover:bg-white/20 transition" onclick="aryReopenOrder('${oid}')">بازگشایی</button></div>` : ''}
+      ${canceled ? (function () {
+        const rf = order.refund ? String(order.refund.state || 'requested') : '';
+        const tk = (state.tickets || []).find(x => String(x.type) === 'refund' && (String(x.order_id) === String(oid) || String(x.subject || '').indexOf('#' + String(oid).slice(-8)) >= 0));
+        const chip = rf === 'refunded' ? '<span class="px-2 py-0.5 rounded-lg bg-emerald-500/15 text-emerald-300 font-bold">بازگشت وجه: واریز شد</span>'
+          : rf === 'rejected' ? '<span class="px-2 py-0.5 rounded-lg bg-rose-500/15 text-rose-300 font-bold">بازگشت وجه: رد شد</span>'
+          : rf === 'requested' ? '<span class="px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 font-bold">بازگشت وجه: در جریانِ تیکت</span>'
+          : '<span class="px-2 py-0.5 rounded-lg bg-white/10 text-white/60 font-bold">پروندهٔ بازگشت وجه ثبت نشده</span>';
+        const btn = tk
+          ? `<button type="button" class="text-[10px] font-black px-2 py-1 rounded-lg bg-sky-500/25 hover:bg-sky-500/40 text-sky-100 transition whitespace-nowrap" onclick="state.adminTab='support'; state.adminSupportSelectedTicketId='${String(tk.id)}'; render();">مشاهدهٔ تیکت بازگشت وجه</button>`
+          : `<button type="button" class="text-[10px] font-black px-2 py-1 rounded-lg bg-sky-600 hover:bg-sky-500 text-white transition whitespace-nowrap" onclick="aryAdminCreateRefundTicket('${oid}')">ثبت تیکت بازگشت وجه برای کاربر</button>`;
+        return `<div class="mb-3 rounded-xl bg-sky-500/8 border border-sky-500/25 px-3 py-2 text-[11px] text-sky-100 flex flex-wrap items-center gap-2">${chip}<span class="text-white/55">مبلغ: <b>${utils.formatPrice(Number(order.total || 0))}</b> تومان</span><span class="mr-auto flex items-center gap-2 shrink-0">${btn}</span></div>`;
+      })() : ''}
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <div class="rounded-xl bg-white/4 border border-white/8 p-3">
@@ -567,6 +579,50 @@ function aryReopenOrder(oid) {
   if (window.toast) toast('سفارش بازگشایی و به «پردازش» منتقل شد', 'info');
   render();
 }
+window.aryAdminCreateRefundTicket = function (oid) {
+  const o = (state.orders || []).find(x => String(x.id) === String(oid)); if (!o) return;
+  const amt = Number(o.total || (o.refund && o.refund.amount) || 0);
+  const amtTxt = (window.utils && utils.formatPrice ? utils.formatPrice(amt) : String(amt)) + ' تومان';
+  state.confirmModal = {
+    type: 'info',
+    title: 'ثبت تیکت بازگشت وجه برای کاربر',
+    message: `
+      <div class="text-start space-y-2.5">
+        <p class="text-xs text-white/60 leading-6">تیکت «بازگشت وجه سفارش #${escapeHtml(String(o.id).slice(-8))}» برای <b>${escapeHtml(o.user_name || 'کاربر')}</b> ثبت و در پنل کاربری او (تب تیکت‌ها) نمایش داده می‌شود. مبلغ قابل واریز: <b class="text-emerald-300">${amtTxt}</b>.</p>
+        <textarea id="ary-refund-open-note" rows="2" class="input-style w-full text-sm resize-none" placeholder="توضیح برای کاربر (اختیاری) — مثلاً «پس از تایید انبار، واریز انجام می‌شود»"></textarea>
+      </div>`,
+    confirmText: 'ثبت و ارسال تیکت',
+    confirmClass: 'bg-blue-600 hover:bg-blue-500 text-white',
+    onConfirm: function () {
+      const note = String(document.getElementById('ary-refund-open-note')?.value || '').trim().slice(0, 400);
+      state.confirmModal = null;
+      const ticket = {
+        id: String(window.utils && utils.uid ? utils.uid() : Date.now()),
+        user_phone: String(o.user_phone || ''), user_name: o.user_name || 'کاربر',
+        subject: 'بازگشت وجه سفارش #' + String(o.id).slice(-8),
+        status: 'open', priority: 'normal',
+        type: 'refund', order_id: String(o.id), refund_amount: amt,
+        refund_state: (o.refund && o.refund.state) || 'requested',
+        messages: [{ from: 'admin', text: 'سلام' + (o.user_name ? ' ' + o.user_name : '') + '. سفارش #' + String(o.id).slice(-8) + ' لغو شد و پروندهٔ بازگشت وجه به مبلغ ' + amtTxt + ' ثبت شد. ' + (note || 'پس از بررسی واحد مالی، نتیجهٔ واریز از همین تیکت اعلام می‌شود.'), at: new Date().toISOString() }],
+        created_at: new Date().toISOString()
+      };
+      state.tickets = Array.isArray(state.tickets) ? state.tickets : [];
+      state.tickets.unshift(ticket);
+      if (!o.refund) o.refund = { state: 'requested', amount: amt, at: new Date().toISOString(), note: 'ثبت توسط پشتیبانی' };
+      try { if (window.AppState) AppState.set({ tickets: state.tickets, orders: state.orders }); } catch (e2) {}
+      try { if (window.AryaDB && AryaDB.upsert) AryaDB.upsert('orders', o).catch(function () {}); } catch (e2) {}
+      try {
+        if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+          AryaServer.crud.upsert('tickets', Object.assign({}, ticket, { messages: JSON.stringify(ticket.messages) })).catch(function () {});
+        }
+      } catch (e2) {}
+      if (window.toast) toast('تیکت بازگشت وجه برای کاربر ثبت شد — در پنل کاربری او هم نمایش داده می‌شود', 'success');
+      render();
+    }
+  };
+  render();
+};
+
 // وضعیت شیت پایین ادمین (باز/کشیدن/حالت) — تعریف سراسری
 const sheetState = { mode: 'closed', open: false, dragging: false, startY: 0, lastY: 0, lastTime: 0, height: 0, velocity: 0 };
 window.sheetState = sheetState;
