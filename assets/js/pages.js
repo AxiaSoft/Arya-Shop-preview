@@ -1523,8 +1523,8 @@ function renderProductRow(p, i) {
             </div>
             <span class="text-[11px] ${inStock ? 'text-emerald-300/80' : 'text-rose-300/80'} inline-flex items-center gap-1 shrink-0">${aryIcon(inStock ? 'check' : 'x','w-3.5 h-3.5')}${inStock ? 'موجود' : 'ناموجود'}<\/span>
           </div>
-          <div class="sm:flex sm:items-center sm:justify-end sm:mt-1">
-            <button type="button" class="btn-primary text-xs px-3.5 h-10 sm:h-9 w-full sm:w-auto rounded-xl inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-40" ${inStock ? '' : 'disabled'} onclick="addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-4 h-4')}افزودن به سبد</button>
+          <div class="flex items-center justify-end mt-0.5 sm:mt-1">
+            <button type="button" class="btn-primary text-xs px-3.5 h-10 sm:h-9 rounded-xl inline-flex items-center justify-center gap-1.5 whitespace-nowrap disabled:opacity-40" ${inStock ? '' : 'disabled'} onclick="addToCartById('${aryEsc(String(p.id))}')">${aryIcon('cart','w-4 h-4')}افزودن به سبد</button>
           </div>
         </div>
       </div>
