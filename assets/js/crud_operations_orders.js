@@ -29,7 +29,7 @@
   function createOrder(order) {
     const safeOrder = normalizeOrderFields(order || {});
     state.orders.push(safeOrder);
-    toast('سفارش جدید ثبت شد ✅');
+    toast('سفارش جدید ثبت شد');
     render();
     return safeOrder;
   }
@@ -66,7 +66,7 @@
     }
 
     if (!order) {
-      toast('سفارش یافت نشد ❌');
+      toast('سفارش یافت نشد');
       return null;
     }
 
@@ -76,7 +76,7 @@
       order[key] = normalized[key];
     });
 
-    toast('سفارش بروزرسانی شد ✨');
+    toast('سفارش بروزرسانی شد');
     render();
     return order;
   }
@@ -85,12 +85,12 @@
   function deleteOrder(id) {
     const index = state.orders.findIndex(o => o.id === id);
     if (index === -1) {
-      toast('سفارش یافت نشد ❌');
+      toast('سفارش یافت نشد');
       return false;
     }
 
     state.orders.splice(index, 1);
-    toast('سفارش حذف شد 🗑️');
+    toast('سفارش حذف شد');
     render();
     return true;
   }

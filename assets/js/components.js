@@ -1,4 +1,113 @@
 // ═══════════════════════════════════════════════════════════════
+// سیستم آیکون SVG (جایگزین ایموجی) — خطی، هم‌وزن Tailwind
+// مصرف: aryIcon('cart') یا aryIcon('truck', 'w-6 h-6 text-emerald-400')
+// ═══════════════════════════════════════════════════════════════
+window.ARYA_ICONS = {
+  // r44 — پک گسترده (جایگزین ایموجی‌ها در سراسر سیستم)
+  download: '<path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>',
+  upload: '<path d="M12 21V9m0 0 4.5 4.5M12 9 7.5 13.5"/><path d="M4 7V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/>',
+  refresh: '<path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/>',
+  undo: '<path d="M3 7v6h6"/><path d="M3.5 13a9 9 0 1 0 2.1-6.4L3 9"/>',
+  redo: '<path d="M21 7v6h-6"/><path d="M20.5 13a9 9 0 1 1-2.1-6.4L21 9"/>',
+  image: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 15.5-4.5-4L6 20"/>',
+  map: '<path d="m9 4-6 2v14l6-2 6 2 6-2V4l-6 2-6-2Zm0 0v14m6-12v14"/>',
+  compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5 5-2Z"/>',
+  calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 11h18"/>',
+  archive: '<rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8M10 12h4"/>',
+  clipboard: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4a2 2 0 0 1 6 0"/><rect x="9" y="2.5" width="6" height="3.5" rx="1"/>',
+  table: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 4v16"/>',
+  link: '<path d="M10 13a5 5 0 0 0 7.5.5l2.5-2.5a5 5 0 0 0-7-7L11.5 6.5"/><path d="M14 11a5 5 0 0 0-7.5-.5L4 13a5 5 0 0 0 7 7l2.5-2.5"/>',
+  save: '<path d="M5 4h11l3 3v13H5Z"/><path d="M8 4v5h7V4M8 20v-6h8v6"/>',
+  menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  flame: '<path d="M12 22c4 0 7-2.7 7-6.5 0-4.5-4-6-4.5-10.5C11 6 9.5 8.5 9.5 11c0-1-.8-2.2-1.8-3C6.4 9.7 5 12 5 15.5 5 19.3 8 22 12 22Z"/>',
+  crown: '<path d="m2 8 4.5 3.5L12 5l5.5 6.5L22 8l-2 11H4L2 8Z"/>',
+  filter: '<path d="M4 5h16l-6 8v5l-4 2v-7L4 5Z"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z"/>',
+  bell: '<path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
+  play: '<path d="m8 5.5 12 6.5-12 6.5V5.5Z"/>',
+  monitor: '<rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8m-4-4v4"/>',
+  server: '<rect x="3" y="4" width="18" height="7" rx="2"/><rect x="3" y="13" width="18" height="7" rx="2"/><path d="M7.5 7.5h.01M7.5 16.5h.01"/>',
+  palette: '<path d="M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3 3h-1.5a2 2 0 0 0-1.4 3.4A2 2 0 0 1 12 21Z"/><circle cx="8" cy="10" r="1.1"/><circle cx="12" cy="7.5" r="1.1"/><circle cx="15.8" cy="10" r="1.1"/>',
+  rocket: '<path d="M5 19c1-4 3.5-9 9.5-13.5C18 3 20 3 21 4s1 3-1.5 6.5C14.5 17 9.5 19 5 19Z"/><circle cx="14.5" cy="9.5" r="1.7"/><path d="m5 19 2.2-2.2"/>',
+  wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76Z"/>',
+  flag: '<path d="M5 22V4m0 0h12l-2 4 2 4H5"/>',
+  send: '<path d="m22 2-7 20-4-9-9-4 20-7Z"/>',
+  timer: '<circle cx="12" cy="14" r="7"/><path d="M12 11v3l2 2M9 2h6"/>',
+  wine: '<path d="M8 22h8M12 15v7M6 3h12l-.5 5.5a5.5 5.5 0 0 1-11 0L6 3Z"/>',
+  filetext: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h6" stroke-width="1.4"/>',
+  external: '<path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
+  store: '<path d="M4 10v9a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-9"/><path d="M3 6l1.5-3h15L21 6a3 3 0 0 1-6 0 3 3 0 0 1-6 0 3 3 0 0 1-6 0Z"/>',
+  spinner: '<path d="M21 12a9 9 0 1 1-9-9" />',
+  gauge: '<path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/>',
+  // آیکون‌ها: پک رسمی Lucide v0.462.0 (lucide.dev — ISC) — 24×24، currentColor
+  thumbdown: '<path d="M17 14V2" /> <path d="M9 18.12 10 14H4.17a2 2 0 0 1-1.92-2.56l2.33-8A2 2 0 0 1 6.5 2H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-2.76a2 2 0 0 0-1.79 1.11L12 22a3.13 3.13 0 0 1-3-3.88Z" />',
+  video: '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5" /> <rect x="2" y="6" width="14" height="12" rx="2" />',
+  edit: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" />',
+  alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" /> <path d="M12 9v4" /> <path d="M12 17h.01" />',
+  grid: '<rect width="7" height="7" x="3" y="3" rx="1" /> <rect width="7" height="7" x="14" y="3" rx="1" /> <rect width="7" height="7" x="14" y="14" rx="1" /> <rect width="7" height="7" x="3" y="14" rx="1" />',
+  coins: '<circle cx="8" cy="8" r="6" /> <path d="M18.09 10.37A6 6 0 1 1 10.34 18" /> <path d="M7 6h1v4" /> <path d="m16.71 13.88.7.71-2.82 2.82" />',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <circle cx="9" cy="7" r="4" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <path d="M16 3.13a4 4 0 0 1 0 7.75" />',
+  trending: '<polyline points="22 7 13.5 15.5 8.5 10.5 2 17" /> <polyline points="16 7 22 7 22 13" />',
+  hourglass: '<path d="M5 22h14" /> <path d="M5 2h14" /> <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" /> <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />',
+  settings: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /> <circle cx="12" cy="12" r="3" />',
+  home: '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
+  database: '<ellipse cx="12" cy="5" rx="9" ry="3" /> <path d="M3 5V19A9 3 0 0 0 21 19V5" /> <path d="M3 12A9 3 0 0 0 21 12" />',
+  list: '<path d="M3 12h.01" /> <path d="M3 18h.01" /> <path d="M3 6h.01" /> <path d="M8 12h13" /> <path d="M8 18h13" /> <path d="M8 6h13" />',
+  key: '<path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z" /> <circle cx="16.5" cy="7.5" r=".5" fill="currentColor" />',
+  cart: '<circle cx="8" cy="21" r="1" /> <circle cx="19" cy="21" r="1" /> <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />',
+  search: '<circle cx="11" cy="11" r="8" /> <path d="m21 21-4.3-4.3" />',
+  user: '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" /> <circle cx="12" cy="7" r="4" />',
+  heart: '<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z" />',
+  bolt: '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />',
+  truck: '<path d="M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2" /> <path d="M15 18H9" /> <path d="M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14" /> <circle cx="17" cy="18" r="2" /> <circle cx="7" cy="18" r="2" />',
+  lock: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2" /> <path d="M7 11V7a5 5 0 0 1 10 0v4" />',
+  shield: '<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" /> <path d="m9 12 2 2 4-4" />',
+  check: '<path d="M20 6 9 17l-5-5" />',
+  card: '<rect width="20" height="14" x="2" y="5" rx="2" /> <line x1="2" x2="22" y1="10" y2="10" />',
+  chat: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />',
+  star: '<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z" />',
+  gift: '<rect x="3" y="8" width="18" height="4" rx="1" /> <path d="M12 8v13" /> <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7" /> <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5" />',
+  bag: '<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /> <path d="M3 6h18" /> <path d="M16 10a4 4 0 0 1-8 0" />',
+  x: '<path d="M18 6 6 18" /> <path d="m6 6 12 12" />',
+  trash: '<path d="M3 6h18" /> <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /> <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /> <line x1="10" x2="10" y1="11" y2="17" /> <line x1="14" x2="14" y1="11" y2="17" />',
+  pin: '<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" /> <circle cx="12" cy="10" r="3" />',
+  phone: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />',
+  mail: '<rect width="20" height="16" x="2" y="4" rx="2" /> <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />',
+  clock: '<circle cx="12" cy="12" r="10" /> <polyline points="12 6 12 12 16 14" />',
+  box: '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <path d="m3.3 7 7.703 4.734a2 2 0 0 0 1.994 0L20.7 7" /> <path d="m7.5 4.27 9 5.15" />',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z" /> <path d="M13 5v2" /> <path d="M13 17v2" /> <path d="M13 11v2" />',
+  plus: '<path d="M5 12h14" /> <path d="M12 5v14" />',
+  chevrondown: '<path d="m6 9 6 6 6-6" />',
+  info: '<circle cx="12" cy="12" r="10" /> <path d="M12 16v-4" /> <path d="M12 8h.01" />',
+  return: '<path d="M9 14 4 9l5-5" /> <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />',
+  eye: '<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" /> <circle cx="12" cy="12" r="3" />',
+  eyeoff: '<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49" /> <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242" /> <path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143" /> <path d="m2 2 20 20" />',
+  smartphone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2" /> <path d="M12 18h.01" />',
+  headphones: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3" />',
+  watch: '<circle cx="12" cy="12" r="6" /> <polyline points="12 10 12 12 13 13" /> <path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05" /> <path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05" />',
+  gamepad: '<line x1="6" x2="10" y1="11" y2="11" /> <line x1="8" x2="8" y1="9" y2="13" /> <line x1="15" x2="15.01" y1="12" y2="12" /> <line x1="18" x2="18.01" y1="10" y2="10" /> <path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z" />',
+  shirt: '<path d="M20.38 3.46 16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.47a1 1 0 0 0 .99.84H6v10c0 1.1.9 2 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.47a2 2 0 0 0-1.34-2.23z" />',
+  camera: '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z" /> <circle cx="12" cy="13" r="3" />',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /> <polyline points="16 17 21 12 16 7" /> <line x1="21" x2="9" y1="12" y2="12" />',
+  sparkles: '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" />',
+  arrowleft: '<path d="m12 19-7-7 7-7" /> <path d="M19 12H5" />',
+  percent: '<line x1="19" x2="5" y1="5" y2="19" /> <circle cx="6.5" cy="6.5" r="2.5" /> <circle cx="17.5" cy="17.5" r="2.5" />',
+  thumbup: '<path d="M7 10v12" /> <path d="M15 5.88 14 10h5.83a2 2 0 0 1 1.92 2.56l-2.33 8A2 2 0 0 1 17.5 22H4a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2h2.76a2 2 0 0 0 1.79-1.11L12 2a3.13 3.13 0 0 1 3 3.88Z" />',
+};
+window.aryIcon = function (name, extra) {
+  var d = window.ARYA_ICONS[name] || ARYA_ICONS.box;
+  var cls = extra || 'w-5 h-5';
+  return '<svg class="ary-ic ' + cls + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>';
+};
+window.ARYA_BOX_SVG = '<div class="w-full h-full flex items-center justify-center text-white/30">' + (window.ARYA_ICONS ? '<svg class="ary-ic w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + ARYA_ICONS.box + '</svg>' : '') + '</div>';
+// آیکون دسته‌بندی: اگر داده نام آیکون داشت SVG و اگر ایموجی/متن بود همان متن
+window.aryCatIcon = function (cat, extra) {
+  var ic = (cat && cat.icon) ? String(cat.icon) : '';
+  if (ARYA_ICONS[ic]) return aryIcon(ic, extra || 'w-6 h-6');
+  return ic ? '<span aria-hidden="true">' + ic + '</span>' : aryIcon('box', extra || 'w-6 h-6');
+};
+
+// ═══════════════════════════════════════════════════════════════
 // HEADER COMPONENT
 // File: assets/js/header component.js
 // ═══════════════════════════════════════════════════════════════
@@ -7,22 +116,19 @@
     if (document.getElementById('gpt5-header-styles')) return;
     const css = `
       .gpt5-drawer {
-        background:
-          radial-gradient(900px 500px at 95% 5%, rgba(86,125,255,0.22) 0%, rgba(0,0,0,0) 40%),
-          radial-gradient(700px 500px at 10% 95%, rgba(0,210,255,0.16) 0%, rgba(0,0,0,0) 45%),
-          linear-gradient(180deg, rgba(16,18,24,0.92) 0%, rgba(16,18,24,0.88) 55%, rgba(16,18,24,0.95) 100%);
-        backdrop-filter: blur(26px) saturate(160%);
-        border-left: 1px solid rgba(255,255,255,0.12);
-        box-shadow: -14px 0 36px rgba(0,0,0,0.45);
-        color:#fff;
+        background: var(--ar-panel, #0e1c3c);
+        backdrop-filter: none;
+        border-left: 1px solid var(--ar-line, rgba(148,187,255,.14));
+        box-shadow: var(--ar-shpop, -14px 0 36px rgba(0,0,0,0.45));
+        color: var(--ar-ink, #fff);
       }
       .gpt5-drawer-link {
-        width:100%; text-align:right; color:rgba(255,255,255,0.95);
+        width:100%; text-align:right; color:var(--ar-ink2, rgba(255,255,255,.95));
         padding:10px 12px; border-radius:12px; border:1px solid transparent;
         transition: background 160ms ease, border-color 160ms ease;
       }
-      .gpt5-drawer-link:hover { background: rgba(255,255,255,0.10); }
-      .gpt5-drawer-link:active { background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.14); }
+      .gpt5-drawer-link:hover { background: var(--ar-hover, rgba(255,255,255,0.10)); }
+      .gpt5-drawer-link:active { background: var(--ar-active, rgba(255,255,255,0.18)); border-color: var(--ar-line2); }
 
       .gpt5-dd {
         overflow:hidden;
@@ -37,18 +143,19 @@
         margin-top:6px;
       }
       .gpt5-dd-inner {
-        border: 1px solid rgba(255,255,255,0.12);
-        background: rgba(255,255,255,0.06);
+        border: 1px solid var(--ar-line, rgba(255,255,255,0.12));
+        background: var(--ar-surface, rgba(255,255,255,0.06));
         border-radius: 14px; padding: 6px;
+        box-shadow: var(--ar-sh2, none);
       }
       .gpt5-dd-item {
-        width:100%; text-align:right; color:rgba(255,255,255,0.92);
+        width:100%; text-align:right; color:var(--ar-ink2, rgba(255,255,255,0.92));
         padding:9px 10px; border-radius:10px; transition: background 160ms ease;
       }
-      .gpt5-dd-item:hover { background: rgba(255,255,255,0.10); }
-      .gpt5-dd-item:active { background: rgba(255,255,255,0.18); }
+      .gpt5-dd-item:hover { background: var(--ar-hover, rgba(255,255,255,0.10)); }
+      .gpt5-dd-item:active { background: var(--ar-active, rgba(255,255,255,0.18)); }
 
-      /* SEARCH FLOATING BAR */
+            /* SEARCH FLOATING BAR */
       .gpt5-search-wrap {
         position: relative;
         height: 0;
@@ -75,11 +182,11 @@
         pointer-events: auto;
       }
       .gpt5-search {
-        background: rgba(20,20,24,0.9);
-        border: 1px solid rgba(255,255,255,0.14);
-        backdrop-filter: blur(20px) saturate(140%);
-        box-shadow: 0 18px 40px rgba(0,0,0,0.45);
-        color: #fff;
+        background: var(--ar-surface, rgba(20,20,24,0.9));
+        border: 1px solid var(--ar-line2, rgba(255,255,255,0.14));
+        backdrop-filter: none;
+        box-shadow: var(--ar-shpop, 0 18px 40px rgba(0,0,0,0.45));
+        color: var(--ar-ink, #fff);
         border-radius: 18px;
         padding: 10px 12px;
         width: 100%;
@@ -90,9 +197,9 @@
       }
       .gpt5-search-input {
         width:100%;
-        color:#fff;
-        background: rgba(255,255,255,0.08);
-        border:1px solid rgba(255,255,255,0.14);
+        color: var(--ar-ink, #fff);
+        background: var(--ar-input, rgba(255,255,255,0.08));
+        border:1px solid var(--ar-inputbd, rgba(255,255,255,0.14));
         border-radius:12px;
         padding:12px 46px 12px 104px;
         outline:none;
@@ -205,19 +312,61 @@
   }
 
   // فقط کلاس نوار سرچ را عوض می‌کند، بدون render
-  function toggleSearchBar() {
+  function toggleSearchBar(force) {
     const shell = document.querySelector('.gpt5-search-shell');
     const btn = document.getElementById('searchToggleBtn');
     if (!shell) return;
-    shell.classList.toggle('open');
-    if (btn) btn.textContent = shell.classList.contains('open') ? '✕' : '🔍';
+    let open = !shell.classList.contains('open');
+    if (force === true || force === false) open = force;
+    if (open === shell.classList.contains('open') && !shell.classList.contains('closing') && force !== undefined) return;
+    if (btn) btn.innerHTML = open ? '✕' : aryIcon('search','w-5 h-5');
+    if (open) {
+      try {
+        if (btn) {
+          const r = btn.getBoundingClientRect();
+          const sr = shell.getBoundingClientRect();
+          shell.style.setProperty('--ary-src-x', (r.left + r.width / 2 - sr.left) + 'px');
+          shell.style.setProperty('--ary-src-y', (r.top + r.height / 2 - sr.top) + 'px');
+        }
+      } catch (e) {}
+      shell.classList.remove('closing');
+      shell.classList.add('open');
+      setTimeout(function () {
+        if (shell.classList.contains('open')) {
+          const inp = document.getElementById('header-search');
+          if (inp) { try { inp.focus(); } catch (e) {} }
+        }
+      }, 380);
+    } else {
+      if (!shell.classList.contains('open') && !shell.classList.contains('closing')) return;
+      shell.classList.remove('open');
+      shell.classList.add('closing');
+      setTimeout(function () { shell.classList.remove('closing'); }, 540);
+    }
   }
+  function arySearchPhone() { try { return window.matchMedia && matchMedia('(max-width: 639px)').matches; } catch (e) { return false; } }
+  document.addEventListener('pointerdown', function (e) {
+    const shell = document.querySelector('.gpt5-search-shell');
+    if (!shell || !shell.classList.contains('open') || !arySearchPhone()) return;
+    const t = e.target;
+    if (shell.contains(t)) return;
+    if (t && t.closest && t.closest('#searchToggleBtn, [onclick*="toggleSearchBar"]')) return;
+    toggleSearchBar(false);
+  }, true);
+  document.addEventListener('scroll', function (e) {
+    const shell = document.querySelector('.gpt5-search-shell');
+    if (!shell || !shell.classList.contains('open') || !arySearchPhone()) return;
+    const t = e.target;
+    if (t && t.nodeType === 1 && shell.contains(t)) return;
+    toggleSearchBar(false);
+  }, { capture: true, passive: true });
 
   function applySearch() {
     const input = document.getElementById('header-search');
     if (!input) return;
     state.productFilter.search = input.value || '';
     navigate('shop');
+    try { toggleSearchBar(false); } catch (e) {}
   }
 
   function handleSearchKey(e) {
@@ -232,7 +381,7 @@
       : (state.cart?.length || 0);
 
     const headerHTML = `
-      <header class="glass-dark sticky top-0 z-50 border-b border-white/5">
+      <header class="glass-dark ary-liquid sticky top-0 z-50 border-b border-white/5">
         <div class="max-w-7xl mx-auto px-4 lg:px-8">
           <div class="flex items-center justify-between h-16 lg:h-20 relative">
             
@@ -246,6 +395,8 @@
             <nav class="hidden lg:flex items-center gap-8">
               <button onclick="navigate('home')" class="text-white/80 hover:text-white text-sm font-medium transition-colors ${state.page==='home'?'text-white':''}" type="button">خانه</button>
               <button onclick="navigate('shop')" class="text-white/80 hover:text-white text-sm font-medium transition-colors ${state.page==='shop'?'text-white':''}" type="button">فروشگاه</button>
+              <button onclick="navigate('blog')" class="text-white/80 hover:text-white text-sm font-medium transition-colors ${state.page==='blog'?'text-white':''}" type="button">بلاگ</button>
+              <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
               
               <!-- Categories Dropdown -->
               <div class="relative group">
@@ -259,7 +410,7 @@
                   <div class="rounded-2xl p-3 min-w-[260px] shadow-2xl bg-gray-900/95 border border-white/15">
                     ${(state.categories || []).map(cat => `
                       <button onclick="state.productFilter.category='${cat.id}'; navigate('shop')" class="w-full text-right px-4 py-2.5 rounded-xl text-sm hover:bg-white/10 flex items-center gap-3 transition-colors" type="button">
-                        <span class="text-lg">${cat.icon||''}</span>
+                        <span class="inline-flex text-blue-300">${typeof aryCatIcon==='function'?aryCatIcon(cat,'w-4.5 h-4.5'):''}</span><span class="text-lg"></span></span>
                         <span>${cat.title}</span>
                       </button>
                     `).join('')}
@@ -270,26 +421,27 @@
             
             <!-- Actions -->
             <div class="flex items-center gap-2 lg:gap-4">
-              <!-- Search toggle -->
+              <!-- Search toggle (کشویی قدیمی — بازگردانی‌شده) -->
               <button
                 id="searchToggleBtn"
                 onclick="toggleSearchBar()"
-                class="p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10"
+                class="as-hbtn p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10"
                 aria-label="جستجو"
+                aria-keyshortcuts="Control+K"
                 type="button"
               >
-                🔍
+                ${aryIcon('search','w-5 h-5 lg:w-6 lg:h-6')}
               </button>
 
               <!-- Cart -->
-              <button onclick="navigate('cart')" class="relative p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="سبد خرید" type="button">
-                🛒
+              <button onclick="navigate('cart')" class="relative as-hbtn p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="سبد خرید" type="button">
+                ${aryIcon('cart','w-5 h-5 lg:w-6 lg:h-6')}
                 ${cartCount>0?`<span class="absolute -top-1 -right-1 gpt5-badge">${cartCount>99?'99+':cartCount}</span>`:''}
               </button>
 
               <!-- Profile / Admin -->
               ${state.user?`
-                <button onclick="navigate('profile')" class="p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="پروفایل" type="button">👤</button>
+                <button onclick="navigate('profile')" class="as-hbtn p-2.5 lg:p-3 glass rounded-xl hover:bg-white/10" aria-label="پروفایل" type="button">${aryIcon('user','w-5 h-5')}</button>
 
                 <button onclick="logout()" class="hidden lg:flex items-center gap-2 px-5 py-2.5 glass rounded-xl text-rose-400 hover:bg-rose-500/10" type="button">خروج</button>
               `:`
@@ -297,8 +449,9 @@
               `}
 
               <!-- Hamburger (mobile/tablet) -->
-              <button onclick="toggleMenu()" class="lg:hidden p-2.5 glass rounded-xl hover:bg-white/10" aria-label="منو" type="button">
-                ☰
+              <button type="button" onclick="window.AryaTheme&&AryaTheme.toggle()" class="ary-theme-btn as-mob-theme" title="حالت روشن/تاریک" aria-label="تغییر تم"><svg class="ico-sun w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg><svg class="ico-moon w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></button>
+              <button onclick="toggleMenu()" class="lg:hidden as-hbtn p-2.5 glass rounded-xl hover:bg-white/10" aria-label="منو" type="button">
+                ${aryIcon ? aryIcon('menu', 'w-5 h-5 lg:w-6 lg:h-6') : ''}
               </button>
             </div>
           </div>
@@ -309,7 +462,7 @@
           <div class="gpt5-search-shell">
             <div class="gpt5-search">
               <div class="gpt5-search-inner">
-                <span class="gpt5-search-icon">🔍</span>
+                <span class="gpt5-search-icon">${aryIcon('search','w-4 h-4')}</span>
                 <input
                   id="header-search"
                   type="text"
@@ -332,14 +485,19 @@
 
       <!-- Mobile/Tablet Sidebar (همیشه در DOM، فقط کلاس open) -->
       <div id="mobileMenu" class="mobile-menu">
-        <div class="gpt5-drawer gpt5-drawer-w ml-auto h-full p-5 sm:p-6 flex flex-col gap-2">
-          <div class="flex items-center justify-between mb-3 sm:mb-4">
-            <span class="font-bold text-white text-base sm:text-lg">${config.store_name}</span>
-            <button onclick="toggleMenu()" class="p-2 rounded-lg hover:bg-white/10 text-white/90" aria-label="بستن" type="button">✕</button>
+        <div class="gpt5-drawer gpt5-drawer-w ml-auto h-full flex flex-col">
+          <div class="ary-dh">
+            <div class="min-w-0">
+              <div class="ary-dh-t">${config.store_name}</div>
+              <div class="ary-dh-s">فهرست دسترسی‌ها</div>
+            </div>
+            <button onclick="toggleMenu()" class="ary-float-x" aria-label="بستن منو" type="button">✕</button>
           </div>
+          <div class="ary-dnav">
 
           <button onclick="navigate('home'); toggleMenu();" class="gpt5-drawer-link" type="button">خانه</button>
           <button onclick="navigate('shop'); toggleMenu();" class="gpt5-drawer-link" type="button">فروشگاه</button>
+          <button onclick="navigate('blog'); toggleMenu();" class="gpt5-drawer-link" type="button">بلاگ</button>
 
           <div class="mt-1">
             <button onclick="toggleSidebarCategories()" class="gpt5-drawer-link flex items-center justify-between" type="button">
@@ -357,12 +515,14 @@
 
           <div class="mt-3 border-t border-white/10"></div>
 
-          <div class="flex items-center gap-2 mt-3">
-            <button onclick="toggleSearchBar(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button">🔍 جستجو</button>
+          <div class="flex items-center gap-2 mt-3" style="margin-inline:.8rem">
+            <button onclick="toggleSearchBar(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('search','w-4 h-4')}جستجو</span></button>
             ${state.user?`
-              <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button">👤 پروفایل</button>
+              <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('user','w-4 h-4')}پروفایل</span></button>
+              <button onclick="logout(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;color:#fda4af" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('logout','w-4 h-4')}خروج</span></button>
 
             `:''}
+          </div>
           </div>
         </div>
 
@@ -399,6 +559,14 @@
     return new Intl.DateTimeFormat('fa-IR-u-nu-latn', { year: 'numeric' })
       .format(new Date());
   }
+
+  // پلاک مجوز: اگر url داشت، لینک تأیید بیرونی (eNamad/Samandehi) با noopener
+  function aryBadgeHtml(b) {
+    var img = '<img src="' + b.img + '" alt="' + (b.alt || '') + '" title="' + (b.alt || '') + '" class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 object-contain rounded-lg glass p-1 transition hover:scale-110 hover:bg-white/10" loading="lazy">';
+    if (b.url) return '<a href="' + b.url + '" target="_blank" rel="noopener noreferrer" title="مشاهده و تأیید اصالت این مجوز">' + img + '</a>';
+    return img;
+  }
+  window.aryBadgeHtml = window.aryBadgeHtml || aryBadgeHtml;
 
   function renderFooter() {
     const currentYear = getShamsiYear();
@@ -439,6 +607,7 @@
               <ul class="space-y-3">
                 <li><button onclick="navigate('home')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">صفحه اصلی</button></li>
                 <li><button onclick="navigate('shop')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">فروشگاه</button></li>
+                <li><button onclick="navigate('blog')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">بلاگ</button></li>
                 <li><button onclick="navigate('cart')" class="text-white/60 hover:text-white text-sm transition-colors" type="button">سبد خرید</button></li>
               </ul>
             </div>
@@ -465,10 +634,10 @@
             <div>
               <h4 class="font-bold text-sm mb-5">ارتباط با ما</h4>
               <ul class="space-y-3 text-white/60 text-sm">
-                <li class="flex items-center gap-2"><span aria-hidden="true">📞</span><span class="font-mono" dir="ltr">۰۲۱-۱۲۳۴۵۶۸</span></li>
-                <li class="flex items-center gap-2"><span aria-hidden="true">📧</span><span>info@premium-shop.ir</span></li>
-                <li class="flex items-center gap-2"><span aria-hidden="true">📍</span><span>تهران، ایران</span></li>
-                <li class="flex items-center gap-2"><span aria-hidden="true">⏰</span><span>شنبه تا پنج‌شنبه ۹-۱۸</span></li>
+                <li class="flex items-center gap-2">${aryIcon("phone","w-4 h-4 text-blue-300")}<span class="font-mono" dir="ltr">۰۲۱-۱۲۳۴۵۶۸</span></li>
+                <li class="flex items-center gap-2">${aryIcon("mail","w-4 h-4 text-blue-300")}<span>info@premium-shop.ir</span></li>
+                <li class="flex items-center gap-2">${aryIcon("pin","w-4 h-4 text-blue-300")}<span>تهران، ایران</span></li>
+                <li class="flex items-center gap-2">${aryIcon("clock","w-4 h-4 text-blue-300")}<span>شنبه تا پنج‌شنبه ۹-۱۸</span></li>
               </ul>
             </div>
           </div>
@@ -482,22 +651,10 @@
               ${badges.length === 0
                 ? `
                 <div class="flex flex-wrap items-center gap-3">
-                  ${trustBadges.map(b => `
-                    <img 
-                      src="${b.img}" 
-                      alt="${b.alt}" 
-                      class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 object-contain rounded-lg glass p-1"
-                    >
-                  `).join('')}
+                  ${trustBadges.map(aryBadgeHtml).join('')}
                 </div>
                 `
-                : badges.map(b => `
-                  <img 
-                    src="${b.img}" 
-                    alt="${b.alt || ''}" 
-                    class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14 object-contain rounded-lg glass p-1"
-                  >
-                `).join('')}
+                : badges.map(aryBadgeHtml).join('')}
             </div>
           </div>
         </div>
@@ -514,10 +671,10 @@
         </div>
 
         <!-- Back-to-top button -->
-        <div class="fixed bottom-6 left-6 z-[60]">
+        <div class="fixed bottom-6 left-6 z-[60] ary-to-top">
           <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
             class="w-12 h-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/10 ring-1 ring-white/10 shadow-2xl hover:bg-white/20 transition-all flex items-center justify-center text-xl"
-            aria-label="برو به بالا" title="برو به بالا" type="button">⬆️</button>
+            aria-label="برو به بالا" title="برو به بالا" type="button"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></svg></button>
         </div>
       </footer>
     `;
@@ -555,11 +712,11 @@ function renderProductCard(product, index = 0) {
   const productImage = getProductImage(product);
   
   return `
-    <article class="glass rounded-2xl lg:rounded-3xl overflow-hidden card animate-fade" style="animation-delay: ${index * 0.08}s">
+    <article class="glass rounded-2xl lg:rounded-3xl overflow-hidden card flex flex-col h-full animate-fade" style="animation-delay: ${index * 0.08}s">
       
       <!-- Product Image با مدیریت خطا -->
       <div 
-        class="product-image aspect-square flex items-center justify-center text-6xl lg:text-8xl cursor-pointer relative bg-gradient-to-br from-violet-500/10 to-purple-600/10"
+        class="product-image aspect-square flex items-center justify-center text-6xl lg:text-8xl cursor-pointer relative bg-gradient-to-br from-blue-500/10 to-sky-600/10"
         onclick="state.selectedProduct = state.products.find(p => p.id === '${product.id}'); goTo('product')"
       >
         ${productImage ? `
@@ -570,10 +727,10 @@ function renderProductCard(product, index = 0) {
             loading="lazy"
             onload="this.style.opacity='1'"
             style="opacity:0"
-            onerror="this.onerror=null; this.parentElement.innerHTML='<div class=\\'text-6xl lg:text-8xl\\'>📦</div>'; this.parentElement.classList.add('no-image')"
+            onerror="this.onerror=null; this.parentElement.innerHTML=(window.ARYA_BOX_SVG || ''); this.parentElement.classList.add('no-image')"
           >
         ` : `
-          <div class="text-6xl lg:text-8xl">📦</div>
+          <div class="flex items-center justify-center w-full h-full text-white/15">${window.ARYA_ICONS ? '<svg class="ary-ic w-16 h-16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">' + ARYA_ICONS.box + '</svg>' : ''}</div>
         `}
         
         <!-- Badges -->
@@ -591,9 +748,9 @@ function renderProductCard(product, index = 0) {
       </div>
       
       <!-- Product Info -->
-      <div class="p-4 lg:p-5">
+      <div class="p-4 lg:p-5 flex-1 flex flex-col">
         ${product.category ? `
-          <span class="text-[10px] lg:text-xs text-violet-400 font-medium mb-2 block">
+          <span class="text-[10px] lg:text-xs text-blue-400 font-medium mb-2 block">
             ${state.categories.find(c => c.id === product.category)?.title || product.category}
           </span>
         ` : ''}
@@ -622,9 +779,9 @@ function renderProductCard(product, index = 0) {
         <button 
           onclick="event.stopPropagation(); addToCart(state.products.find(p => p.id === '${product.id}'))"
           ${!inStock ? 'disabled' : ''}
-          class="w-full btn-primary py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+          class="w-full btn-primary mt-auto py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
         >
-          <span>🛒</span>
+          <span>${aryIcon('cart','w-6 h-6')}</span>
           <span>افزودن به سبد</span>
         </button>
       </div>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl" data-aria-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>۴۰۴ — صفحه پیدا نشد | فروشگاه آریا</title>
+<meta name="robots" content="noindex">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Vazirmatn, "Segoe UI", Tahoma, sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; color:#fff;
+    background: radial-gradient(120% 90% at 50% 0%, #12275c 0%, #0a1531 45%, #060c1e 100%); overflow-x:hidden; }
+  .card { position:relative; width:min(560px, calc(100vw - 32px)); border-radius:2rem; padding:56px 32px 40px; text-align:center;
+    background: rgba(13, 24, 51, .62); border:1px solid rgba(148,187,255,.18); backdrop-filter: blur(16px); box-shadow: 0 30px 80px rgba(2,6,20,.55); }
+  .glow { position:absolute; inset:-40% -20% auto; height:70%; background: radial-gradient(50% 60% at 50% 0, rgba(59,130,246,.28), transparent 70%); pointer-events:none; }
+  .code { font-size: clamp(64px, 12vw, 104px); font-weight:900; line-height:1; letter-spacing:-2px; display:inline-block;
+    background: linear-gradient(120deg, #60a5fa, #38bdf8 55%, #93c5fd); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  h1 { font-size:20px; font-weight:900; margin:14px 0 8px; }
+  p { color: rgba(255,255,255,.6); font-size:13.5px; line-height:2; margin-bottom:26px; }
+  .btns { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  a { text-decoration:none; font-weight:700; font-size:13.5px; padding:12px 22px; border-radius:14px; transition: filter .2s, transform .2s; display:inline-flex; align-items:center; gap:8px; }
+  a:hover { filter: brightness(1.12); transform: translateY(-1px); }
+  .p { background: linear-gradient(120deg, #2563eb, #3b82f6); color:#fff; box-shadow: 0 12px 30px rgba(37,99,235,.35); }
+  .g { background: rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.14); color:#dbe6ff; }
+  .hint { margin-top:22px; font-size:11px; color:rgba(255,255,255,.35); }
+  @media (prefers-reduced-motion: no-preference) { .card { animation: up .5s ease both; } @keyframes up { from { opacity:0; transform: translateY(14px);} } }
+</style>
+</head>
+<body>
+  <main class="card">
+    <span class="glow"></span>
+    <span class="code">۴۰۴</span>
+    <h1>این صفحه در فروشگاه پیدا نشد</h1>
+    <p>نشانی‌ای که باز کردی بخشی از این سایت نیست — ممکن است جابه‌جا یا حذف شده باشد.</p>
+    <div class="btns">
+      <a class="p" href="./index.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><path d="m3 11 9-8 9 8v9a1 1 0 0 1-1 1h-5v-7h-6v7H4a1 1 0 0 1-1-1v-9Z"/></svg> بازگشت به خانه</a>
+      <a class="g" href="./index.html#/shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:1.05rem;height:1.05rem;vertical-align:-0.15em" aria-hidden="true"><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/><path d="M3 4h2l2.4 11.1a1 1 0 0 0 1 .9h8.3a1 1 0 0 0 1-.8L21 8H6"/></svg> رفتن به فروشگاه</a>
+    </div>
+    <div class="hint">اگر از لینک قدیمی آمده‌اید، از جست‌وجوی هدر استفاده کنید.</div>
+  </main>
+  <script>
+    // اگر روت SPA بود (مثل /some/path)، به صفحهٔ ۴۰۴ خودِ سایت هدایت کن
+    try {
+      var h = location.hash || '';
+      if (!/^#\/(product|article|blog|admin|shop|cart|checkout|login|profile|home)/.test(h) && location.pathname.indexOf('404') === -1) {
+        location.replace('./index.html#/notfound' + h);
+      }
+    } catch (e) {}
+  </script>
+</body>
+</html>

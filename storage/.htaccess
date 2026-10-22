@@ -1,0 +1,6 @@
+# هیچ دسترسی وب به محتوای این پوشه (سشن‌ها، دیتابیس SQLite، لاگ، rate) مجاز نیست
+Require all denied
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>

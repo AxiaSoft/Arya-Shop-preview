@@ -80,12 +80,12 @@
     };
 
     // لاگ برای دیباگ
-    console.log('✅ محصول جدید ایجاد شد:', safeProduct.title);
+    console.log('[CRUD] محصول جدید ایجاد شد:', safeProduct.title);
     console.log('   مقاله:', safeProduct.article ? 'دارد' : 'ندارد');
     console.log('   ویدیو:', safeProduct.videos?.length ? `${safeProduct.videos.length} ویدیو` : 'ندارد');
     
     state.products.push(safeProduct);
-    toast('محصول جدید اضافه شد ✅');
+    toast('محصول جدید اضافه شد');
     render();
     return safeProduct;
   }
@@ -101,12 +101,12 @@
     }
 
     if (!product) {
-      toast('محصول یافت نشد ❌');
+      toast('محصول یافت نشد');
       return null;
     }
 
     // لاگ برای دیباگ
-    console.log('🔄 به‌روزرسانی محصول:', product.title);
+    console.log('[CRUD] به‌روزرسانی محصول:', product.title);
     console.log('   ویدیو قبلی:', product.videos?.length || 0);
     console.log('   ویدیو جدید:', updates.videos?.length || 0);
 
@@ -118,7 +118,7 @@
       product[key] = normalized[key];
     });
 
-    toast('محصول بروزرسانی شد ✨');
+    toast('محصول بروزرسانی شد');
     render();
     return product;
   }
@@ -127,12 +127,12 @@
   function deleteProduct(id) {
     const index = state.products.findIndex(p => p.id === id);
     if (index === -1) {
-      toast('محصول یافت نشد ❌');
+      toast('محصول یافت نشد');
       return false;
     }
 
     state.products.splice(index, 1);
-    toast('محصول حذف شد 🗑️');
+    toast('محصول حذف شد');
     render();
     return true;
   }
