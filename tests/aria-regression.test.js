@@ -101,6 +101,27 @@ async function boot(htmlFile, extra) {
   // سایت — لاگین OTP ادغام می‌کند (hook در functions)
   t('OTP login hooks wlSync', /ورود موفق بود[\s\S]{0,60}wlSync|wlSync[\s\S]{0,60}goTo\('home'\);\r?\n  toast/.test(rd('assets/js/functions.js')) || /r46 — ادغام خودکار/.test(rd('assets/js/functions.js')));
 
+  /* ═══ r51 — سایت: لغو با تیکت بازگشت وجه ═══ */
+  {
+    w.eval('state.user = { id:\"u9\", username:\"ali\", name:\"آرین علوی\", phone:\"09127770009\" }; state.page = \"profile\"; state.profileTab = \"orders\";');
+    w.eval('state.orders = [{ id:\"rf1order\", user:\"u9\", user_phone:\"09127770009\", status:\"pending\", total: 250000, created_at: new Date().toISOString(), items: [] }]; state.tickets = []; render();');
+    await flush(w);
+    const profHtml = () => w.document.body.innerHTML;
+    t('r51 cancel button shown for pending', /requestOrderCancel\('rf1order'\)/.test(profHtml()) && /لغو سفارش و درخواست بازگشت وجه/.test(profHtml()));
+    w.eval('requestOrderCancel(\"rf1order\")'); await flush(w);
+    t('r51 confirm modal mentions auto ticket', !!(w.state.confirmModal && /تیکت/.test(String(w.state.confirmModal.title) + String(w.state.confirmModal.message))));
+    await w.state.confirmModal.onConfirm(); await new Promise(r => setTimeout(r, 200)); await flush(w);
+    const od = (w.state.orders || []).find(o => o.id === 'rf1order');
+    t('r51 order canceled with refund request', od && od.status === 'canceled' && od.refund && od.refund.state === 'requested' && Number(od.refund.amount) === 250000);
+    const tk = (w.state.tickets || []).find(t2 => String(t2.type) === 'refund');
+    t('r51 refund ticket auto-created for user', !!tk && String(tk.order_id) === 'rf1order' && /بازگشت وجه سفارش/.test(String(tk.subject)));
+    w.eval('state.profileTab = \"tickets\"; render();'); await flush(w);
+    t('r51 ticket card shows queued refund chip', /در صف بررسی مالی/.test(profHtml()));
+    w.eval('state.profileTab = \"orders\"; render();'); await new Promise(r => setTimeout(r, 150)); await flush(w);
+    t('r51 order card shows refund queue chip', /بازگشت وجه: در صف تیکت/.test(profHtml()) && /لغو شده/.test(profHtml()));
+    await w.eval('state.user=null; state.orders=[]; state.tickets=[]; wlSync(); render();'); await flush(w);
+  }
+
   /* ═══ ۳ — ادمین ═══ */
   const a = await boot('admin.html', 'admin');
   await new Promise(r => setTimeout(r, 120));
@@ -119,6 +140,28 @@ async function boot(htmlFile, extra) {
   t('raw logout called once', a.window.__rawCalls === 1);
   t('adminLogoutNow bypass (idle)', (() => { a.window.__rawCalls = 0; a.adminLogoutNow(); return a.window.__rawCalls === 1 && !a.state.confirmModal; })());
 
+  /* ═══ r51 — ادمین: اقدام بازگشت وجه از تیکت ═══ */
+  {
+    a.state.page = 'admin'; a.state.isAdmin = true; a.state.adminTab = 'support';
+    a.state.orders = [{ id: 'rf1orderXX', user_phone: '09127770009', status: 'canceled', total: 250000, cancel_reason: 'مشتری: انصراف', refund: { state: 'requested', amount: 250000 }, created_at: new Date().toISOString(), items: [] }];
+    a.state.tickets = [{ id: 'rftk1', type: 'refund', order_id: 'rf1orderXX', subject: 'بازگشت وجه سفارش #rf1orde', user_phone: '09127770009', user_name: 'آرین علوی', status: 'open', priority: 'normal', refund_state: 'requested', messages: [{ from: 'user', text: 'سلام، لطفا وجه را برگردانید', at: new Date().toISOString() }], created_at: new Date().toISOString() }];
+    a.state.supportFilter = a.state.supportFilter || { status: '', q: '' };
+    a.state.activeTicketId = 'rftk1';
+    a.render(); await flush(a);
+    const supHtml = () => a.document.body.innerHTML;
+    t('r51 admin refund panel in thread', /پروندهٔ <\/b>?.*بازگشت وجه|پروندهٔ/.test(supHtml()) && /تأیید و ثبت واریز/.test(supHtml()) && /رد درخواست/.test(supHtml()));
+    a.window.aryAdminRefundStart('rftk1', 'rejected'); await flush(a);
+    t('r51 reject requires reason', !!(a.state.confirmModal && /دلیل/.test(String(a.state.confirmModal.title) + String(a.state.confirmModal.message))));
+    a.state.confirmModal = null;
+    await a.window.aryAdminRefundApply('rftk1', 'refunded', 'حواله ساتا', 'ST-987'); await new Promise(r => setTimeout(r, 120)); await flush(a);
+    const tk = (a.state.tickets || []).find(x => x.id === 'rftk1');
+    const msgs = tk.messages || [];
+    t('r51 admin reply sent via same ticket', tk.status === 'answered' && tk.refund_state === 'refunded' && msgs.length === 2 && msgs[1].from === 'admin' && /واریز می‌گردد/.test(msgs[1].text) && /ST-987/.test(msgs[1].text));
+    const od2 = (a.state.orders || []).find(o => o.id === 'rf1orderXX');
+    t('r51 order refund synced from ticket', od2.refund.state === 'refunded' && od2.refund.ref === 'ST-987');
+    t('r51 ticket cancel still blocked for admin', (() => { const o = { id: 'zz2', status: 'pending' }; a.updateOrderStatus(o, 'canceled'); return o.status === 'pending'; })());
+    a.state.orders = []; a.state.tickets = []; a.state.activeTicketId = null; a.render();
+  }
   /* ═══ r49 — حذف لغو سفارش (ادمین) ═══ */
   {
     const o = { id: 'zz-cancel-test', status: 'pending', user_name: 'ت', user_phone: '0912' };
@@ -221,7 +264,7 @@ async function boot(htmlFile, extra) {
   a.state.productDraft = null;
   const fh = a.renderProductModal();
   t('product form submit stacked + nowrap', /flex flex-col-reverse sm:flex-row/.test(fh) && /btn-primary w-full sm:flex-1[^"]*whitespace-nowrap/.test(fh) && /بروزرسانی/.test(fh));
-  t('r49 cancel removed from user panel', !/requestOrderCancel/.test(P) && !/canCancel/.test(P) && !/cx-reason/.test(P));
+  t('r49 admin cancel entries stay removed (user-side r51 flow only)', !/\['canceled','لغو'\]/.test(A) && /String\(nextStatus\) === 'canceled'/.test(A) && !/AryaServer\.call\('order_cancel'/.test(P));
   t('r49 cancel removed from admin status select', A.includes("if (String(nextStatus) === 'canceled')") && !/"'canceled','لغو'"/.test(A) && !/\['canceled','لغو'\]/.test(A));
   t('r49 cancel display kept (badge + reopen)', /badge-canceled/.test(P) && /aryReopenOrder/.test(A));
   t('r50 blog video wired: sanitize allows video+embed marker', / MARK VIDEO SOURCE'/.test(rd('assets/js/functions.js')) && /data-embed-src/.test(rd('assets/js/functions.js')));
@@ -229,6 +272,10 @@ async function boot(htmlFile, extra) {
   t('r50 product hides video affordances', /isProd \? '' : tb\("aryBlogWpMediaAdd\('video'\)"/.test(A) && /_isProduct && String\(t\) !== 'image'/.test(A) && /isProd \? \['image'\] : \['image', 'video', 'embed'\]/.test(A));
   t('r50 product save+submit strip video, site render strips too', /aryProductArticleHtml\(html\)/.test(A) && /aryProductArticleHtml\(state.productDraft.article\)/.test(A) && /aryStripVideoMedia\(article\)/.test(P));
   t('r50 media UI css present', /\.ary-wp-media-ui/.test(TH) && /ary-wp-embed-live iframe/.test(TH));
+  t('r51 user cancel with refund ticket wired', /requestOrderCancel/.test(P) && /type: 'refund', order_id:/.test(P) && /بازگشت وجه سفارش #/.test(P));
+  t('r51 refund ticket meta + chips', /payload.meta/.test(P) && /order.refund.state/.test(P) && /بازگشت وجه واریز شد/.test(P));
+  t('r51 admin refund via ticket only', /aryAdminRefundApply/.test(A) && /aryAdminRefundPanel/.test(A) && /addTicketMessage\(t, \{ from: 'admin', text: msg \}\)/.test(A));
+  t('r51 admin still cannot cancel orders', /if \(String\(nextStatus\) === 'canceled'\)/.test(A));
   t('edit icon on category/blog rows', /aria-label="ویرایش دسته"[^>]*>\s*<svg/.test(A) && /aria-label="ویرایش مقاله"[^>]*>\s*<svg/.test(A));
   // مودال ولش‌لیست ادمین ربطی ندارد — ادیتور چک نشد؛ تست bulk flow کوتاه:
   a.openAryaBulkImport && a.openAryaBulkImport();

@@ -1935,6 +1935,93 @@ function setTicketMessages(t, msgs) {
   t.messages = Array.isArray(msgs) ? msgs : [];
 }
 
+/* ═══ r51 — پروندهٔ بازگشت وجهِ ناشی از لغو سفارش (از همان تیکت به کاربر پاسخ داده می‌شود) ═══ */
+function aryIsRefundTicket(t) {
+  return !!t && (String(t.type) === 'refund' || /بازگشت وجه/.test(String(t.subject || '')));
+}
+function aryRefundOrderOf(t) {
+  const oid = String((t && t.order_id) || (String((t && t.subject) || '').match(/#\s*([A-Za-z0-9-]{4,})/) || [])[1] || '');
+  if (!oid) return null;
+  return (state.orders || []).find(o => String(o.id) === oid || String(o.id).slice(-8) === oid) || null;
+}
+window.aryAdminRefundPanel = function (t) {
+  if (!aryIsRefundTicket(t)) return '';
+  const od = aryRefundOrderOf(t);
+  const oid = od ? String(od.id) : String(t.order_id || '');
+  const amount = Number((od && od.refund && od.refund.amount) || t.refund_amount || (od && od.total) || 0);
+  const stt = String((od && od.refund && od.refund.state) || t.refund_state || 'requested');
+  const amtTxt = (window.utils && utils.formatPrice ? utils.formatPrice(amount) : String(amount)) + ' تومان';
+  const label = stt === 'refunded' ? ('واریز شد' + (t.refund_ref ? ' — مرجع: ' + escapeHtml(String(t.refund_ref)) : '')) : (stt === 'rejected' ? 'رد شده' : 'در انتظار اقدام مالی');
+  const lblCls = stt === 'refunded' ? 'text-emerald-300' : (stt === 'rejected' ? 'text-rose-300' : 'text-amber-300');
+  return `
+    <div class="mb-3 rounded-2xl border border-sky-500/30 bg-sky-500/10 px-4 py-3">
+      <div class="flex flex-wrap items-center gap-3">
+        <div class="text-xs text-white/85 leading-6 min-w-0">پروندهٔ <b>بازگشت وجه</b> سفارش <span dir="ltr" class="font-mono">#${escapeHtml(oid.slice(-8)) || '—'}</span> — مبلغ <b class="text-emerald-300">${amtTxt}</b> — وضعیت: <b class="${lblCls}">${label}</b>${od && od.cancel_reason ? ' · دلیل لغو کاربر: ' + escapeHtml(String(od.cancel_reason)) : ''}</div>
+        <div class="mr-auto flex items-center gap-2 shrink-0">
+          ${stt === 'requested' ? `<button type="button" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white whitespace-nowrap" onclick="aryAdminRefundStart('${escapeHtml(String(t.id))}','refunded')">تأیید و ثبت واریز</button>
+          <button type="button" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-rose-600/85 hover:bg-rose-600 text-white whitespace-nowrap" onclick="aryAdminRefundStart('${escapeHtml(String(t.id))}','rejected')">رد درخواست</button>` : `<button type="button" class="text-[11px] font-bold px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/85 whitespace-nowrap" onclick="aryAdminRefundStart('${escapeHtml(String(t.id))}','refunded')">اصلاح وضعیت واریز</button>`}
+        </div>
+      </div>
+      <p class="text-[10px] text-white/45 mt-1">پاسخ (واریز یا رد) از طریق همین تیکت برای کاربر ثبت و در پنل کاربری او نمایش داده می‌شود؛ لغو/وضعیت سفارش از این‌جا تغییر نمی‌کند.</p>
+    </div>`;
+};
+window.aryAdminRefundStart = function (tid, mode) {
+  const t = (state.tickets || []).find(x => String(x.id) === String(tid));
+  if (!t) return;
+  const rej = mode === 'rejected';
+  state.confirmModal = {
+    type: rej ? 'warning' : 'info',
+    title: rej ? 'رد درخواست بازگشت وجه — ثبت دلیل' : 'ثبت واریز بازگشت وجه',
+    message: `
+      <div class="text-start space-y-2.5">
+        <textarea id="ary-refund-note" rows="2" class="input-style w-full text-sm resize-none" placeholder="${rej ? 'دلیل رد (از همان تیکت برای کاربر قابل مشاهده است)' : 'توضیح / تاریخ و مرجع حواله (اختیاری)'}"></textarea>
+        ${rej ? '' : '<input id="ary-refund-ref" dir="ltr" class="input-style w-full text-xs" placeholder="شماره پیگیری/حواله (اختیاری)">'}
+        <p class="text-[10px] text-white/40">متن به‌عنوان پاسخ پشتیبانی در همین تیکت ثبت می‌شود${rej ? ' — در صورت رد، سفارش «لغوشده» باقی می‌ماند' : ''}.</p>
+      </div>`,
+    confirmText: rej ? 'ثبت رد و ارسال پاسخ' : 'ثبت واریز و ارسال پاسخ',
+    confirmClass: rej ? 'bg-rose-600 hover:bg-rose-500 text-white' : 'bg-emerald-600 hover:bg-emerald-500 text-white',
+    onConfirm: function () {
+      const note = String(document.getElementById('ary-refund-note')?.value || '').trim().slice(0, 400);
+      const ref = rej ? '' : String(document.getElementById('ary-refund-ref')?.value || '').trim().slice(0, 80);
+      if (rej && note.replace(/\s+/g, '').length < 4) { if (window.toast) toast('برای رد درخواست، دلیل را بنویسید', 'warning'); return; }
+      state.confirmModal = null;
+      window.aryAdminRefundApply(tid, mode, note, ref);
+    }
+  };
+  render();
+};
+window.aryAdminRefundApply = function (tid, mode, note, ref) {
+  const t = (state.tickets || []).find(x => String(x.id) === String(tid));
+  if (!t) return;
+  const od = aryRefundOrderOf(t);
+  const oid = od ? String(od.id) : String(t.order_id || '');
+  const amount = Number((od && od.refund && od.refund.amount) || t.refund_amount || (od && od.total) || 0);
+  const amtTxt = (window.utils && utils.formatPrice ? utils.formatPrice(amount) : String(amount)) + ' تومان';
+  const ok = mode === 'refunded';
+  const msg = ok
+    ? ('بازگشت وجه سفارش #' + oid.slice(-8) + ' تأیید شد؛ مبلغ ' + amtTxt + ' به حساب شما واریز می‌گردد.' + (ref ? (' مرجع حواله: ' + ref + '.') : '') + (note ? (' توضیح: ' + note + '.') : '') + ' در صورت واریز نشدن تا ۷۲ ساعت کاری، از همین تیکت پیگیری کنید.')
+    : ('با سلام. درخواست بازگشت وجه سفارش #' + oid.slice(-8) + ' بررسی و متأسفانه رد شد.' + (note ? (' دلیل: ' + note + '.') : '') + ' در صورت داشتن مستندات جدید، همان‌جا پاسخ دهید تا مجدد بررسی شود.');
+  t.type = 'refund';
+  if (oid) t.order_id = oid;
+  t.refund_state = ok ? 'refunded' : 'rejected';
+  if (ok) { t.refunded_at = new Date().toISOString(); if (ref) t.refund_ref = ref; }
+  if (note) t.refund_note = note;
+  if (od) {
+    od.refund = Object.assign({}, od.refund || {}, { state: t.refund_state, amount: amount, ref: ref || (od.refund && od.refund.ref) || '', note: note || (od.refund && od.refund.note) || '', decided_at: new Date().toISOString() });
+    try { if (window.AryaDB && AryaDB.upsert) AryaDB.upsert('orders', od).catch(function () {}); } catch (e2) {}
+  }
+  try { if (window.AppState) AppState.set({ orders: state.orders, tickets: state.tickets }); } catch (e2) {}
+  try {
+    if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+      AryaServer.crud.upsert('tickets', { id: String(t.id), refund_state: t.refund_state, status: t.status }).catch(function () {});
+    }
+  } catch (e2) {}
+  addTicketMessage(t, { from: 'admin', text: msg });
+  if (t.status === 'open') t.status = 'answered';
+  if (window.toast) toast(ok ? 'واریز ثبت شد و پاسخ از طریق تیکت برای کاربر ارسال شد' : 'رد درخواست ثبت و از طریق تیکت به کاربر اعلام شد', 'success');
+  render();
+};
+
 function addTicketMessage(ticket, payload) {
   if (!ticket) return Promise.resolve(false);
   const text = String(payload.text || '').trim();
@@ -2181,6 +2268,7 @@ function renderAdminSupportSafe() {
               </div>
             </div>
 
+            ${(function () { return window.aryAdminRefundPanel ? aryAdminRefundPanel(activeTicket) : ''; })()}
             <div id="admin-ticket-thread" class="flex-1 overflow-y-auto space-y-2 mb-3" data-tid="${activeTicket.id}">
               ${
                 activeMessages.length === 0

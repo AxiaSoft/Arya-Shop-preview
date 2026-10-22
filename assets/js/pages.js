@@ -3982,6 +3982,8 @@ function renderProductPage() {
       ],
       created_at: new Date().toISOString()
     };
+    // r51 — متادیتای پرونده‌های سیستمی (مثل تیکت بازگشت وجهِ لغو سفارش)
+    if (payload && payload.meta && typeof payload.meta === 'object') { try { Object.assign(ticket, payload.meta); } catch (err) {} }
 
     // ثبت سمت سرور باید اول تأیید شود؛ تا تیکت maui در_UI جا نیفتد (وگرنه ادمین چیزی نمی‌بیند)
     if (serverAuth()) {
@@ -4084,6 +4086,54 @@ function renderProductPage() {
     try { if (window.AryaDB && AryaDB.loadToState) await AryaDB.loadToState(); } catch (e) {}
     if (typeof render === 'function') render();
   }
+
+  // ───────── لغو سفارش توسط کاربر → ثبت تیکت بازگشت وجه (r51) ─────────
+  window.requestOrderCancel = function (id) {
+    const order = findTrackedOrder(id);
+    if (!order) { toast('سفارش یافت نشد', 'error'); return; }
+    const stt = String(order.status || '').toLowerCase();
+    if (stt !== 'pending' && stt !== 'processing') { toast('فقط سفارش‌های «در انتظار» یا «در حال پردازش» قابل لغو هستند', 'warning'); return; }
+    const amtTxt = (window.utils && utils.formatPrice ? utils.formatPrice(Number(order.total || 0)) : String(order.total || 0)) + ' تومان';
+    state.confirmModal = {
+      type: 'danger',
+      title: 'لغو سفارش و درخواست بازگشت وجه',
+      message: `
+        <div class="text-start space-y-2.5">
+          <p class="text-xs text-white/60 leading-6">سفارش <span dir="ltr" class="font-mono">#${aryEsc(String(order.id).slice(-8))}</span> لغو می‌شود. مبلغ پرداختی (<b class="text-emerald-300">${amtTxt}</b>) پس از بررسی واحد مالی بازگردانده می‌شود. برای پیگیری، یک <b>تیکت «بازگشت وجه»</b> به‌صورت خودکار در همان پنل شما ثبت می‌شود و نتیجهٔ واریز یا رد فقط از طریق همان تیکت اعلام می‌شود.</p>
+          <textarea id="cx-reason-text" rows="2" class="input-style w-full text-sm resize-none" placeholder="دلیل لغو (اختیاری) — مثلاً انصراف از خرید یا طولانی‌بودن زمان ارسال"></textarea>
+          <p class="text-[10px] text-white/40">نیازی به تماس جداگانه نیست — وضعیت بازگشت وجه را در تب «تیکت‌ها» پیگیری کنید.</p>
+        </div>`,
+      confirmText: 'لغو سفارش و ثبت تیکت بازگشت وجه',
+      confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
+      onConfirm: async () => {
+        const reason = String(document.getElementById('cx-reason-text')?.value || '').trim().slice(0, 300) || 'انصراف مشتری';
+        state.confirmModal = null;
+        order.status = 'canceled';
+        order.cancel_reason = 'مشتری: ' + reason;
+        order.refund = { state: 'requested', amount: Number(order.total || 0), at: new Date().toISOString(), note: reason };
+        try { if (window.AryaDB && AryaDB.upsert) await AryaDB.upsert('orders', order); } catch (e2) {}
+        try { if (window.AppState) AppState.set({ orders: state.orders }); } catch (e2) {}
+        try {
+          if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) {
+            AryaServer.crud.upsert('orders', { id: String(order.id), status: 'canceled', cancel_reason: order.cancel_reason }).catch(function () {});
+          }
+        } catch (e2) {}
+        try {
+          if (typeof createTicketUser === 'function') {
+            await createTicketUser({
+              subject: 'بازگشت وجه سفارش #' + String(order.id).slice(-8),
+              message: 'سلام.\nسفارش #' + String(order.id).slice(-8) + ' را لغو کردم (دلیل: ' + reason + ').\nمبلغ قابل بازگشت: ' + amtTxt + '.\nلطفاً پس از بررسی واحد مالی، نتیجهٔ واریز را از همین تیکت اعلام کنید.',
+              priority: 'normal',
+              meta: { type: 'refund', order_id: String(order.id), refund_amount: Number(order.total || 0), refund_state: 'requested' }
+            });
+          }
+        } catch (e2) {}
+        toast('سفارش لغو شد؛ تیکت بازگشت وجه در پنل شما ثبت شد — نتیجه از همان‌جا اعلام می‌شود', 'success', 6000);
+        render();
+      }
+    };
+    render();
+  };
 
   window.toggleOrderReturnForm = function (id) {
     state.returnFormFor = (state.returnFormFor === String(id)) ? null : String(id);
@@ -4406,6 +4456,8 @@ function renderProductPage() {
                       const s = getStatusInfo(order.status);
                       const st = String(order.status || '').toLowerCase();
                       const rs = String(order.return_status || '').toLowerCase();
+                      const canCancel = st === 'pending' || st === 'processing';
+                      const rf = st === 'canceled' && order.refund ? String(order.refund.state || 'requested') : '';
                       const rsBusy = rs === 'requested' || rs === 'approved';
                       const canReturn = st === 'delivered' && !rsBusy && inReturnWindow(order);
                       const windowExpired = st === 'delivered' && !rsBusy && !canReturn;
@@ -4418,6 +4470,7 @@ function renderProductPage() {
                           <div class="font-mono text-xs text-white/70">#${aryEsc(String(order.id || '').slice(-8))}</div>
                           <div class="flex items-center gap-2 flex-wrap">
                             <span class="badge ${s.badge} inline-flex items-center gap-1">${s.icon} ${s.label}</span>
+                            ${rf ? `<span class="badge ${rf === 'refunded' ? 'badge-delivered' : (rf === 'rejected' ? 'badge-canceled' : 'badge-processing')}">${rf === 'refunded' ? 'بازگشت وجه: واریز شد' : (rf === 'rejected' ? 'بازگشت وجه: رد شد — پاسخ تیکت را ببینید' : 'بازگشت وجه: در صف تیکت')}</span>` : ''}
                             ${rs ? `<span class="badge ${rs === 'approved' || rs === 'completed' ? 'badge-delivered' : (rs === 'rejected' ? 'badge-canceled' : 'badge-processing')} inline-flex items-center gap-1">${aryIcon('return', 'w-3.5 h-3.5')}${retLabels[rs] || ('مرجوعی: ' + rs)}</span>` : ''}
                             ${order.delivery_slot ? `<span class="text-[10px] text-sky-200/80 glass rounded-lg px-2 py-1 inline-flex items-center gap-1"><span class="inline-flex "><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:.75rem;height:.75rem;vertical-align:-2px"><path d="M10 17V5H2v12m8 0h8m-8 0h-1m9 0h1v-5l-3-4h-4v9M6 8h.01"/><circle cx="6" cy="18.5" r="1.6"/><circle cx="16.5" cy="18.5" r="1.6"/></svg></span> ${aryEsc(String(order.delivery_slot))}</span>` : ''}
                           </div>
@@ -4446,8 +4499,9 @@ function renderProductPage() {
                         })()}
                         ${order.admin_note ? `<p class="text-[11px] text-amber-200/85 bg-amber-500/5 border border-amber-500/15 rounded-xl px-3 py-2 flex items-start gap-1.5"><span class="mt-0.5 inline-flex shrink-0">${aryIcon('info','w-3.5 h-3.5')}</span><span>یادداشت پشتیبانی: ${aryEsc(String(order.admin_note))}</span></p>` : ''}
                         ${rs && order.return_reason ? `<p class="text-[11px] text-white/50">دلیل مرجوعی: ${aryEsc(String(order.return_reason))}</p>` : ''}
-                        ${(canReturn || windowExpired) ? `
+                        ${(canCancel || canReturn || windowExpired) ? `
                         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
+                          ${canCancel ? `<button type="button" onclick="requestOrderCancel('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 transition-colors inline-flex items-center gap-1.5">${aryIcon('x', 'w-3.5 h-3.5')}لغو سفارش و درخواست بازگشت وجه</button>` : ''}
                           ${canReturn ? `<button type="button" onclick="toggleOrderReturnForm('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 transition-colors inline-flex items-center gap-1.5">${aryIcon('return', 'w-3.5 h-3.5')}درخواست مرجوعی</button>` : ''}
                           ${windowExpired ? `<span class="text-[10px] text-white/35">مهلت ${returnWindowDays()} روزه‌ی مرجوعی این سفارش به پایان رسیده است</span>` : ''}
                         </div>` : ''}
@@ -4558,6 +4612,17 @@ function renderProductPage() {
                         <span class="badge ${stBadge}">${stLabel}</span>
                         ${t.priority === 'urgent' ? `<span class="badge ${prBadge}">${prLabel}</span>` : ''}
                         <span class="text-[11px] text-white/35 font-mono" dir="ltr">#${String(t.id || '').slice(-6)}</span>
+                        ${(function () {
+                          const isRf = String(t.type) === 'refund' || /بازگشت وجه/.test(String(t.subject || ''));
+                          if (!isRf) return '';
+                          const oidM = String(t.order_id || (String(t.subject || '').match(/#\s*([A-Za-z0-9-]{4,})/) || [])[1] || '');
+                          const od = (state.orders || []).find(o => String(o.id) === oidM || String(o.id).slice(-8) === oidM);
+                          const rfs = String((od && od.refund && od.refund.state) || t.refund_state || 'requested');
+                          const cls = rfs === 'refunded' ? 'badge-delivered' : (rfs === 'rejected' ? 'badge-canceled' : 'badge-processing');
+                          const ref = (od && od.refund && od.refund.ref) || t.refund_ref || '';
+                          const lbl = rfs === 'refunded' ? ('بازگشت وجه واریز شد' + (ref ? ' — مرجع: ' + aryEsc(String(ref)) : '')) : (rfs === 'rejected' ? 'درخواست بازگشت وجه رد شد — پاسخ پشتیبانی را ببینید' : 'در صف بررسی مالی — منتظر اقدام پشتیبانی');
+                          return `<span class="badge ${cls}">${lbl}</span>`;
+                        })()}
                       </div>
                       <h3 class="font-bold text-base sm:text-lg leading-8 break-words">${aryEsc(t.subject || 'بدون موضوع')}</h3>
                       <p class="text-xs text-white/45 mt-1">
