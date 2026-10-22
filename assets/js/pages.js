@@ -1900,8 +1900,52 @@ function isLoggedIn() {
   return !!state.currentUser;
 }
 
+// ───── Wishlist آگاه از کاربر (r46) ─────
+// میهمان: لیست فقط در همین تب (sessionStorage) — با بستن سایت پاک می‌شود.
+// لاگین: لیست میهمان داخل لیست دائمی کاربر ادغام می‌شود.
+const ARYA_GUEST_WL_KEY = 'arya_guest_wl';
+function wlUserKey() {
+  const u = state.user || null;
+  if (!u) return null;
+  return 'u:' + String(u.id || u.phone || u.email || 'me');
+}
+function wlGuestRead() { try { const g = JSON.parse(sessionStorage.getItem(ARYA_GUEST_WL_KEY) || '[]'); return Array.isArray(g) ? g : []; } catch (e) { return []; } }
+function wlPersist() {
+  const k = state._wlKey;
+  if (k) {
+    if (!state.userWishlists || typeof state.userWishlists !== 'object') state.userWishlists = {};
+    state.userWishlists[k] = Array.isArray(state.wishlist) ? state.wishlist.slice() : [];
+    try { if (window.AppState) AppState.set({ userWishlists: state.userWishlists, wishlist: state.wishlist }); } catch (e) {}
+  } else {
+    try { sessionStorage.setItem(ARYA_GUEST_WL_KEY, JSON.stringify(Array.isArray(state.wishlist) ? state.wishlist : [])); } catch (e) {}
+  }
+}
+function wlSync() {
+  const k = wlUserKey();
+  const prev = state._wlKey === undefined ? 'INIT' : state._wlKey;
+  if (prev === k) return false;
+  state._wlKey = k;
+  if (!Array.isArray(state.wishlist)) state.wishlist = [];
+  if (k) {
+    if (!state.userWishlists || typeof state.userWishlists !== 'object') state.userWishlists = {};
+    if (!Array.isArray(state.userWishlists[k])) state.userWishlists[k] = [];
+    const owned = state.userWishlists[k];
+    let added = 0;
+    const seed = wlGuestRead().concat(prev === 'INIT' ? state.wishlist.filter(Boolean) : []);
+    seed.forEach(id => { if (id && owned.indexOf(id) === -1) { owned.push(id); added++; } });
+    try { sessionStorage.removeItem(ARYA_GUEST_WL_KEY); } catch (e) {}
+    state.wishlist = owned;
+    wlPersist();
+    return added > 0;
+  }
+  // میهمان (هرگز وارد نشده یا تازه خارج شده): لیست = همین تب؛ انبار دائمی پاک می‌شود
+  state.wishlist = wlGuestRead();
+  try { if (window.AppState) AppState.set({ wishlist: state.wishlist }); } catch (e) {}
+  return false;
+}
 function isInWishlist(productId) {
-  return state.wishlist.includes(productId);
+  if (typeof wlSync === 'function') wlSync();
+  return (Array.isArray(state.wishlist) ? state.wishlist : []).includes(productId);
 }
 
 function preserveScrollAndRender() {
@@ -1922,6 +1966,7 @@ function safeActionWithRender(fn) {
 }
 
 function toggleWishlist(productId) {
+  if (typeof wlSync === 'function') wlSync();
   safeActionWithRender(() => {
     if (isInWishlist(productId)) {
       state.wishlist = state.wishlist.filter(id => id !== productId);
@@ -1930,6 +1975,7 @@ function toggleWishlist(productId) {
       state.wishlist.push(productId);
       toast('به لیست علاقه‌مندی‌ها اضافه شد', 'success');
     }
+    if (typeof wlPersist === 'function') wlPersist();
   });
 }
 
@@ -3506,6 +3552,8 @@ function renderProductPage() {
         if (window.AppState) {
           AppState.set({ user: null, currentUser: null, isAdmin: false, loggedIn: false });
         }
+        // r46 — لیست بعد از خروج به حالت میهمان برمی‌گردد (تهی در همین تب)
+        try { if (typeof wlSync === 'function') wlSync(); } catch (e) {}
         state.confirmModal = null;
         toast('از حساب خارج شدید', 'info');
         goTo('home');
@@ -3858,7 +3906,9 @@ function renderProductPage() {
 
     wl.splice(index, 1);
 
-    if (window.AppState) AppState.set({ wishlist: wl, tickets: state.tickets });
+    state.wishlist = wl;
+    if (typeof wlPersist === 'function') wlPersist();
+    else if (window.AppState) AppState.set({ wishlist: wl, tickets: state.tickets });
 
     toast('محصول از علاقه‌مندی حذف شد');
     render();
@@ -4201,6 +4251,7 @@ function renderProductPage() {
 
   // ───────── Render profile page ─────────
   function renderProfilePage() {
+    if (typeof wlSync === 'function') wlSync();
     if (!state.user) {
       navigate('login');
       return '';

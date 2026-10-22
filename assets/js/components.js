@@ -515,7 +515,7 @@ window.aryCatIcon = function (cat, extra) {
 
           <div class="mt-3 border-t border-white/10"></div>
 
-          <div class="flex items-center gap-2 mt-3">
+          <div class="flex items-center gap-2 mt-3" style="margin-inline:.8rem">
             <button onclick="toggleSearchBar(); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('search','w-4 h-4')}جستجو</span></button>
             ${state.user?`
               <button onclick="navigate('profile'); toggleMenu();" class="gpt5-drawer-link" style="width:auto;" type="button"><span style="display:inline-flex;gap:.4rem;align-items:center">${aryIcon('user','w-4 h-4')}پروفایل</span></button>

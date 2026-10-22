@@ -356,7 +356,7 @@ html[data-aria-theme] #mobileMenu > button.bg-black\/40 { background: var(--ar-s
 #mobileMenu .ary-dnav::-webkit-scrollbar { width:5px; }
 #mobileMenu .ary-dnav::-webkit-scrollbar-thumb { background: var(--ar-sbthumb); border-radius:99px; }
 #mobileMenu .gpt5-drawer-link { width:auto; margin-inline:.8rem; border-radius:15px; padding:.82rem .95rem; font-weight:700; font-size:.9rem; transition:background .16s ease,border-color .16s ease,transform .12s ease; }
-#mobileMenu .gpt5-drawer-link[style*="width:auto"] { flex:1; justify-content:center; }
+#mobileMenu .gpt5-drawer-link[style*="width:auto"] { flex:1 1 0; min-width:0; margin-inline:0; justify-content:center; padding:.7rem .4rem; font-size:.78rem; white-space:nowrap; }
 
 /* دکمهٔ دایره‌ای بستن (سرِ سطر هدر هر دو پنل) */
 .ary-float-x {

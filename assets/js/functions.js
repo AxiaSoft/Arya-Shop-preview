@@ -360,6 +360,8 @@ function verifyOtp(code) {
   // پنل مدیریت فقط از طریق آدرس admin.html و سیستم ورود اختصاصی آن در دسترس است.
   state.user = { phone: state.loginPhone, name: 'کاربر' };
   state.isAdmin = false;
+  // r46 — ادغام خودکار لیست علاقه‌مندی میهمان در لیست کاربر
+  try { if (typeof wlSync === 'function') wlSync(); } catch (e) {}
   goTo('home');
   toast('ورود موفق بود');
 
@@ -387,6 +389,7 @@ function logout() {
       try { if (window.AryaServer && AryaServer.isConfigured && AryaServer.isConfigured()) AryaServer.logout().catch(() => {}); } catch (e) {}
       state.user = null; state.currentUser = null; state.isAdmin = false;
       try { if (window.AppState) AppState.set({ user: null, currentUser: null, isAdmin: false, loggedIn: false }); } catch (e) {}
+      try { if (typeof wlSync === 'function') wlSync(); } catch (e) {}
       state.confirmModal = null;
       goTo('home');
       toast('از حساب خارج شدید', 'info');

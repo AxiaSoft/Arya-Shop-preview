@@ -11,3 +11,4 @@ storage/*
 *.log
 *.sql.bak
 .DS_Store
+node_modules/
