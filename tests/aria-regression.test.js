@@ -50,7 +50,7 @@ async function boot(htmlFile, extra) {
   t('products toolbar: filter row then buttons', A.includes('grid grid-cols-2 sm:flex') && A.includes('col-span-2 sm:col-auto'));
   t('r48 editor reuse wired', /state.blogEdit._isProduct/.test(A) && /_isProduct: true/.test(A) && /return renderAdminBlogEditor\(\)/.test(A.slice(A.indexOf('function renderAdminProductsEditor'), A.indexOf('function renderAdminProductsEditor') + 700)));
   t('r48 separate draft key', (A.match(/'product_article'/g) || []).length >= 4);
-  t('r48 legacy dispatch guarded', /_isProduct\) return null/.test(rd('assets/js/functions.js').replace(/\r\n/g, '\n')));
+  t('r48b legacy screen retired (no old UI, no blank)', !/return renderArticleEditor\(\);/.test(rd('assets/js/functions.js').replace(/\r\n/g, '\n')) && /state.currentScreen = null;/.test(rd('assets/js/functions.js')));
   t('product form stacked actions on mobile', /flex flex-col-reverse sm:flex-row gap-2\.5 sm:gap-4 mt-8/.test(A));
   t('bulk import shared media', /media: \{ image: '', video: '', article: '', onlyEmpty: true \}/.test(A) && /function aryBulkImgFile/.test(A));
   t('admin login header has key icon', /width:80px;[\s\S]{0,260}?box-shadow:0 20px 40px[\s\S]{0,340}?<circle cx="7.5" cy="15.5" r="4"/.test(rd('admin.html')));
@@ -126,6 +126,10 @@ async function boot(htmlFile, extra) {
     st.editProduct = { id: 1, title: 'هدفون X', price: 100 };
     st.productDraft = null;
     const blogLen = (st.blog || []).length;
+    // r48b — رندر مجدد صفحهٔ لگسی نباید ادیتور قدیمی را برگرداند
+    a.eval('state.currentScreen = "article-editor"; state.blogEdit = null; render();');
+    await new Promise(r => setTimeout(r, 160)); await flush(a);
+    t('r48b legacy screen self-heals to unified editor', a.state.currentScreen === null && !/id="article-editor-content"/.test(a.document.body.innerHTML));
     a.openArticleEditor(); await flush(a);
     let bd = a.document.body.innerHTML;
     t('product article opens blog-style editor', /ary-wp-root/.test(bd) && /ویرایش مقالهٔ محصول/.test(bd));

@@ -464,9 +464,11 @@ function logout() {
     const mainHTML = safe(() => {
       // If article editor screen is active, render it first
       if (state.currentScreen === "article-editor") {
-        // r48 — ویرایشگر مقالهٔ محصول حالا همان UI بلاگ را دارد (state.blogEdit._isProduct در تب محصولات)
-        if (state.blogEdit && state.blogEdit._isProduct) return null; // پوستهٔ ادمین رندر می‌شود
-        return renderArticleEditor();
+        // r48b — صفحهٔ لگسی ویرایش مقاله بازنشسته شد؛ ادیتور مقالهٔ محصول همان UI بلاگ است.
+        state.currentScreen = null;
+        if (!(state.blogEdit && state.blogEdit._isProduct) && (state.editProduct || state.productDraft)) {
+          setTimeout(function () { try { openArticleEditor(); } catch (err) {} }, 0);
+        }
       }
 
       if (state.isAdmin && state.page === 'admin') {
