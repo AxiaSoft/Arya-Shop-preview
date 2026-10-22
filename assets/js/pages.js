@@ -2851,6 +2851,7 @@ function renderProductVideos(product) {
 
 // ========== بخش مقاله محصول ==========
 function renderProductArticle(article) {
+  article = String(window.aryStripVideoMedia ? aryStripVideoMedia(article) : (article || '')); // r50 — مقالهٔ محصول بدون ویدیو
   if (!article || !article.trim()) return '';
 
   const wordCount = article.split(/\s+/).length;

@@ -3480,7 +3480,7 @@ function submitProductForm(formEl) {
   const price = Number(formEl.price.value || 0);
   const original_price = Number(formEl.original_price.value || 0);
   const payload = {
-    article: (window.arySanitizeHtml ? arySanitizeHtml(state.productDraft.article) : String(state.productDraft.article || "")),
+    article: (window.aryProductArticleHtml ? aryProductArticleHtml(state.productDraft.article) : (window.arySanitizeHtml ? arySanitizeHtml(state.productDraft.article) : String(state.productDraft.article || ""))),
     videos: state.productDraft.videos || [],
     title: formEl.title.value.trim(), category: formEl.category.value || '', price,
     stock: Number(formEl.stock.value || 0), description: formEl.description ? formEl.description.value || '' : '',
@@ -4342,7 +4342,7 @@ function renderAdminBlogEditor() {
   const mediaRows = m.media.map((md, i) => `
     <div class="glass rounded-xl p-3 space-y-2">
       <div class="flex flex-wrap items-center gap-2">
-        <select class="input-style text-xs py-1.5" onchange="state.blogEdit.media[${i}].type=this.value">${['image', 'video', 'embed'].map(t => `<option value="${t}"${md.type === t ? ' selected' : ''}>${t === 'image' ? 'تصویر' : t === 'video' ? 'ویدیو' : 'کد جاسازی (iframe)'}</option>`).join('')}</select>
+        <select class="input-style text-xs py-1.5" onchange="state.blogEdit.media[${i}].type=this.value">${(isProd ? ['image'] : ['image', 'video', 'embed']).map(t => `<option value="${t}"${md.type === t ? ' selected' : ''}>${t === 'image' ? 'تصویر' : t === 'video' ? 'ویدیو' : 'کد جاسازی (iframe)'}</option>`).join('')}</select>
         <select class="input-style text-xs py-1.5" onchange="state.blogEdit.media[${i}].size=this.value">${[['full', 'عرض کامل'], ['half', 'نصف'], ['third', 'یک‌سوم']].map(t => `<option value="${t[0]}"${(md.size || 'full') === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('')}</select>
         <select class="input-style text-xs py-1.5" onchange="state.blogEdit.media[${i}].align=this.value">${[['center', 'وسط'], ['start', 'راست'], ['end', 'چپ']].map(t => `<option value="${t[0]}"${(md.align || 'center') === t[0] ? ' selected' : ''}>${t[1]}</option>`).join('')}</select>
         <label class="inline-flex items-center gap-1.5 text-[11px] text-white/60"><input type="checkbox" ${md.radius !== false ? 'checked' : ''} onchange="state.blogEdit.media[${i}].radius=this.checked" class="accent-blue-500"><span>گِرد</span></label>
@@ -4383,7 +4383,7 @@ function renderAdminBlogEditor() {
           ${sep}
           ${tb("AryaWp.exec('formatBlock','blockquote')", 'نقل‌قول', 'double-quotes-l')}${tb("AryaWp.linkPop()", 'درج لینک', 'link')}${tb("AryaWp.exec('unlink')", 'حذف لینک', 'unlink')}${tb("aryBlogWpInsertTable()", 'جدول', 'table-line')}${tb("AryaWp.insertHTML('<hr>')", 'خط جداکننده', 'separator')}
           ${sep}
-          ${tb("aryBlogWpMediaAdd('image')", 'تصویر (پایین صفحه)', 'image-line')}${tb("aryBlogWpMediaAdd('video')", 'ویدیو', 'video-line')}
+          ${tb("aryBlogWpMediaAdd('image')", 'تصویر (پایین صفحه)', 'image-line')}${isProd ? '' : tb("aryBlogWpMediaAdd('video')", 'ویدیو', 'video-line')}
           ${sep}
           ${tb("AryaWp.undo()", 'بازگشت (Ctrl+Z)', 'arrow-go-back-line')}${tb("AryaWp.redo()", 'جلو (Ctrl+Y)', 'arrow-go-forward-line')}${tb("AryaWp.exec('removeFormat')", 'پاک‌کردن قالب‌بندی', 'eraser')}
           ${sep}
@@ -4396,7 +4396,7 @@ function renderAdminBlogEditor() {
             <textarea id="ary-wp-code" class="ary-wp-code" dir="ltr" spellcheck="false" oninput="state.blogEdit.body=this.value">${escAttr(m.body || '')}</textarea>
           ` : `
             ${isProd ? '' : `<input id="ary-wp-title" class="ary-wp-title" placeholder="عنوان مقاله…" value="${escAttr(m.title || '')}" oninput="state.blogEdit.title=this.value">`}
-            <div id="ary-wp-body" class="ary-wp-content" contenteditable="true" data-ph="بدنهٔ مقاله را همین‌جا بنویسید — از منوی بالا تیتر، لیست، لینک و رسانه اضافه کنید…" data-oninput="aryBlogWpSync" oninput="state.blogEdit.body=this.innerHTML; AryaWp.refreshState()" onkeydown="if((event.ctrlKey||event.metaKey)&amp;&amp;event.key.toLowerCase()==='s'){event.preventDefault();aryBlogWpSave();}">${m.body || ''}</div>
+            <div id="ary-wp-body" class="ary-wp-content" contenteditable="true" data-ph="بدنهٔ مقاله را همین‌جا بنویسید — از منوی بالا تیتر، لیست، لینک و رسانه اضافه کنید…" data-oninput="aryBlogWpSync" oninput="aryBlogWpSync(this.innerHTML); AryaWp.refreshState()" onkeydown="if((event.ctrlKey||event.metaKey)&amp;&amp;event.key.toLowerCase()==='s'){event.preventDefault();aryBlogWpSave();}">${m.body || ''}</div>
           `}
         </article>
         <div class="ary-wp-under">
@@ -4436,7 +4436,7 @@ function renderAdminBlogEditor() {
                   <button type="button" class="text-[11px] font-bold px-2.5 py-1.5 rounded-lg bg-blue-500/10 text-blue-300 border border-blue-500/20 hover:bg-blue-500/20 transition" onclick="aryAdminBlogMediaAdd('embed')">+ iframe</button>
                 </span>
               </div>
-              ${mediaRows ? `<div class="space-y-2.5">${mediaRows}</div>` : '<div class="text-[11px] text-white/40 glass rounded-xl px-4 py-3">فعلاً بلوک رسانه‌ای ندارید — تصویر یا ویدیوی درشت، مقاله را زنده می‌کند.</div>'}
+              ${mediaRows ? `<div class="space-y-2.5">${mediaRows}</div>` : `<div class="text-[11px] text-white/40 glass rounded-xl px-4 py-3">${isProd ? 'فعلاً بلوک رسانه‌ای ندارید — افزودن تصویر، مقاله را زنده می‌کند.' : 'فعلاً بلوک رسانه‌ای ندارید — تصویر یا ویدیوی درشت، مقاله را زنده می‌کند. بلوک ویدیو را با کشیدن یا دکمه‌های ↑↓ روی همان بلوک، جابه‌جا کنید.'}</div>`}
             </div>
           </details>
           <div class="flex flex-wrap items-center gap-3 pt-1 pb-2">
@@ -4449,7 +4449,9 @@ function renderAdminBlogEditor() {
     </div>
   `;
 }
-window.aryBlogWpSync = function (html) { if (state.blogEdit) state.blogEdit.body = String(html || ''); };
+window.aryBlogWpSync = function (html) {
+  if (state.blogEdit) state.blogEdit.body = window.aryWpCleanBody ? window.aryWpCleanBody(String(html || '')) : String(html || '');
+};
 window.aryBlogWpBlock = function (sel) { const v = sel.value; sel.value = ''; if (v) window.AryaWp && AryaWp.block(v); };
 window.aryBlogWpInsertTable = function () {
   if (!window.AryaWp) return;
@@ -4457,6 +4459,7 @@ window.aryBlogWpInsertTable = function () {
 };
 window.aryBlogWpMediaAdd = function (t) {
   if (!state.blogEdit) return;
+  if (state.blogEdit._isProduct && String(t) !== 'image') { toast('در مقالهٔ محصول فقط تصویر مجاز است (ویدیو حذف شده)', 'warning'); return; }
   state.blogEdit.media = state.blogEdit.media || [];
   state.blogEdit.media.push({ type: t, url: '', caption: '', size: 'full', align: 'center', radius: true });
   render();
@@ -4472,22 +4475,28 @@ window.aryBlogWpMediaInsert = function (i) {
   const u = String(md.url).replace(/"/g, '&quot;');
   const cap = String(md.caption || '').replace(/</g, '');
   let html;
-  if (md.type === 'video') html = '<figure><video controls preload="metadata" src="' + u + '" style="width:100%;' + (md.radius !== false ? 'border-radius:16px' : '') + '"></video>' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
-  else if (md.type === 'embed') html = '<figure><div class="ary-wp-embed" data-embed-src="' + u + '" style="aspect-ratio:16/9;background:#0b1526;color:#93c5fd;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:12px">جا‌سازی رسانه — پس از ذخیره در سایت نمایش داده می‌شود</div></figure>';
-  else html = '<figure><img src="' + u + '" alt="' + cap + '" style="width:100%;' + (md.radius !== false ? 'border-radius:16px' : '') + '">' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
+  const FIG = '<figure data-ary-media="1">';
+  if (md.type === 'video') html = FIG + '<video controls preload="metadata" src="' + u + '" style="width:100%;' + (md.radius !== false ? 'border-radius:16px' : '') + '"></video>' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
+  else if (md.type === 'embed') {
+    const thumb = window.aryYoutubeThumbUrl ? aryYoutubeThumbUrl(md.url) : '';
+    html = FIG + '<div class="ary-wp-embed" data-embed-src="' + u + '"' + (thumb ? ' data-embed-thumb="' + thumb + '"' : '') + ' style="aspect-ratio:16/9;background:#0b1526;color:#93c5fd;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:12px;background-size:cover;background-position:center">پلیر ویدیو — پس از ذخیره در سایت پخش می‌شود (جابه‌جایی: کشیدن بلوک یا ↑↓)</div>' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
+  }
+  else html = FIG + '<img src="' + u + '" alt="' + cap + '" style="width:100%;' + (md.radius !== false ? 'border-radius:16px' : '') + '">' + (cap ? '<figcaption>' + cap + '</figcaption>' : '') + '</figure>';
   AryaWp.insertHTML(html + '<p><br></p>');
-  toast('رسانه در متن درج شد ✓', 'success');
+  if (window.aryWpSyncBody) window.aryWpSyncBody();
+  if (window.aryWpDecorateMedia) setTimeout(function () { window.aryWpDecorateMedia(); }, 20);
+  toast('رسانه در متن درج شد ✓ — با کشیدن بلوک یا دکمه‌های ↑↓ جایش را عوض کنید', 'success');
 };
 window.aryBlogWpToggleCode = function () {
   const m = state.blogEdit; if (!m) return;
-  const live = document.getElementById('ary-wp-body'); if (live) m.body = live.innerHTML;
+  const live = document.getElementById('ary-wp-body'); if (live) m.body = (window.aryWpCleanBody ? window.aryWpCleanBody(live.innerHTML) : live.innerHTML);
   const ta = document.getElementById('ary-wp-code'); if (ta) m.body = ta.value;
   const ti = document.getElementById('ary-wp-title'); if (ti) m.title = ti.value;
   m._code = !m._code; render();
 };
 window.aryBlogWpSave = async function () {
   const m = state.blogEdit; if (!m) return;
-  const live = document.getElementById('ary-wp-body'); if (live) m.body = live.innerHTML;
+  const live = document.getElementById('ary-wp-body'); if (live) m.body = (window.aryWpCleanBody ? window.aryWpCleanBody(live.innerHTML) : live.innerHTML);
   const ta = document.getElementById('ary-wp-code'); if (ta) m.body = ta.value;
   const ti = document.getElementById('ary-wp-title'); if (ti) m.title = ti.value;
   window.AryaWp && AryaWp.stopAutosave();
@@ -4495,7 +4504,7 @@ window.aryBlogWpSave = async function () {
     const txt = String(m.body || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
     if (txt.length < 20) { toast('متن مقاله خیلی کوتاه است (حداقل ۲۰ نویسه).', 'warning'); return; }
     let html = String(m.body || '');
-    try { html = arySanitizeHtml(html); } catch (e) {}
+    try { html = window.aryProductArticleHtml ? window.aryProductArticleHtml(html) : arySanitizeHtml(aryStripVideoMedia(html)); } catch (e) {}
     initProductDraft();
     state.productDraft.article = html;
     state.productDraft.articleMedia = (m.media || []).filter(x => x && String(x.url || '').trim());
@@ -4550,6 +4559,90 @@ window.aryBlogWpRecoverDraft = function () {
   Object.assign(m, d.o); render();
   toast('پیش‌نویس خودکار بازیابی شد ✓', 'success');
 };
+/* ───────── رندر/جابه‌جایی بلوک رسانه داخل برگهٔ ویرایشگر ───────── */
+window.aryWpCleanBody = function (html) {
+  const raw = String(html == null ? '' : html);
+  try {
+    const doc = new DOMParser().parseFromString('<div id="ary-clean">' + raw + '</div>', 'text/html');
+    const root = doc.getElementById('ary-clean'); if (!root) return raw;
+    root.querySelectorAll('[data-ary-ui]').forEach(function (n) { n.remove(); });
+    root.querySelectorAll('figure[data-ary-media]').forEach(function (f) {
+      f.removeAttribute('draggable'); f.removeAttribute('contenteditable');
+    });
+    return root.innerHTML;
+  } catch (e) { return raw.replace(/<div class="ary-wp-media-ui"[\s\S]*?<\/div>(?=<\/figure>)/g, ''); }
+};
+window.aryWpDecorateMedia = function () {
+  const b = document.getElementById('ary-wp-body'); if (!b) return;
+  Array.prototype.slice.call(b.querySelectorAll('figure')).forEach(function (f) {
+    f.setAttribute('data-ary-media', '1');
+    f.setAttribute('contenteditable', 'false');
+    f.setAttribute('draggable', 'true');
+    const ph = f.querySelector('.ary-wp-embed[data-embed-thumb]');
+    if (ph && ph.style) { ph.style.backgroundImage = 'url("' + ph.getAttribute('data-embed-thumb') + '")'; }
+    if (f.querySelector(':scope > .ary-wp-media-ui')) return;
+    const ui = document.createElement('div');
+    ui.className = 'ary-wp-media-ui'; ui.setAttribute('data-ary-ui', '1'); ui.setAttribute('contenteditable', 'false');
+    ui.innerHTML = '<span class="ary-wp-media-grip" title="برای جابه‌جایی، بلوک را بکشید">⋮⋮</span>'
+      + '<button type="button" title="انتقال به بالای بلوک قبلی" aria-label="انتقال به بالا" onclick="event.preventDefault();event.stopPropagation();window.aryWpMediaMove \u0026\u0026 aryWpMediaMove(this.closest(\'figure\'), -1)">↑</button>'
+      + '<button type="button" title="انتقال به پایینِ بلوک بعدی" aria-label="انتقال به پایین" onclick="event.preventDefault();event.stopPropagation();window.aryWpMediaMove \u0026\u0026 aryWpMediaMove(this.closest(\'figure\'), 1)">↓</button>'
+      + '<button type="button" class="is-danger" title="حذف از متن (ردیف تنظیمات پایین می‌ماند)" aria-label="حذف بلوک از متن" onclick="event.preventDefault();event.stopPropagation();window.aryWpMediaDetach \u0026\u0026 aryWpMediaDetach(this.closest(\'figure\'))">✕</button>';
+    f.appendChild(ui);
+  });
+  if (window.aryWpMediaDndOn) window.aryWpMediaDndOn(b);
+};
+window.aryWpSyncBody = function () {
+  const b = document.getElementById('ary-wp-body');
+  if (b && state.blogEdit) {
+    state.blogEdit.body = window.aryWpCleanBody ? window.aryWpCleanBody(b.innerHTML) : b.innerHTML;
+    if (window.AryaWp) AryaWp.refreshState();
+  }
+};
+window.aryWpMediaMove = function (fig, dir) {
+  if (!fig) return;
+  const b = document.getElementById('ary-wp-body'); if (!b) return;
+  const figs = Array.prototype.slice.call(b.querySelectorAll('figure[data-ary-media]'));
+  const i = figs.indexOf(fig); if (i < 0) return;
+  const j = i + (Number(dir) < 0 ? -1 : 1);
+  if (j < 0 || j >= figs.length) return;
+  const other = figs[j];
+  if (Number(dir) < 0) b.insertBefore(fig, other); else b.insertBefore(other, fig);
+  window.aryWpSyncBody && window.aryWpSyncBody();
+};
+window.aryWpMediaDetach = function (fig) {
+  if (!fig || !fig.parentNode) return;
+  fig.parentNode.removeChild(fig);
+  window.aryWpSyncBody && window.aryWpSyncBody();
+};
+window.aryWpMediaDndOn = function (body) {
+  if (!body || body.dataset.dnd === '1') return;
+  body.dataset.dnd = '1';
+  body.addEventListener('dragstart', function (e) {
+    const interactive = e.target && e.target.closest && e.target.closest('button, a, input, textarea, select');
+    const fig = e.target && e.target.closest && e.target.closest('figure[data-ary-media]');
+    if (interactive || !fig) { try { e.preventDefault(); } catch (err) {} return; }
+    window.__aryDragFig = fig;
+    fig.classList.add('is-dragging');
+    try { e.dataTransfer.setData('text/plain', 'ary-media'); e.dataTransfer.effectAllowed = 'move'; } catch (err) {}
+  });
+  body.addEventListener('dragover', function (e) {
+    const f0 = window.__aryDragFig; if (!f0) return;
+    e.preventDefault();
+    try { e.dataTransfer.dropEffect = 'move'; } catch (err) {}
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const tgt = under && under.closest && under.closest('figure[data-ary-media]');
+    if (tgt && tgt !== f0) {
+      const r = tgt.getBoundingClientRect();
+      if (e.clientY > r.top + r.height / 2) body.insertBefore(f0, tgt.nextSibling); else body.insertBefore(f0, tgt);
+    }
+  });
+  body.addEventListener('drop', function (e) { if (window.__aryDragFig) e.preventDefault(); });
+  body.addEventListener('dragend', function () {
+    const f0 = window.__aryDragFig;
+    window.__aryDragFig = null;
+    if (f0) { f0.classList.remove('is-dragging'); window.aryWpSyncBody && window.aryWpSyncBody(); }
+  });
+};
 window.aryBlogWpMount = function () {
   const b = document.getElementById('ary-wp-body');
   if (b) {
@@ -4560,12 +4653,13 @@ window.aryBlogWpMount = function () {
       });
     }
     if (window.AryaWp) AryaWp.refreshState();
+    if (window.aryWpDecorateMedia) window.aryWpDecorateMedia();
   }
   const m = state.blogEdit; if (!m || !window.AryaWp) return;
   AryaWp.autosave(m._isProduct ? 'product_article' : 'blog_' + (m.id || 'new'), function () {
     const el = document.getElementById('ary-wp-body'); const code = document.getElementById('ary-wp-code'); const ti = document.getElementById('ary-wp-title');
     if (ti) m.title = ti.value;
-    if (el) m.body = el.innerHTML; if (code) m.body = code.value;
+    if (el) m.body = window.aryWpCleanBody ? window.aryWpCleanBody(el.innerHTML) : el.innerHTML; if (code) m.body = code.value;
     return { id: m.id || '', title: m.title, body: m.body, excerpt: m.excerpt, cover: m.cover, tags: m.tags, author: m.author, status: m.status, media: m.media };
   });
 };

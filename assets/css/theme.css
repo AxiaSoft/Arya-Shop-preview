@@ -966,3 +966,22 @@ html[data-aria-theme] i.ary-ic-i { line-height: 0; vertical-align: middle; }
 html[data-aria-theme="light"] .ary-sheet-tool-view { color: #1d4ed8; }
 html[data-aria-theme="light"] .ary-sheet-tool-db { color: #047857; }
 html[data-aria-theme="light"] .ary-sheet-tool-out { color: #be123c; }
+
+/* ═══ r50 — بلوک رسانه در ویرایشگر مقاله (جابه‌جایی با درگ/دکمه) + پلیر سایت ═══ */
+.ary-wp-content figure[data-ary-media] { position: relative; margin: 1.1em 0; }
+.ary-wp-content figure[data-ary-media] img,
+.ary-wp-content figure[data-ary-media] video { display: block; width: 100%; border-radius: 16px; }
+.ary-wp-content figure[data-ary-media].is-dragging { opacity: .35; outline: 2px dashed #3b82f6; outline-offset: 3px; pointer-events: none; }
+.ary-wp-content figure[data-ary-media]:hover .ary-wp-media-ui { display: inline-flex; }
+.ary-wp-media-ui { position: absolute; top: 8px; right: 8px; display: none; gap: 4px; align-items: center; z-index: 6; direction: ltr; }
+.ary-wp-media-ui .ary-wp-media-grip { cursor: grab; padding: 4px 7px; border-radius: 8px; background: rgba(10, 20, 40, .82); color: #93c5fd; border: 1px solid rgba(148, 163, 184, .35); font-size: 12px; letter-spacing: 1px; user-select: none; }
+.ary-wp-media-ui button { width: 26px; height: 26px; border-radius: 8px; background: rgba(10, 20, 40, .82); color: #dbeafe; border: 1px solid rgba(148, 163, 184, .35); font-size: 12px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ary-wp-media-ui button:hover { background: #3b82f6; color: #fff; }
+.ary-wp-media-ui button.is-danger:hover { background: #e11d48; }
+.ary-wp-embed-live { margin: 1.1em 0; }
+.ary-wp-embed-live iframe { width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 14px; display: block; background: #0b1526; }
+.ary-wp-embed-link { display: inline-flex; align-items: center; gap: 6px; margin: 1em 0; padding: 10px 16px; border-radius: 12px; background: rgba(59, 130, 246, .12); border: 1px solid rgba(59, 130, 246, .35); color: #93c5fd; font-size: 13px; font-weight: 700; text-decoration: none; }
+.ary-wp-embed-link:hover { background: rgba(59, 130, 246, .2); }
+.prose-arya figure, .article-content figure { margin: 1.2em 0; }
+.prose-arya video, .article-content video { width: 100%; border-radius: 16px; display: block; }
+.prose-arya figcaption, .article-content figcaption { font-size: 12px; color: rgba(255, 255, 255, .55); text-align: center; margin-top: 6px; }

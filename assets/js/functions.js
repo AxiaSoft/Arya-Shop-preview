@@ -596,7 +596,8 @@ function logout() {
     const samePage = lastPage === state.page;
     const keep = samePage ? captureKeepState(appEl) : null;
 
-    writeHTML(appEl, html);
+    writeHTML(appEl, html);
+    try { if (window.AryaHydrateMedia) AryaHydrateMedia(appEl); } catch (e) {}
     if (keep) restoreKeepState(appEl, keep);
     lastHTML = html;
     lastPage = state.page;
@@ -829,14 +830,16 @@ window.arySanitizeHtml = function (html) {
     const doc = new DOMParser().parseFromString('<body id="ary-san-root">' + raw + '</body>', 'text/html');
     const root = doc.getElementById('ary-san-root'); if (!root) return '';
     root.querySelectorAll('script,style,iframe,object,embed,form,input,button,link,meta,base,svg,math,animate,animatetransform').forEach(function (n) { n.remove(); });
-    const ALLOW = 'A B STRONG I EM U BR P H2 H3 H4 H5 UL OL LI BLOCKQUOTE FIGCAPTION FIGURE SPAN DIV TABLE THEAD TBODY TR TD TH IMG HR CODE PRE SMALL SUB SUP MARK'.split(' ');
+    const ALLOW = 'A B STRONG I EM U BR P H2 H3 H4 H5 UL OL LI BLOCKQUOTE FIGCAPTION FIGURE SPAN DIV TABLE THEAD TBODY TR TD TH IMG HR CODE PRE SMALL SUB SUP MARK VIDEO SOURCE'.split(' ');
     const urlOk = function (u) { u = String(u || '').trim().toLowerCase(); if (!u) return false; if (u.indexOf('javascript:') === 0 || u.indexOf('vbscript:') === 0 || u.indexOf('data:text/html') === 0) return false; return /^(https?:|mailto:|tel:|\/|\.\/|#)/.test(u) || /^data:image\/(png|jpeg|jpg|webp|gif);base64,/.test(u); };
     (function walk(parent) {
       Array.prototype.slice.call(parent.children).forEach(function (el) {
         if (ALLOW.indexOf(el.tagName) === -1) { el.replaceWith(doc.createTextNode(el.textContent || '')); return; }
         Array.prototype.slice.call(el.attributes).forEach(function (at) {
           const n = at.name.toLowerCase(), v = at.value;
-          const keep = (n === 'href' && el.tagName === 'A' && urlOk(v)) || (n === 'src' && el.tagName === 'IMG' && urlOk(v)) || (n === 'alt') || (n === 'class' && /^(ary|align|img|text)/.test(v)) || (n === 'colspan' || n === 'rowspan');
+          const isMediaSrc = el.tagName === 'IMG' || el.tagName === 'VIDEO' || el.tagName === 'SOURCE';
+          const isEmbed = el.classList && el.classList.contains('ary-wp-embed');
+          const keep = (n === 'href' && el.tagName === 'A' && urlOk(v)) || (n === 'src' && isMediaSrc && urlOk(v)) || (n === 'poster' && el.tagName === 'VIDEO' && urlOk(v)) || (n === 'alt') || (n === 'class' && /^(ary|align|img|text)/.test(v)) || (n === 'colspan' || n === 'rowspan') || n === 'controls' || (n === 'preload' && /^(none|metadata|auto)$/.test(v)) || (n === 'type' && el.tagName === 'SOURCE' && /^[\w/.+-]+$/.test(v)) || ((n === 'data-embed-src' || n === 'data-embed-thumb') && isEmbed && urlOk(v)) || n === 'data-ary-media';
           if (!keep) el.removeAttribute(at.name);
         });
         if (el.tagName === 'A') { el.setAttribute('rel', 'noopener noreferrer nofollow'); if (!el.getAttribute('target')) { } else el.setAttribute('target', '_blank'); }
@@ -851,4 +854,63 @@ window.arySanitizeHtml = function (html) {
       .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
       .replace(/(javascript:|vbscript:)\s*/gi, '$1_blocked:');
   }
+};
+
+// ───────── رسانه: یوتیوب، جا‌اندازی iframe و حذف ویدیو از مقاله محصول ─────────
+window.aryYoutubeEmbedUrl = function (u) {
+  u = String(u || '').trim(); if (!u) return '';
+  const m = u.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtube\.com\/(?:shorts|embed|live)\/|youtu\.be\/)([A-Za-z0-9_-]{6,24})/);
+  if (m) return 'https://www.youtube-nocookie.com/embed/' + m[1];
+  if (/^https:\/\/(www\.)?(youtube|youtube-nocookie)\.com\/embed\/[\w-]+/.test(u)) return u;
+  return '';
+};
+window.aryYoutubeThumbUrl = function (u) {
+  const emb = window.aryYoutubeEmbedUrl ? aryYoutubeEmbedUrl(u) : '';
+  const m = String(emb || '').match(/embed\/([A-Za-z0-9_-]+)/);
+  return m ? 'https://i.ytimg.com/vi/' + m[1] + '/hqdefault.jpg' : '';
+};
+// تبدیل جای‌نگهدارهای رسانه به پلیر واقعی (بعد از هر رندر)
+window.AryaHydrateMedia = function (root) {
+  root = root || document;
+  try {
+    root.querySelectorAll('.ary-wp-embed[data-embed-src]').forEach(function (ph) {
+      if (ph.closest && ph.closest('#ary-wp-body')) return; // داخل ویرایشگر — placeholder بماند
+      if (ph.dataset && ph.dataset.hydrated === '1') return;
+      const u = String(ph.getAttribute('data-embed-src') || '').trim();
+      const emb = window.aryYoutubeEmbedUrl ? aryYoutubeEmbedUrl(u) : '';
+      if (emb) {
+        const f = document.createElement('iframe');
+        f.src = emb; f.title = 'ویدیو'; f.loading = 'lazy';
+        f.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture');
+        f.setAttribute('allowfullscreen', '');
+        const w = document.createElement('div'); w.className = 'ary-wp-embed-live'; w.appendChild(f);
+        if (ph.parentNode) ph.replaceWith(w);
+      } else if (u) {
+        const a = document.createElement('a');
+        a.href = u; a.target = '_blank'; a.rel = 'noopener nofollow';
+        a.className = 'ary-wp-embed-link'; a.textContent = 'مشاهده ویدیو';
+        if (ph.parentNode) ph.replaceWith(a);
+      }
+      if (ph.dataset) ph.dataset.hydrated = '1';
+    });
+  } catch (e) {}
+};
+// حذف هرگونه بلوک ویدیو/جا‌سازی (برای مقاله محصول) — تصویر سالم می‌ماند
+window.aryStripVideoMedia = function (html) {
+  const raw = String(html == null ? '' : html); if (!raw) return '';
+  try {
+    const doc = new DOMParser().parseFromString('<div id="ary-strip">' + raw + '</div>', 'text/html');
+    const root = doc.getElementById('ary-strip'); if (!root) return raw;
+    root.querySelectorAll('video, iframe, object, embed, .ary-wp-embed, .ary-wp-embed-live').forEach(function (n) {
+      const fig = n.closest && n.closest('figure');
+      if (fig && !fig.querySelector('img')) { fig.remove(); } else { n.remove(); }
+    });
+    return root.innerHTML;
+  } catch (e) { return raw.replace(/<figure[^>]*>[\s\S]*?<\/figure>/gi, function (m) { return /<video|<iframe|ary-wp-embed/i.test(m) && !/<img/i.test(m) ? '' : m; }); }
+};
+// خروجی نهایی مقاله محصول: بدون ویدیو، sanitize شده
+window.aryProductArticleHtml = function (html) {
+  let h = window.aryStripVideoMedia ? aryStripVideoMedia(String(html || '')) : String(html || '');
+  if (window.arySanitizeHtml) { try { h = arySanitizeHtml(h); } catch (e) {} }
+  return h;
 };

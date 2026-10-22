@@ -162,6 +162,56 @@ async function boot(htmlFile, extra) {
     a.eval('state.editProduct = null; state.productDraft = null; state.blogEdit = null; render();');
     await flush(a);
   }
+
+  /* ═══ r50 — ویدیو در بلاگ: درج، جابه‌جایی، ذخیره؛ حذف از محصول ═══ */
+  {
+    const st = a.state;
+    // ادیتور بلاگ
+    st.adminTab = 'blog';
+    st.blogEdit = { id: null, title: 'تست ویدیو', body: '<p>متن بدنهٔ مقاله برای تست بلوک ویدیو کافی است.</p>', excerpt: '', cover: '', tags: '', author: 'Admin', status: 'published', media: [], _code: false };
+    a.render(); await new Promise(r => setTimeout(r, 160)); await flush(a);
+    a.window.aryBlogWpMediaAdd('video');
+    a.window.aryBlogWpMediaAdd('embed');
+    st.blogEdit.media[0].url = 'https://cdn.example.com/clips/intro.mp4';
+    st.blogEdit.media[0].caption = 'معرفی';
+    st.blogEdit.media[1].url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    a.window.aryBlogWpMediaInsert(0);
+    a.window.aryBlogWpMediaInsert(1);
+    await new Promise(r => setTimeout(r, 80)); await flush(a);
+    const body = a.document.getElementById('ary-wp-body');
+    t('r50 video figure inserted with real player', /<figure[^>]*data-ary-media[^>]*>\s*<video controls[^>]*src="https:\/\/cdn\.example\.com\/clips\/intro\.mp4"/.test(body.innerHTML));
+    t('r50 youtube embed placeholder with thumb', /class="ary-wp-embed"/.test(body.innerHTML) && /data-embed-src="https:\/\/www\.youtube\.com\/watch\?v=dQw4w9WgXcQ"/.test(body.innerHTML) && /data-embed-thumb="https:\/\/i\.ytimg\.com\/vi\//.test(body.innerHTML));
+    t('r50 media blocks decorated with move UI', body.querySelectorAll('figure[data-ary-media] .ary-wp-media-ui').length === 2 && body.innerHTML.includes('aryWpMediaMove'));
+    const figs0 = [...body.querySelectorAll('figure[data-ary-media]')];
+    const videoFirst = figs0[0].querySelector('video');
+    a.window.aryWpMediaMove(figs0[1], -1);
+    const figs1 = [...a.document.querySelectorAll('#ary-wp-body figure[data-ary-media]')];
+    t('r50 move up reorders media blocks', Boolean(figs1.length === 2 && figs1[0] !== figs0[0] && figs1[0].querySelector('.ary-wp-embed') && figs1[1].querySelector('video') && videoFirst));
+    const cleaned = a.window.aryWpCleanBody(body.innerHTML);
+    t('r50 clean body strips editor UI but keeps media', !/ary-wp-media-ui/.test(cleaned) && /<video controls/.test(cleaned) && /data-embed-src=/.test(cleaned));
+    st.blogEdit.body = cleaned;
+    a.window.aryBlogWpSave && await a.window.aryBlogWpSave(); await flush(a);
+    const saved = (st.blog || []).find(x => /تست ویدیو/.test(String(x.title)));
+    t('r50 blog save persists video + embed (sanitize keeps them)', !!saved && /<video controls[^>]*src="https:\/\/cdn\.example\.com\/clips\/intro\.mp4"/.test(saved.body) && /data-embed-src="https:\/\/www\.youtube\.com\/watch\?v=dQw4w9WgXcQ"/.test(saved.body));
+    t('r50 iframe never stored raw', !/<iframe/i.test(saved.body));
+    // هیدریت (شبیه‌سازی رندر سایت روی کانتینر)
+    const host = a.document.createElement('div');
+    host.innerHTML = saved.body; a.document.body.appendChild(host);
+    a.window.AryaHydrateMedia(host);
+    t('r50 placeholder hydrates to youtube-nocookie iframe on site', !!host.querySelector('iframe[src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"]'));
+    host.remove();
+    if (saved) { try { await a.AryaDB.upsert('blog', { id: saved.id, _delete: true }); } catch (e) {} st.blog = (st.blog || []).filter(x => x !== saved); }
+    // حالت محصول: بدون ویدیو (همیشه a.state تازه — هوک‌ها ممکن است شیء state را جایگزین کنند)
+    const PROD_ART = '<p>مقالهٔ قبلی با ویدیو برای تست حذف بلوک ویدیو هنگام ذخیره</p><figure data-ary-media="1"><video controls src="https://x/y.mp4"></video></figure><figure data-ary-media="1"><div class="ary-wp-embed" data-embed-src="https://youtu.be/z"></div></figure><p><img src="https://x/pic.jpg" alt="t"></p>';
+    a.state.editProduct = { id: 2, title: 'پرز', price: 10 };
+    a.state.productDraft = { title: 'پرز', price: 10, stock: 1, category: '', description: '', mainImage: '', gallery: [], original_price: 0, article: PROD_ART, _synced: null };
+    a.state.blogEdit = null;
+    a.openArticleEditor(); await new Promise(r => setTimeout(r, 120)); await flush(a);
+    await a.window.aryBlogWpSave(); await flush(a);
+    const art = String((a.state.productDraft || {}).article || '');
+    t('r50 product save strips video+embed keeps text/img', !/video|ary-wp-embed/.test(art) && /مقالهٔ قبلی/.test(art) && /pic\.jpg/.test(art));
+    a.eval('state.editProduct=null; state.productDraft=null; state.blogEdit=null; render();');
+  }
   for (const tab of ['products', 'orders', 'database']) {
     a.state.adminTab = tab; if (a.render) a.render(); await flush(a);
     t('admin tab ' + tab + ' zero emoji', hard(d2.body.innerHTML).length === 0, hard(d2.body.innerHTML).slice(0, 3).join(''));
@@ -174,6 +224,11 @@ async function boot(htmlFile, extra) {
   t('r49 cancel removed from user panel', !/requestOrderCancel/.test(P) && !/canCancel/.test(P) && !/cx-reason/.test(P));
   t('r49 cancel removed from admin status select', A.includes("if (String(nextStatus) === 'canceled')") && !/"'canceled','لغو'"/.test(A) && !/\['canceled','لغو'\]/.test(A));
   t('r49 cancel display kept (badge + reopen)', /badge-canceled/.test(P) && /aryReopenOrder/.test(A));
+  t('r50 blog video wired: sanitize allows video+embed marker', / MARK VIDEO SOURCE'/.test(rd('assets/js/functions.js')) && /data-embed-src/.test(rd('assets/js/functions.js')));
+  t('r50 hydrate after every render', /AryaHydrateMedia\(appEl\)/.test(rd('assets/js/functions.js')));
+  t('r50 product hides video affordances', /isProd \? '' : tb\("aryBlogWpMediaAdd\('video'\)"/.test(A) && /_isProduct && String\(t\) !== 'image'/.test(A) && /isProd \? \['image'\] : \['image', 'video', 'embed'\]/.test(A));
+  t('r50 product save+submit strip video, site render strips too', /aryProductArticleHtml\(html\)/.test(A) && /aryProductArticleHtml\(state.productDraft.article\)/.test(A) && /aryStripVideoMedia\(article\)/.test(P));
+  t('r50 media UI css present', /\.ary-wp-media-ui/.test(TH) && /ary-wp-embed-live iframe/.test(TH));
   t('edit icon on category/blog rows', /aria-label="ویرایش دسته"[^>]*>\s*<svg/.test(A) && /aria-label="ویرایش مقاله"[^>]*>\s*<svg/.test(A));
   // مودال ولش‌لیست ادمین ربطی ندارد — ادیتور چک نشد؛ تست bulk flow کوتاه:
   a.openAryaBulkImport && a.openAryaBulkImport();
