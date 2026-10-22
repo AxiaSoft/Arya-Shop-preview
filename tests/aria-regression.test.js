@@ -48,6 +48,9 @@ async function boot(htmlFile, extra) {
   t('adminP order filters plain text', /renderOrderFilterButton\("pending", "در انتظار"\)/.test(A));
   t('ICON_FALLBACK neutralized', /const ICON_FALLBACK = \{\}/.test(A));
   t('products toolbar: filter row then buttons', A.includes('grid grid-cols-2 sm:flex') && A.includes('col-span-2 sm:col-auto'));
+  t('r48 editor reuse wired', /state.blogEdit._isProduct/.test(A) && /_isProduct: true/.test(A) && /return renderAdminBlogEditor\(\)/.test(A.slice(A.indexOf('function renderAdminProductsEditor'), A.indexOf('function renderAdminProductsEditor') + 700)));
+  t('r48 separate draft key', (A.match(/'product_article'/g) || []).length >= 4);
+  t('r48 legacy dispatch guarded', /_isProduct\) return null/.test(rd('assets/js/functions.js').replace(/\r\n/g, '\n')));
   t('product form stacked actions on mobile', /flex flex-col-reverse sm:flex-row gap-2\.5 sm:gap-4 mt-8/.test(A));
   t('bulk import shared media', /media: \{ image: '', video: '', article: '', onlyEmpty: true \}/.test(A) && /function aryBulkImgFile/.test(A));
   t('admin login header has key icon', /width:80px;[\s\S]{0,260}?box-shadow:0 20px 40px[\s\S]{0,340}?<circle cx="7.5" cy="15.5" r="4"/.test(rd('admin.html')));
@@ -110,9 +113,41 @@ async function boot(htmlFile, extra) {
   a.window.__aryAdminLogoutRaw = function () { a.window.__rawCalls++; };
   a.state.confirmModal = null; a.adminLogout(); await flush(a);
   t('admin logout confirm modal', !!(a.state.confirmModal && /خروج از پنل مدیریت/.test(a.state.confirmModal.title)));
+
+
   a.state.confirmModal.onConfirm(); await new Promise(r => setTimeout(r, 80));
   t('raw logout called once', a.window.__rawCalls === 1);
   t('adminLogoutNow bypass (idle)', (() => { a.window.__rawCalls = 0; a.adminLogoutNow(); return a.window.__rawCalls === 1 && !a.state.confirmModal; })());
+
+  /* ═══ r48 — ویرایشگر مقالهٔ محصول = همان ادیتور وبلاگ ═══ */
+  {
+    const st = a.state;
+    st.adminTab = 'products'; st.blogEdit = null; st.currentScreen = null;
+    st.editProduct = { id: 1, title: 'هدفون X', price: 100 };
+    st.productDraft = null;
+    const blogLen = (st.blog || []).length;
+    a.openArticleEditor(); await flush(a);
+    let bd = a.document.body.innerHTML;
+    t('product article opens blog-style editor', /ary-wp-root/.test(bd) && /ویرایش مقالهٔ محصول/.test(bd));
+    t('product mode: full WP toolbar', /class="ary-wp-tools" role="toolbar"/.test(bd) && /ary-wp-tbtn/.test(bd) && /ary-wp-back/.test(bd));
+    t('product mode: no blog title input', !/id="ary-wp-title"/.test(bd));
+    t('product mode: blog-only settings hidden', !/مقاله منتشرشده/.test(bd) && /رسانه‌های مقاله/.test(bd));
+    t('product mode: paper body editable', !!a.document.getElementById('ary-wp-body'));
+    a.document.getElementById('ary-wp-body').innerHTML = '<p>این یک مقالهٔ آزمایشی کافی‌طول برای تست ذخیره است.</p>';
+    await a.window.aryBlogWpSave(); await flush(a);
+    t('article saved to product draft', /آزمایشی کافی‌طول/.test(String((st.productDraft || {}).article || '')));
+    t('no blog post created by product save', (st.blog || []).length === blogLen);
+    t('editor closed back to product form', !st.blogEdit && /مقاله ثبت شده/.test(a.document.body.innerHTML));
+    a.openArticleEditor(); await flush(a);
+    a.document.getElementById('ary-wp-body').innerHTML = '<p>محتوای تغییرکردهٔ ذخیره‌نشده برای تست دیالوگ خروج الزامی است.</p>';
+    a.window.aryBlogWpCancel(); await flush(a);
+    t('dirty exit shows confirm modal', !!(st.confirmModal && /خروج از ویرایش مقالهٔ محصول/.test(String(st.confirmModal.title || ''))));
+    if (st.confirmModal) { const cb = st.confirmModal.onConfirm; st.confirmModal = null; cb(); }
+    await flush(a);
+    t('discard on confirmed exit', !st.blogEdit && !/دیالوگ خروج الزامی/.test(String((st.productDraft || {}).article || '')));
+    a.eval('state.editProduct = null; state.productDraft = null; state.blogEdit = null; render();');
+    await flush(a);
+  }
   for (const tab of ['products', 'orders', 'database']) {
     a.state.adminTab = tab; if (a.render) a.render(); await flush(a);
     t('admin tab ' + tab + ' zero emoji', hard(d2.body.innerHTML).length === 0, hard(d2.body.innerHTML).slice(0, 3).join(''));

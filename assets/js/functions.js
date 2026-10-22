@@ -464,6 +464,8 @@ function logout() {
     const mainHTML = safe(() => {
       // If article editor screen is active, render it first
       if (state.currentScreen === "article-editor") {
+        // r48 — ویرایشگر مقالهٔ محصول حالا همان UI بلاگ را دارد (state.blogEdit._isProduct در تب محصولات)
+        if (state.blogEdit && state.blogEdit._isProduct) return null; // پوستهٔ ادمین رندر می‌شود
         return renderArticleEditor();
       }
 
