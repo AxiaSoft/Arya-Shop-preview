@@ -12,3 +12,4 @@ storage/*
 *.sql.bak
 .DS_Store
 node_modules/
+node_modules
