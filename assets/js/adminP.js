@@ -515,7 +515,7 @@ function renderAdminOrderCard(order, i) {
         <div class="mr-auto flex items-center gap-2">
           <span class="text-[10px] font-black px-2 py-1 rounded-lg ${({pending:'bg-amber-500/15 text-amber-300',processing:'bg-blue-500/15 text-blue-300',shipped:'bg-sky-500/15 text-sky-300',delivered:'bg-emerald-500/15 text-emerald-300',canceled:'bg-rose-500/15 text-rose-300'})[st] || 'bg-white/10 text-white/60'}">${({pending:'در انتظار',processing:'پردازش',shipped:'ارسال شده',delivered:'تحویل شده',canceled:'لغوشده'})[st] || st}</span>
           <select id="status-${oid}" onchange="updateOrderStatus(state.orders.find(o => o.id === '${oid}'), this.value)" class="text-[11px] font-bold rounded-lg px-2 py-1.5 bg-white/8 border border-white/15 text-white/80">
-            ${[['pending','در انتظار'],['processing','پردازش'],['shipped','ارسال'],['delivered','تحویل'],['canceled','لغو']].map(o => `<option value="${o[0]}" ${st === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}
+            ${[['pending','در انتظار'],['processing','پردازش'],['shipped','ارسال'],['delivered','تحویل']].map(o => `<option value="${o[0]}" ${st === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}${canceled ? `<option value="canceled" selected>لغو (قدیمی)</option>` : ''}
           </select>
         </div>
       </div>
@@ -901,26 +901,10 @@ window.aryAdminReturnDecision = function (orderId, decision) {
 
 function updateOrderStatus(order, nextStatus) {
   if (!order || !order.id) return;
-  // لغو از پنل ادمین: مانند پنل کاربر، دلیل لازم است (در گزارش لغوها ثبت می‌شود)
-  if (String(nextStatus) === 'canceled' && String(order.status || '') !== 'canceled') {
-    state.confirmModal = {
-      type: 'danger',
-      title: 'لغو سفارش از پنل — ثبت دلیل',
-      message: `
-        <div class="text-start space-y-2.5">
-          <p class="text-xs text-white/60 leading-6">سفارش #${String(order.id).slice(-8)} (${order.user_name || 'بدون نام'}) لغو می‌شود. دلیل را بنویسید تا در کارت سفارش و گزارش لغوها ثبت شود:</p>
-          <textarea id="admin-cancel-reason" rows="2" class="input-style w-full text-sm resize-none" placeholder="مثلاً: موجودی انبار تمام شد / تماس با مشتری و انصراف…"></textarea>
-          <p class="text-[10px] text-white/40">اگر چیزی ننویسید، «لغو اداری» ثبت می‌شود.</p>
-        </div>`,
-      confirmText: 'ثبت دلیل و لغو',
-      confirmClass: 'bg-rose-600 hover:bg-rose-500 text-white',
-      onConfirm: () => {
-        const txt = String(document.getElementById('admin-cancel-reason')?.value || '').trim();
-        state.confirmModal = null;
-        updateOrder(order.id, { status: 'canceled', cancel_reason: 'مدیر: ' + (txt !== '' ? txt : 'لغو اداری') });
-      }
-    };
+  // r49 — امکان لغو سفارش از پنل ادمین حذف شده؛ لغو فقط سابقاً ثبت‌شده نمایش داده می‌شود
+  if (String(nextStatus) === 'canceled') {
     render();
+    toast('امکان لغو سفارش از پنل وجود ندارد', 'warning');
     return;
   }
   updateOrder(order.id, { status: nextStatus });

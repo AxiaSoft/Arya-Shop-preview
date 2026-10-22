@@ -4063,7 +4063,7 @@ function renderProductPage() {
     return { badge: 'badge-new', icon: aryIcon('box', 'w-3.5 h-3.5'), label: 'ثبت شده' };
   }
 
-  // ───────── پیگیری سفارش: لغو و درخواست مرجوعی (طبق قوانین) ─────────
+  // ───────── پیگیری سفارش: درخواست مرجوعی (طبق قوانین) — لغو سفارش حذف شده است ─────────
   function getOrderPhone() { return String((state.user && state.user.phone) || (state.currentUser && state.currentUser.phone) || ''); }
   function findTrackedOrder(id) { id = String(id); return (state.orders || []).find(o => String(o.id) === id); }
   function returnWindowDays() {
@@ -4083,69 +4083,6 @@ function renderProductPage() {
     try { if (window.AryaDB && AryaDB.loadToState) await AryaDB.loadToState(); } catch (e) {}
     if (typeof render === 'function') render();
   }
-
-  window.requestOrderCancel = function (id) {
-    const order = findTrackedOrder(id);
-    if (!order) { toast('سفارش یافت نشد', 'error'); return; }
-    const reasons = [
-      'تغییر نظر و انصراف از خرید',
-      'پیدا کردن قیمت بهتر در جای دیگر',
-      'زمان پردازش/ارسال太长 بود',
-      'اطلاعات یا آدرس سفارش را اشتباه زدم',
-      'موقع پرداخت، درگاه خطا داد',
-      '__other',
-    ];
-    reasons[2] = 'زمان پردازش/ارسال خیلی طولانی بود';
-    state.confirmModal = {
-      type: 'danger',
-      title: 'لغو سفارش — ثبت دلیل',
-      message: `
-        <div class="text-start space-y-2.5">
-          <p class="text-xs text-white/60 leading-6">برای بهبود خدمات و ثبت فرایند عودت وجه، دلیل لغو را مشخص کنید (اجباری):</p>
-          ${reasons.map((r, i) => `
-            <label class="flex items-center gap-2.5 text-[13px] cursor-pointer glass rounded-lg px-3 py-2 hover:bg-white/5">
-              <input type="radio" name="cx-reason" value="${r === '__other' ? '__other' : aryEsc(r)}" ${i === 4 ? 'data-other' : ''}>
-              <span>${r === '__other' ? 'مورد دیگر (خودم می‌نویسم)…' : aryEsc(r)}</span>
-            </label>`).join('')}
-          <textarea id="cx-reason-text" rows="2" class="input-style w-full text-sm resize-none" placeholder="توضیح دلخواه (حداقل ۵ کاراکتر)"></textarea>
-          <p class="text-[10px] text-white/40">اگر پرداخت آنلاین انجام شده، مبلغ تا ۷۲ ساعت کاری عودت می‌شود. دلیل لغو در پنل فروشگاه ثبت می‌شود.</p>
-        </div>`,
-      confirmText: 'ثبت دلیل و لغو سفارش',
-      confirmClass: 'btn-danger bg-rose-600 hover:bg-rose-700 text-white',
-      validate: () => {
-        const sel = document.querySelector('input[name="cx-reason"]:checked');
-        const custom = String(document.getElementById('cx-reason-text')?.value || '').trim();
-        const chosen = sel ? String(sel.value) : '';
-        const reason = chosen === '__other' ? custom : (custom ? chosen + ' — ' + custom : chosen);
-        if (reason.replace(/\s+/g, '').length < 5) {
-          toast('دلیل لغو را انتخاب یا بنویسید (حداقل ۵ کاراکتر)', 'warning');
-          return false;
-        }
-        window.__cxReason = reason.slice(0, 300);
-        return true;
-      },
-      onConfirm: async () => {
-        const reason = String(window.__cxReason || '').trim();
-        delete window.__cxReason;
-        state.confirmModal = null;
-        try {
-          if (window.AryaServer && AryaServer.isConfigured()) {
-            const r = await AryaServer.call('order_cancel', { body: { id: String(order.id), phone: getOrderPhone(), reason } });
-            if (!r || !r.ok) { toast((r && r.msg) || 'لغو سفارش ناموفق بود', 'error'); render(); return; }
-          } else {
-            order.status = 'canceled';
-            order.cancel_reason = 'مشتری: ' + reason;
-            try { if (window.AryaDB && AryaDB.upsert) await AryaDB.upsert('orders', order); } catch (e) {}
-          }
-          toast('سفارش با ثبت دلیل لغو شد؛ عودت وجه در صف پردازش است');
-        } finally {
-          try { if (window.AryaDB && AryaDB.loadToState) await AryaDB.loadToState(); } catch (e) {}
-          render();
-        }
-      }
-    };
-    render();
-  };
 
   window.toggleOrderReturnForm = function (id) {
     state.returnFormFor = (state.returnFormFor === String(id)) ? null : String(id);
@@ -4468,7 +4405,6 @@ function renderProductPage() {
                       const s = getStatusInfo(order.status);
                       const st = String(order.status || '').toLowerCase();
                       const rs = String(order.return_status || '').toLowerCase();
-                      const canCancel = st === 'pending' || st === 'processing';
                       const rsBusy = rs === 'requested' || rs === 'approved';
                       const canReturn = st === 'delivered' && !rsBusy && inReturnWindow(order);
                       const windowExpired = st === 'delivered' && !rsBusy && !canReturn;
@@ -4509,9 +4445,8 @@ function renderProductPage() {
                         })()}
                         ${order.admin_note ? `<p class="text-[11px] text-amber-200/85 bg-amber-500/5 border border-amber-500/15 rounded-xl px-3 py-2 flex items-start gap-1.5"><span class="mt-0.5 inline-flex shrink-0">${aryIcon('info','w-3.5 h-3.5')}</span><span>یادداشت پشتیبانی: ${aryEsc(String(order.admin_note))}</span></p>` : ''}
                         ${rs && order.return_reason ? `<p class="text-[11px] text-white/50">دلیل مرجوعی: ${aryEsc(String(order.return_reason))}</p>` : ''}
-                        ${(canCancel || canReturn || windowExpired) ? `
+                        ${(canReturn || windowExpired) ? `
                         <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-white/5">
-                          ${canCancel ? `<button type="button" onclick="requestOrderCancel('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 transition-colors inline-flex items-center gap-1.5">${aryIcon('x', 'w-3.5 h-3.5')}لغو سفارش</button>` : ''}
                           ${canReturn ? `<button type="button" onclick="toggleOrderReturnForm('${aryEsc(String(order.id))}')" class="text-xs px-3 py-1.5 rounded-lg bg-sky-500/15 text-sky-300 hover:bg-sky-500/25 transition-colors inline-flex items-center gap-1.5">${aryIcon('return', 'w-3.5 h-3.5')}درخواست مرجوعی</button>` : ''}
                           ${windowExpired ? `<span class="text-[10px] text-white/35">مهلت ${returnWindowDays()} روزه‌ی مرجوعی این سفارش به پایان رسیده است</span>` : ''}
                         </div>` : ''}

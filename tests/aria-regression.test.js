@@ -119,6 +119,16 @@ async function boot(htmlFile, extra) {
   t('raw logout called once', a.window.__rawCalls === 1);
   t('adminLogoutNow bypass (idle)', (() => { a.window.__rawCalls = 0; a.adminLogoutNow(); return a.window.__rawCalls === 1 && !a.state.confirmModal; })());
 
+  /* ═══ r49 — حذف لغو سفارش (ادمین) ═══ */
+  {
+    const o = { id: 'zz-cancel-test', status: 'pending', user_name: 'ت', user_phone: '0912' };
+    a.state.orders = (a.state.orders || []).concat([o]);
+    a.updateOrderStatus(o, 'canceled'); await flush(a);
+    t('r49 admin cancel attempt blocked', String(o.status) === 'pending');
+    a.updateOrderStatus(o, 'processing'); await flush(a);
+    t('r49 other status transitions still work', String(o.status) === 'processing');
+    a.state.orders = (a.state.orders || []).filter(x => x.id !== 'zz-cancel-test');
+  }
   /* ═══ r48 — ویرایشگر مقالهٔ محصول = همان ادیتور وبلاگ ═══ */
   {
     const st = a.state;
@@ -161,6 +171,9 @@ async function boot(htmlFile, extra) {
   a.state.productDraft = null;
   const fh = a.renderProductModal();
   t('product form submit stacked + nowrap', /flex flex-col-reverse sm:flex-row/.test(fh) && /btn-primary w-full sm:flex-1[^"]*whitespace-nowrap/.test(fh) && /بروزرسانی/.test(fh));
+  t('r49 cancel removed from user panel', !/requestOrderCancel/.test(P) && !/canCancel/.test(P) && !/cx-reason/.test(P));
+  t('r49 cancel removed from admin status select', A.includes("if (String(nextStatus) === 'canceled')") && !/"'canceled','لغو'"/.test(A) && !/\['canceled','لغو'\]/.test(A));
+  t('r49 cancel display kept (badge + reopen)', /badge-canceled/.test(P) && /aryReopenOrder/.test(A));
   t('edit icon on category/blog rows', /aria-label="ویرایش دسته"[^>]*>\s*<svg/.test(A) && /aria-label="ویرایش مقاله"[^>]*>\s*<svg/.test(A));
   // مودال ولش‌لیست ادمین ربطی ندارد — ادیتور چک نشد؛ تست bulk flow کوتاه:
   a.openAryaBulkImport && a.openAryaBulkImport();
