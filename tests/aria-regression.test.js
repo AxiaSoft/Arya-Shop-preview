@@ -45,6 +45,7 @@ async function boot(htmlFile, extra) {
   t('search btn not force-circular', !/header \.gpt5-search-btn[^}]*border-radius:\s*50%/s.test(TH) && /header \.gpt5-search-btn \{ border-radius: 11px; \}/.test(TH));
   t('menu hamburger is svg', !/☰/.test(C) && /aryIcon\('menu'/.test(C));
   t('r52 hamburger mobile-only (nav switches at md)', /hidden md:flex items-center gap-4 lg:gap-8/.test(C) && /md:hidden as-hbtn/.test(C) && !/lg:hidden as-hbtn/.test(C) && !/hidden lg:flex items-center/.test(C));
+  t('r53 :has rule respects responsive-hide + hard header guard', (TH.match(/:not\(\.md\\:hidden\)/g) || []).length >= 4 && /@media \(min-width:768px\) \{ html\[data-aria-theme\] header \.md\\:hidden \{ display: none !important; \} \}/.test(TH));
   t('r52 desktop catmenu themed (no dark hardcode)', /ary-catbtn/.test(C) && /ary-catpanel/.test(C) && !/bg-gray-900\/95/.test(C) && /light"\] \.ary-catpanel \{ background: rgba\(255,255,255,\.96\)/.test(TH));
   t('r52 mob-theme hidden from md + mobile hdr sizes capped to 767', /@media \(min-width:768px\) \{ \.as-mob-theme \{ display: none !important; \} \}/.test(TH) && /@media \(max-width:767px\)/.test(TH));
   t('r52 smoother animations (spring easing + reduced-motion)', ((C + TH).match(/cubic-bezier\(\.16,1,\.3,1\)/g) || []).length >= 4 && /\.mobile-menu \.gpt5-drawer \{/.test(C) && /prefers-reduced-motion: reduce/.test(TH.slice(TH.indexOf('.mobile-menu .gpt5-drawer { transition: none') - 400, TH.indexOf('.mobile-menu .gpt5-drawer { transition: none'))));

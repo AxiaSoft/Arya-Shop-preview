@@ -876,12 +876,17 @@ svg text { font-family: inherit; }
   /* r44: دکمهٔ «جستجو» داخل نوار بازشو — پیِل متنی می‌ماند (دایره/مربع نشود) */
   html[data-aria-theme] header .gpt5-search-btn { border-radius: 11px; }
 }
-/* آیکن تنها داخل دکمه — دقیقاً وسط (رفع نیم‌پیکسل بالا/پایین از baseline) */
+/* آیکن تنها داخل دکمه — دقیقاً وسط (رفع نیم‌پیکسل بالا/پایین از baseline)
+   r53 — این قانون نباید ابزارهای پاسخive مخفی‌کننده (md:hidden / lg:hidden) را بازنویسی کند؛
+   وگرنه همبرگر هدر در دسکتاپ نشت می‌کند (اولویت spec بالاتر از کلاس تک‌تایی) */
 html[data-aria-theme] button > svg { display: inline-block; vertical-align: middle; }
-html[data-aria-theme] button:has(> svg:only-child),
-html[data-aria-theme] button:has(> span:only-child > svg:only-child),
-html[data-aria-theme] button:has(> i:only-child) { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
-html[data-aria-theme] button:has(> span:only-child > svg:only-child) { display: inline-flex; align-items: center; justify-content: center; }
+html[data-aria-theme] button:has(> svg:only-child):not(.md\:hidden):not(.lg\:hidden):not(.sm\:hidden),
+html[data-aria-theme] button:has(> span:only-child > svg:only-child):not(.md\:hidden):not(.lg\:hidden):not(.sm\:hidden),
+html[data-aria-theme] button:has(> i:only-child):not(.md\:hidden):not(.lg\:hidden):not(.sm\:hidden) { display: inline-flex; align-items: center; justify-content: center; line-height: 0; }
+html[data-aria-theme] button:has(> span:only-child > svg:only-child):not(.md\:hidden):not(.lg\:hidden):not(.sm\:hidden) { display: inline-flex; align-items: center; justify-content: center; }
+/* r53 — گارد قطعی: هیچ دکمهٔ مخفی‌شده‌ای در هدرِ دسکتاپ نباید دیده شود */
+@media (min-width:768px) { html[data-aria-theme] header .md\:hidden { display: none !important; } }
+@media (min-width:1024px) { html[data-aria-theme] header .lg\:hidden { display: none !important; } }
 html[data-aria-theme] button > span:only-child > svg:only-child { display: block; margin: auto; }
 /* ═══ ۳۱) r41 — ادیتور WP (بلاگ/محصول) + بازطراحی موبایل ادمین ═══ */
 .ary-wp-root { position: fixed; inset: 0; z-index: 70; display: flex; flex-direction: column; background: #0b1630; color: #e6efff; }
