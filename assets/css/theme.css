@@ -631,7 +631,7 @@ html[data-aria-theme] #admin-auth-screen button.btn-primary { white-space: nowra
 html[data-aria-theme] button[class*="btn"] > svg, html[data-aria-theme] .af-btn svg, html[data-aria-theme] .admin-topbar-btn svg { flex: none; }
 @media (max-width:639px) { .admin-topbar-btn span { display:none; } .admin-topbar-btn { padding:.45rem .6rem; } }
 /* دکمهٔ تمِ هدر موبایل — فقط موبایل */
-@media (min-width:1024px) { .as-mob-theme { display: none !important; } }
+@media (min-width:768px) { .as-mob-theme { display: none !important; } }
 /* FAB و دکمهٔ بالا — زیر سایدبارهای بازشده */
 body:has(#mobileMenu.open) #arya-support-fab, body:has(#shop-filter-sidebar.open) #arya-support-fab,
 body:has(#mobileMenu.open) .fixed.bottom-6.left-6, body:has(#shop-filter-sidebar.open) .fixed.bottom-6.left-6 { z-index: 50 !important; }
@@ -864,8 +864,8 @@ svg text { font-family: inherit; }
 .ary-donut-seg:hover, .ary-donut-seg:focus { stroke-width: 4.6; outline: none; }
 .ary-donut-row { cursor: pointer; transition: background .15s ease; }
 .ary-donut-row:hover, .ary-donut-row:focus { background: rgba(59,130,246,.12); outline: none; }
-/* ═══ ۲۹) r40 — هدر موبایل یک‌سایز + وسط‌چین بودن آیکن‌های تک ═══ */
-@media (max-width:1023px) {
+/* ═══ ۲۹) r40 — هدر موبایل یک‌سایز + وسط‌چین بودن آیکن‌های تک (r52: فقط زیر md تا دسکتاپ کوچک اذیت نشود) ═══ */
+@media (max-width:767px) {
   html[data-aria-theme] header .as-hbtn,
   html[data-aria-theme] header .ary-theme-btn:not(.lg\:hidden) {
     width: 2.65rem; height: 2.65rem; min-height: 0; padding: 0;
@@ -985,3 +985,34 @@ html[data-aria-theme="light"] .ary-sheet-tool-out { color: #be123c; }
 .prose-arya figure, .article-content figure { margin: 1.2em 0; }
 .prose-arya video, .article-content video { width: 100%; border-radius: 16px; display: block; }
 .prose-arya figcaption, .article-content figcaption { font-size: 12px; color: rgba(255, 255, 255, .55); text-align: center; margin-top: 6px; }
+
+/* ═══ ۳۲) r52 — منوی دستهٔ دسکتاپ هم‌تن با تم + انیمیشن‌های روان‌تر ═══ */
+html[data-aria-theme] header .ary-catbtn { color: var(--ar-ink2); transition: background-color .18s ease, color .18s ease, transform .18s cubic-bezier(.22,.9,.3,1); }
+html[data-aria-theme] header .ary-catbtn:hover { color: var(--ar-ink); background: var(--ar-hover); }
+html[data-aria-theme] header .ary-catbtn:active { transform: scale(.97); }
+.ary-catpanel {
+  background: rgba(9,18,38,.94); border: 1px solid rgba(148,187,255,.18);
+  backdrop-filter: blur(16px) saturate(1.4); -webkit-backdrop-filter: blur(16px) saturate(1.4);
+}
+html[data-aria-theme="light"] .ary-catpanel { background: rgba(255,255,255,.96); border-color: #d9e6f8; box-shadow: 0 18px 44px -18px rgba(23,51,105,.28); }
+.ary-catitem { color: var(--ar-ink2); transition: background-color .16s ease, color .16s ease, transform .18s cubic-bezier(.22,.9,.3,1); }
+.ary-catitem:hover { background: var(--ar-hover); color: var(--ar-ink); transform: translateX(-2px); }
+.ary-catitem:active { background: var(--ar-active); }
+html[data-aria-theme="light"] .ary-catitem:hover { background: #eef4fd; }
+html[data-aria-theme="light"] .ary-catitem { color: #22406f; }
+.ary-cat-ico { color: #93c5fd; }
+html[data-aria-theme="light"] .ary-cat-ico { color: #2563eb; }
+/* میکرواینترکشن دکمه‌های هدر */
+html[data-aria-theme] header .as-hbtn,
+html[data-aria-theme] header .btn-primary { transition: transform .18s cubic-bezier(.22,.9,.3,1), background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease; }
+html[data-aria-theme] header .as-hbtn:active,
+html[data-aria-theme] header .btn-primary:active { transform: scale(.95); }
+/* ظاهر شدن نرم‌تر بخش‌ها */
+html[data-aria-theme] .animate-fade { animation-duration: .5s; animation-timing-function: cubic-bezier(.16,1,.3,1); }
+html[data-aria-theme] .animate-fade-up { animation-timing-function: cubic-bezier(.16,1,.3,1); }
+@media (prefers-reduced-motion: reduce) {
+  html[data-aria-theme] header .ary-catbtn, html[data-aria-theme] .ary-catitem,
+  html[data-aria-theme] header .as-hbtn, html[data-aria-theme] header .btn-primary { transition: none; transform: none; }
+  .mobile-menu .gpt5-drawer { transition: none; transform: none; }
+  html[data-aria-theme] .animate-fade, html[data-aria-theme] .animate-fade-up { animation: none; }
+}
