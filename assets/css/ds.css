@@ -1,0 +1,119 @@
+/* ════════════════════════════════════════════════════════════════
+   Arya · Design-System layer (برگرفته از Simple Design System — Figma)
+   مقیاس‌های SDS (فاصله، شعاع، سایه، تایپوگرافی، معنایی) روی پوستهٔ
+   آبی تیرهٔ آریا نگاشت شده‌اند. این فایل «بعد» از style.css لینک می‌شود
+   و فقط لایهٔ صیقل‌دهی است؛ ساختار و کلاس‌های فعلی دست‌نخورده می‌مانند.
+   ════════════════════════════════════════════════════════════════ */
+:root {
+  /* SDS spacing scale (px) — 100=4 … 600=24 */
+  --sds-sp-1: 2px;  --sds-sp-2: 4px;  --sds-sp-3: 6px;  --sds-sp-4: 8px;
+  --sds-sp-5: 12px; --sds-sp-6: 16px; --sds-sp-7: 24px; --sds-sp-8: 32px;
+  --sds-sp-9: 48px; --sds-sp-10: 64px;
+
+  /* SDS radius scale */
+  --sds-r-1: 4px;   /* rounded-100 */
+  --sds-r-2: 8px;   /* rounded-200 */
+  --sds-r-4: 16px;  /* rounded-400 */
+  --sds-r-full: 9999px;
+
+  /* SDS layered drop shadows (dark-theme tuned) */
+  --sds-drop-1: 0 1px 1px rgba(2, 8, 23, .18), 0 1px 8px rgba(2, 8, 23, .12);
+  --sds-drop-2: 0 1px 4px rgba(2, 8, 23, .28), 0 4px 8px -4px rgba(2, 8, 23, .28);
+  --sds-drop-3: 0 2px 4px rgba(2, 8, 23, .32), 0 8px 16px -4px rgba(2, 8, 23, .34);
+  --sds-drop-4: 0 2px 8px rgba(2, 8, 23, .34), 0 16px 24px -8px rgba(2, 8, 23, .38);
+
+  /* SDS typography ramp */
+  --sds-fs-xs: 12px; --sds-fs-s: 14px; --sds-fs-m: 16px;
+  --sds-fs-l: 20px;  --sds-fs-xl: 24px; --sds-fs-2xl: 32px;
+
+  /* Semantic (blue-only brand per project rule; SDS groups kept) */
+  --sds-brand: #3b82f6;
+  --sds-brand-strong: #2563eb;
+  --sds-on-brand: #ffffff;
+  --sds-bg: #0b1730;
+  --sds-surface: rgba(255, 255, 255, .06);
+  --sds-border: rgba(255, 255, 255, .10);
+  --sds-text: rgba(255, 255, 255, .92);
+  --sds-text-muted: rgba(255, 255, 255, .60);
+  --sds-positive: #10b981;
+  --sds-warning: #f59e0b;
+  --sds-danger: #f43f5e;
+  --sds-focus-ring: 0 0 0 2px rgba(11, 23, 48, 1), 0 0 0 4px #60a5fa; /* 2px ring @150 */
+
+  /* Motion */
+  --sds-ease: cubic-bezier(.2, 0, 0, 1);
+}
+
+/* ——— بنیاد ——— */
+body {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+p { line-height: 1.65; }          /* FA-friendly relaxed leading (SDS body 150%+) */
+h1, h2, h3 { letter-spacing: -.01em; } /* SDS headings: semibold + tight */
+
+/* ——— کارت / سطح ——— */
+.glass {
+  box-shadow: var(--sds-drop-2);
+  border-color: var(--sds-border);
+  transition: background-color .2s var(--sds-ease), border-color .2s var(--sds-ease),
+              box-shadow .25s var(--sds-ease), transform .25s var(--sds-ease);
+}
+.card:hover, .product-card:hover {
+  box-shadow: var(--sds-drop-4);
+}
+
+/* ——— دکمه‌ها ——— */
+.btn-primary, .btn-danger, .btn-ghost {
+  position: relative;
+  transition: transform .18s var(--sds-ease), box-shadow .18s var(--sds-ease),
+              background-color .18s var(--sds-ease), border-color .18s var(--sds-ease);
+}
+.btn-primary { box-shadow: var(--sds-drop-2); font-weight: 700; }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: var(--sds-drop-3); }
+.btn-primary:active { transform: translateY(0) scale(.985); box-shadow: var(--sds-drop-1); }
+.btn-ghost:hover { transform: translateY(-1px); }
+.btn-primary:active, .btn-ghost:active, .btn-danger:active { transition-duration: .06s; }
+
+/* ——— ورودی‌ها ——— */
+.input-style, select.input-style, textarea.input-style {
+  border-radius: var(--sds-r-2);
+  transition: border-color .15s var(--sds-ease), box-shadow .15s var(--sds-ease), background-color .15s var(--sds-ease);
+}
+.input-style:focus, .input-style:focus-visible {
+  box-shadow: var(--sds-focus-ring);
+  border-color: rgba(96, 165, 250, .55);
+  outline: none;
+}
+
+/* حلقهٔ فوکوس ۲پیکسلی SDS برای همهٔ کنترل‌های کلیدی‌پد‌نوردار */
+:where(button, a, [role="button"], .tablike):focus-visible {
+  outline: none;
+  box-shadow: var(--sds-focus-ring);
+  border-radius: var(--sds-r-2);
+}
+
+/* ——— مدیا در محتوا (بلاگ/مقالهٔ محصول) ——— */
+.prose-arya img, .prose-arya video { border-radius: var(--sds-r-4); }
+.prose-arya h2 { font-weight: 600; } /* SDS heading semibold */
+.prose-arya a:hover { text-decoration-thickness: 2px; }
+
+/* ——— اسکرول‌بار هم‌خانواده (دسکتاپ) ——— */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, .28);
+  border-radius: var(--sds-r-full);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: rgba(59, 130, 246, .5); background-clip: padding-box; }
+
+/* ——— جدول‌های پنل ——— */
+.admin-table thead th { font-weight: 600; letter-spacing: 0; }
+
+/* ——— حرکت کم (دسترس‌پذیری SDS motion) ——— */
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:hover, .btn-ghost:hover, .card:hover { transform: none !important; }
+  .glass, .btn-primary, .btn-danger, .btn-ghost, .input-style { transition: none; }
+}

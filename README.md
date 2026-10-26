@@ -1,0 +1,106 @@
+# 🛍️ Arya Shop Preview
+
+فروشگاه فارسی‌زبان استاتیک (HTML/JS) + یک API تکی PHP با پشتیبانی از **همه موتورهای دیتابیس** و **پنل‌های هاستینگ**.
+
+> گزارش کامل امنیتی و تغییرات: `SECURITY-AUDIT-REPORT.md`
+
+## ویژگی‌ها
+
+- **حداقل PHP:** نسخه ۸.۰ به بالا (توابع `str_contains`/`str_starts_with` و typed properties) — روی ۷.x عمداً و بدون پیام اجرا نمی‌شود؛ اگر هاست قدیمی است از cPanel → MultiPHP نسخه ۸.۲ را انتخاب کنید.
+- **کاتالوگ نمونه (منبع واحد):** `assets/data/demo-catalog.json` — همان فایلی که ویزارد در صورت فعال بودن «ساخت کاتالوگ نمونه» داخل دیتابیس درج می‌کند، `scripts/seed_demo.php` می‌خواند و وقتی هیچ بک‌اندی وصل نیست (مثلاً **GitHub Pages**)، فروشگاه مستقیم از همان JSON به‌صورت دمو در مرورگر بالا می‌آید (داده در IndexedDB ذخیره و از پنل محلی قابل ویرایش است). — فقط با PDO و افزونه مربوطه؛ ترجمه DDL/UPSERT خودکار (لایه `includes/db_engine.php`).
+- **Supabase (از نسخه ۲):** موتور انتخابی `supabase` در ویزارد — دایالکت همان PostgreSQL است؛ میزبان/پورت/کاربر از Project ref خودکار ساخته می‌شود (Direct `db.<ref>.supabase.co:5432` یا Session Pooler `aws-0-<region>.pooler.supabase.com:6543` با کاربر `postgres.<ref>`) و TLS با `sslmode=require` اجباری است (امکان `verify-full` + `sslrootcert`). نیازی به pdo_pgsql خارج از افزونه‌های معمول نیست؛ نکته: برای مرحله نصب، Direct توصیه می‌شود (روی Transaction Pooler فرمان‌های session محدودند).
+- **پنل هاستینگ:** ویزارد نصب می‌تواند دیتابیس + کاربر را به‌صورت خودکار روی **cPanel/WHM**، **DirectAdmin** یا **Plesk** بسازد (یا دستی پر کنید). حالت «بدون پنل» روی هر سرور PHP کار می‌کند.
+- **احراز هویت واقعی:** bcrypt سمت سرور، ورود کاربر ۲ مرحله‌ای (رمز + OTP)، ورود مدیر ۳ مرحله‌ای (+2FA)، بازیابی رمز با OTP، CSRF، Rate-Limit و هاردنینگ نشست.
+- **پیگیری سفارش (مشتری):** لغو سفارش تا پیش از ارسال (pending/processing) با دلیل، و **درخواست مرجوعی پس از تحویل طبق قوانین** — مهلت پیش‌فرض ۷ روز از ثبت، دلیل حداقل ۱۰ کاراکتر، و نهایتاً یک درخواست بازِ فعال. رد/قبول توسط مدیر در کارت همان سفارش در پنل انجام می‌شود. اعتبار مالکیت با شماره موبایل حساب/سفارش بررسی می‌شود.
+- **تنظیم مهلت مرجوعی:** `define('ARYA_RETURN_WINDOW_DAYS', 10);` در `config.php` (پیش‌فرض ۷). endpoint `status` همین عدد را با کلید `return_window_days` به فرانت‌اند می‌دهد تا متن قوانین و اعتبارسنجی همیشه هم‌خط باشند.
+- **نشانی اجباری:** ثبت سفارش جدید بدون نشانی پستی معتبر (حداقل ۱۰ کاراکتر) ممکن نیست — فرانت‌اند قبل از ورود به پرداخت راهنمایی می‌کند و بک‌اند هم برای سفارش‌های مهمان enforce می‌کند.
+- **آیکون‌های حرفه‌ای (SVG):** سراسر ویترین و کارت‌های پنل از آیکون‌های inline SVG استفاده می‌کنند (رجیستری `ARYA_ICONS` در `components.js` + `aryIcon()/aryCatIcon()`). آیکون دسته‌بندی‌ها در `demo-catalog.json` به‌صورت *نام* ذخیره می‌شود (`smartphone/headphones/watch/gamepad/shirt`) و رندر SVG انجام می‌گیرد؛ متن آزاد هم سازگار است.
+- **اسلایدر صفحه اصلی:** آرایه `aryHeroSlides` در `configuration.js` (تصویر/تیتر/متن/دکمه/لینک) — تصاویر نمونه در `assets/img/home/` هست؛ با خالی‌کردن آرایه، طرح گرادیانی قدیمی برمی‌گردد. بنر «دعوت به اقدام» پایین صفحه هم تصویر پس‌زمینه دارد.
+- **پیشانه مجوزها (Inamad و…):** به هر مورد از `trustBadges` یک `url` بدهید (مثلاً `https://enamad.ir/<شناسه-اعتماد>`) تا با کلیک، صفحه تأیید اصالت در *تب جدید* باز شود؛ بدون `url` مثل قبل فقط تصویر است.
+- **چت شناور پشتیبانی:** دکمهٔ دایره‌ای پایین صفحه، گفتگوی اختصاصی و امن با ادمین روی بستر تیکت‌ها — فقط برای حساب کاربریِ لاگین‌شده، با دریافت خودکار پاسخ‌ها (هر ۳۰ ثانیه) و نشانهٔ تعداد تیکت‌های بی‌پاسخ؛ برای مهمان به صفحهٔ ورود هدایت می‌کند.
+- **پلیر ویدیوی مستقل:** پخش‌کنندهٔ تمام‌صفحهٔ محصولات خارج از چرخهٔ render ساخته می‌شود — بدون پخش دوباره، سوییچ فوری بین ویدیوها (کلیدهای جهت‌دار و Esc)، و بندانگشتی هر ویدیو با فریم اول واقعی نمایش داده می‌شود.
+- **آیکون‌ها:** کل رجیستری UI از پک رسمی و اوپن‌سورس **Lucide v0.462.0** (ISC) پر شده است؛ داده‌ای از آی‌کون‌فونت/CDN خارجی بارگذاری نمی‌شود (inline SVG).
+- **پنل مدیریت در حالت دمو:** روی GitHub Pages (بدون PHP) با حساب نمایشی `demo@arya.local / Demo@12345` کاملاً قابل تست است — داده‌ها فقط در همان مرورگر. **هیچ لینک ورود به پنل در سایت اصلی وجود ندارد**؛ ورود تنها با باز‌کردن مستقیم `admin.html`.
+- **کد OTP دمو داخل کارت ورود:** دیگر نوتیفیکیشن (toast) نمایش داده نمی‌شود؛ فقط در حالت دمو یک چیپ کوچک داخل همان فرم با دکمه «استفاده از کد» ظاهر می‌شود. در پروداکشن (سرور واقعی که OTP به SMS/ایمیل ارسال می‌شود) این کد هیچ‌جای رابط کاربری درز نمی‌کند.
+- **بدون سرور هم کار می‌کند:** اگر `config.php` نباشد، فروشگاه با دمای محلی (IndexedDB) و برچسب «آزمایشی» ادامه می‌دهد — مناسب طراحی و دمو.
+
+## راه‌اندازی سریع
+
+1. فایل‌ها را روی هاست PHP (≥ 8.0) بارگذاری کنید (`.htaccess` هم آپلود شود — روی nginx نمونه پایین را ببینید).
+2. به `index.html` بروید → ویزارد نصب باز می‌شود.
+3. موتور دیتابیس را انتخاب کنید:
+   - **هاست پنل‌دار:** بخش «پنل هاستینگ» را باز کنید، اطلاعات cPanel/DA/Plesk را بزنید → «ساخت خودکار دیتابیس» → فرم خودش پر می‌شود.
+   - **دستی:** نام دیتابیس/کاربر/رمز را از پنل هاست یا phpMyAdmin بگیرید.
+   - **تست محلی:** `php -S 127.0.0.1:8000 router.php` و درایور SQLite — router.php مسیرهای حساس (storage/config/includes) را می‌بندد و هدرهای امنیتی را می‌فرستد.
+4. ایمیل/رمز مدیر را تعیین کنید (خالی = رمز تصادفی، فقط یک‌بار نمایش داده می‌شود) → «اتصال و راه‌اندازی». جداول و حساب مدیر خودکار ساخته می‌شوند.
+5. ورود مدیر: `admin.html`.
+
+### نصب دستی (بدون ویزارد)
+
+`config.sample.php` را به `config.php` تغییر نام دهید و مقادیر را پر کنید. حداقل: `DB_DRIVER` + پارامترهای اتصال + `API_SECRET` تصادفی (`php -r "echo bin2hex(random_bytes(24));"`).
+
+### nginx (جایگزین .htaccess)
+
+```nginx
+location ^~ /includes/    { return 404; }
+location ^~ /storage/     { return 404; }
+location ~ /\.(ht|git)    { return 404; }
+location = /config.php    { return 404; }
+location ~* (config\.local\.php|.*\.(sqlite|db|sql|log))$ { return 404; }
+
+location ~ \.php$ {
+    include fastcgi_params;
+    fastcgi_pass unix:/run/php/php8.2-fpm.sock;
+    fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}
+```
+
+## اکشن‌های API (`Db.php?action=...`)
+
+| گروه | اکشن‌ها |
+|---|---|
+| عمومی | `status` `csrf` `stats` |
+| نصب/پنل (فقط پیش‌از‌نصب) | `setup` `panel_probe` `panel_provision` |
+| مدیر | `admin_login_step1/2/3` `admin_session` `admin_logout` `admin_change_password` `admin_list` `admin_create` `admin_update` `admin_delete` `system_status` `admin_review_moderate` |
+| کاربر | `user_register` `user_login_step1/2` `user_reset_step1/2` `user_session` `user_logout` `user_update` `user_change_password` `user_delete` |
+| محتوا | `review_create` `review_vote` `ticket_create` `ticket_reply` |
+| پیگیری سفارش | `order_cancel` (مالک + pending/processing) `order_return` (مالک + تحویل‌شده + مهلت/سیاست مرجوعی) |
+| CRUD با سیاست | `getAll` `getById` `upsert` `delete` `import` (جدول‌های مجاز؛ نوشتن فقط با CSRF/توکن؛ `users` از این مسیر قفل) |
+
+حالت برنامه‌های بیرونی: هدر `Authorization: Bearer <API_SECRET>` (نیازمند توکن؛ بدون آن فقط same-origin).
+
+## افزودن درایور/پنل تازه
+
+- **دیتابیس:** در `includes/db_engine.php` → رجیستری `SUPPORTED` + `buildDsn()` + `colType()/createTableSql()/upsertSqlFor()/columnsOf()` (نمونه‌ها موجودند؛ ~۱۰۰ خط).
+- **پنل:** در `includes/panels.php` → پیاده‌سازی `IAryaPanel` (۶ متد) + ثبت در `AryaPanel::SUPPORTED`.
+
+## تست‌ها
+
+```bash
+php tests/engine_dialect.php                                # ۶۱ تست یونیت SQL + مهاجرت ستون‌ها
+php -S 127.0.0.1:8211 router.php &                            # برای E2E (router = بستن مسیرهای حساس)
+rm -f config.php storage/arya_store.sqlite
+BASE_URL=http://127.0.0.1:8211 bash tests/e2e_backend.sh     # ۱۰۹ تست سرتاسری (لغو/مرجوعی + رگرسیون‌های امنیتی)
+PHP_BIN=php bash tests/panels_e2e.sh                         # ۱۶ تست پنل (سرور جعلی)
+```
+
+## ساختار
+
+```
+index.html / admin.html      صفحات اصلی + ویزارد نصب
+Db.php                       API تک‌نقطه‌ای
+includes/                    security.php · db_engine.php · panels.php
+assets/js/                   Arya_api.js (کلاینت سرور) · Arya_db.js (کش محلی) · pages.js · adminP.js · ...
+storage/                     rate/ logs/ sessions/ (خودکار ساخته می‌شوند)
+config.php                   فایل تنظیمات (ساخته ویزارد؛ در گیت قرار نمی‌گیرد)
+tests/                       تست یونیت + E2E API + پنل جعلی
+```
+
+## نکات امنیتی (خلاصه)
+
+- تا وصل‌نشدن سرویس پیامک/ایمیل، `DEMO_MODE=true` فقط برای محیط تست مجاز است.
+- `config.php` و `storage/` نباید از وب قابل‌دسترسی باشند (گارد + .htaccess تعبیه شده؛ روی nginx هم blocking لازم است).
+- HTTPS را فعال کنید؛ `API_SECRET` تصادفی باشد؛ رمز مدیر پیش‌فرض اولین ورود عوض می‌شود (اجباری).
+- سقف حجم بدنه ۸ مگابایت در PHP و `LimitRequestBody 10485760` در Apache (۴۱۳ زودهنگام) اعمال می‌شود.
+- ابزار هش رمز در `scripts/generate-password-hash.php` است و `/scripts/` و `/tests/` روی وب مسدودند.
+- جزئیات کامل: `SECURITY-AUDIT-REPORT.md` (ممیزی سراسری + ریزِ تست‌ها)

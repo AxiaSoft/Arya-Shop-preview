@@ -1,0 +1,312 @@
+#!/usr/bin/env node
+/* تست رگرسیون یکپارچه آریا (راندهای ۴۰→۴۶)
+   اجرا:  npm i --no-save jsdom && node tests/aria-regression.test.js
+   - بخش ۱: ایستا — CSS/JS (هدر، دکمه‌ها، مودال‌ها، صفرتا صفر ایموجی)
+   - بخش ۲: رانتایم سایت (jsdom) — جستجوی شناور، ولش‌لیست میهمان/کاربر، خروج با مودال
+   - بخش ۳: رانتایم ادمین — بوت واقعی، تب‌ها، فیلتر سفارشات، صفر ایموجی در DOM زنده */
+const path = require('path');
+const ROOT = path.resolve(__dirname, '..');
+let JSDOM;
+try { JSDOM = require('jsdom').JSDOM; }
+catch (e) { JSDOM = require('/home/user/node_modules/jsdom').JSDOM; }
+const fs = require('fs');
+const flush = async w => { await new Promise(r => { try { w.requestAnimationFrame(r); } catch (e) { r(); } }); await new Promise(r => setTimeout(r, 200)); };
+let fails = 0;
+const t = (n, ok) => { const p = ok === true; if (!p) fails++; console.log((p ? '✓' : '✗ ' + String(ok).slice(0, 150)) + '  ' + n); };
+const rd = f => fs.readFileSync(ROOT + '/' + f, 'utf8');
+const EMO = /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{2300}-\u{23FF}]/gu;
+const TYPO = new Set([...'★☆⯨←↑→↓↔↕⬅➡⬆⬇✓✔✕✖✗×▪•·▲▼⚠☰']);
+const hard = s => [...String(s).replace(/\uFE0F/g, '').matchAll(EMO)].map(m => m[0]).filter(c => !TYPO.has(c));
+const SITE_FILES = ['Arya_api.js','Arya_db.js','configuration.js','global_state_management.js','functions.js','navigation.js','toast_notifications.js','crud_operations_products.js','crud_operations_orders.js','map_picker.js','components.js','confirm_modal.js','wp_editor.js','pages.js'];
+const ALL_FILES = SITE_FILES.map(f => 'assets/js/' + f).concat(['assets/js/adminP.js', 'index.html', 'admin.html', '404.html']);
+
+async function boot(htmlFile, extra) {
+  const html = rd(htmlFile);
+  const dom = new JSDOM(html, { url: 'http://localhost:8312/' + htmlFile, runScripts: 'outside-only', pretendToBeVisual: true });
+  const w = dom.window;
+  w.scrollTo = () => {}; w.HTMLElement.prototype.scrollIntoView = () => {};
+  w.Element.prototype.animate = function () { return { finished: Promise.resolve(), cancel() {} }; };
+  const files = extra === 'admin' ? SITE_FILES.concat(['adminP.js']).map(f => 'assets/js/' + f) : SITE_FILES.map(f => 'assets/js/' + f);
+  try { w.eval(files.map(f => fs.readFileSync(ROOT + '/' + f, 'utf8') + '\n;\n').join('\n')); } catch (e) { console.log('LOAD-ERR', e.message); }
+  const inline = [...html.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).filter(x => x.trim() && !/cdn\.js|tailwind/.test(x));
+  for (const c of inline) { try { w.eval(c); } catch (e) {} }
+  if (w.AryaDB && w.AryaDB.init) { try { await w.AryaDB.init(); } catch (e) {} }
+  await flush(w); if (w.render) { w.render(); await flush(w); }
+  return w;
+}
+
+(async () => {
+  /* ═══ ۱ — ایستا ═══ */
+  const C = rd('assets/js/components.js'), TH = rd('assets/css/theme.css'), A = rd('assets/js/adminP.js'), P = rd('assets/js/pages.js');
+  let emo = 0; for (const f of ALL_FILES) emo += hard(rd(f)).length;
+  t('zero emoji across system', emo === 0, emo);
+  t('floating search restored', /function toggleSearchBar\(force\)/.test(C) && /function applySearch\(\)/.test(C));
+  t('no cmdk remnants', !/AryaSearch/.test(C) && !/ary-cmdk/i.test(C) && !/ary-cmdk/i.test(TH));
+  t('search btn not force-circular', !/header \.gpt5-search-btn[^}]*border-radius:\s*50%/s.test(TH) && /header \.gpt5-search-btn \{ border-radius: 11px; \}/.test(TH));
+  t('menu hamburger is svg', !/☰/.test(C) && /aryIcon\('menu'/.test(C));
+  t('r52 hamburger mobile-only (nav switches at md)', /hidden md:flex items-center gap-4 lg:gap-8/.test(C) && /md:hidden as-hbtn/.test(C) && !/lg:hidden as-hbtn/.test(C) && !/hidden lg:flex items-center/.test(C));
+  t('r52 desktop catmenu themed (no dark hardcode)', /ary-catbtn/.test(C) && /ary-catpanel/.test(C) && !/bg-gray-900\/95/.test(C) && /light"\] \.ary-catpanel \{ background: rgba\(255,255,255,\.96\)/.test(TH));
+  t('r52 mob-theme hidden from md + mobile hdr sizes capped to 767', /@media \(min-width:768px\) \{ \.as-mob-theme \{ display: none !important; \} \}/.test(TH) && /@media \(max-width:767px\)/.test(TH));
+  t('r52 smoother animations (spring easing + reduced-motion)', ((C + TH).match(/cubic-bezier\(\.16,1,\.3,1\)/g) || []).length >= 4 && /\.mobile-menu \.gpt5-drawer \{/.test(C) && /prefers-reduced-motion: reduce/.test(TH.slice(TH.indexOf('.mobile-menu .gpt5-drawer { transition: none') - 400, TH.indexOf('.mobile-menu .gpt5-drawer { transition: none'))));
+  t('drawer action row aligned (no overflow)', /flex:1 1 0; min-width:0; margin-inline:0;[^}]*white-space:nowrap/.test(TH) && /style="margin-inline:\.8rem"/.test(C));
+  t('adminP order filters plain text', /renderOrderFilterButton\("pending", "در انتظار"\)/.test(A));
+  t('ICON_FALLBACK neutralized', /const ICON_FALLBACK = \{\}/.test(A));
+  t('products toolbar: filter row then buttons', A.includes('grid grid-cols-2 sm:flex') && A.includes('col-span-2 sm:col-auto'));
+  t('r48 editor reuse wired', /state.blogEdit._isProduct/.test(A) && /_isProduct: true/.test(A) && /return renderAdminBlogEditor\(\)/.test(A.slice(A.indexOf('function renderAdminProductsEditor'), A.indexOf('function renderAdminProductsEditor') + 700)));
+  t('r48 separate draft key', (A.match(/'product_article'/g) || []).length >= 4);
+  t('r48b legacy screen retired (no old UI, no blank)', !/return renderArticleEditor\(\);/.test(rd('assets/js/functions.js').replace(/\r\n/g, '\n')) && /state.currentScreen = null;/.test(rd('assets/js/functions.js')));
+  t('product form stacked actions on mobile', /flex flex-col-reverse sm:flex-row gap-2\.5 sm:gap-4 mt-8/.test(A));
+  t('bulk import shared media', /media: \{ image: '', video: '', article: '', onlyEmpty: true \}/.test(A) && /function aryBulkImgFile/.test(A));
+  t('admin login header has key icon', /width:80px;[\s\S]{0,260}?box-shadow:0 20px 40px[\s\S]{0,340}?<circle cx="7.5" cy="15.5" r="4"/.test(rd('admin.html')));
+  t('wizard logo has db icon', /<div class="sw-logo"><svg/.test(rd('index.html')));
+  t('no empty one-line buttons in adminP', !/<button[^<>]*><\/button>/.test(A));
+  t('category filter precedes buttons', A.indexOf('col-span-2 sm:col-auto flex items-center gap-2 min-w-0') < A.indexOf('openAryaBulkImport()">'));
+  t('shop list row: price/stock top, cart btn LEFT (end in RTL) on mobile too',
+    /mt-auto pt-2 flex flex-col gap-2 sm:block/.test(P) &&
+    /flex items-end justify-between gap-3 min-w-0/.test(P) &&
+    /<div class="flex items-center justify-end mt-0\.5 sm:mt-1">/.test(P) &&
+    /h-10 sm:h-9 rounded-xl inline-flex items-center justify-center[^"]*whitespace-nowrap/.test(P) &&
+    !/w-full sm:w-auto rounded-xl inline-flex items-center justify-center gap-1\.5 whitespace-nowrap disabled/.test(P) &&
+    !/flex flex-wrap items-end justify-between gap-2 mt-auto/.test(P));
+  for (const f of ['index.html','admin.html']) t(f + ': frame-src self + cache', /frame-src 'self' https:\/\/www\.youtube\.com/.test(rd(f)) && /v=20261022[a-z]/.test(rd(f)));
+  t('CSP in .htaccess too', /frame-src 'self' https:\/\/www\.youtube\.com/.test(rd('.htaccess')));
+
+  /* ═══ ۲ — سایت ═══ */
+  const w = await boot('index.html', 'site');
+  const d = w.document;
+  w.state.products = [{ id: 'p1', title: 'هدفون بی‌سیم آریا', price: 1200000, category: 'audio', stock: 3 }, { id: 'p2', title: 'کیبورد مکانیکی', price: 800000, category: 'keyboard', stock: 5 }, { id: 'p3', title: 'ماوس', price: 300000, category: 'keyboard', stock: 5 }];
+  w.state.page = 'home'; if (w.render) { w.render(); await flush(w); }
+  t('header search toggle', !!d.getElementById('searchToggleBtn'));
+  if (w.toggleSearchBar) w.toggleSearchBar(true); await flush(w);
+  t('floating bar opens', /open/.test((d.querySelector('.gpt5-search-shell') || {}).className || ''));
+  const si = d.getElementById('header-search'); if (si) si.value = 'هدفون';
+  w.eval("state.searchQuery='هدفون'; applySearch();"); await flush(w);
+  t('applySearch → shop filter', w.state.page === 'shop' && /هدفون/.test(String(w.state.productFilter.search || w.state.searchQuery || '')), w.state.page + '/' + w.state.productFilter.search);
+  t('site body zero emoji (rendered)', hard(d.body.innerHTML).length === 0, hard(d.body.innerHTML).slice(0, 3).join(''));
+  // ── ولش‌لیست: چرخه میهمان → لاگین → خروج → تب جدید ──
+  w.state.user = null; w.eval('wlSync(); sessionStorage.clear();');
+  w.toggleWishlist('p1'); await flush(w);
+  t('guest wishlist works', w.state.wishlist.includes('p1') && JSON.parse(w.sessionStorage.getItem('arya_guest_wl') || '[]').includes('p1'));
+  w.toggleWishlist('p2'); await flush(w);
+  w.eval("state.user={ phone:'09120000000', name:'آرین علوی' }; state.currentUser=state.user; wlSync();");
+  await flush(w);
+  t('login merges guest into user list', w.state.wishlist.includes('p1') && w.state.wishlist.includes('p2') && !w.sessionStorage.getItem('arya_guest_wl'));
+  t('user list keyed + persisted', !!(w.state.userWishlists && w.state.userWishlists['u:09120000000'] && w.state.userWishlists['u:09120000000'].length === 2));
+  w.toggleWishlist('p3'); await flush(w);
+  w.logoutUser(); await flush(w);
+  const cm = w.state.confirmModal;
+  t('site logout uses confirm modal', !!(cm && /خروج از حساب/.test(cm.title)));
+  cm.onConfirm(); await new Promise(r => setTimeout(r, 120));
+  t('guest list wiped after logout', w.state.wishlist.length === 0);
+  w.eval("state.user={ phone:'09120000000' }; wlSync();");
+  t('re-login restores user list', w.state.wishlist.length === 3);
+  w.eval("state.user=null; sessionStorage.clear(); wlSync();");
+  t('new tab wipes guest wishlist', w.state.wishlist.length === 0);
+  // سایت — لاگین OTP ادغام می‌کند (hook در functions)
+  t('OTP login hooks wlSync', /ورود موفق بود[\s\S]{0,60}wlSync|wlSync[\s\S]{0,60}goTo\('home'\);\r?\n  toast/.test(rd('assets/js/functions.js')) || /r46 — ادغام خودکار/.test(rd('assets/js/functions.js')));
+
+  /* ═══ r51 — سایت: لغو با تیکت بازگشت وجه ═══ */
+  {
+    w.eval('state.user = { id:\"u9\", username:\"ali\", name:\"آرین علوی\", phone:\"09127770009\" }; state.page = \"profile\"; state.profileTab = \"orders\";');
+    w.eval('state.orders = [{ id:\"rf1order\", user:\"u9\", user_phone:\"09127770009\", status:\"pending\", total: 250000, created_at: new Date().toISOString(), items: [] }]; state.tickets = []; render();');
+    await flush(w);
+    const profHtml = () => w.document.body.innerHTML;
+    t('r51 cancel button shown for pending', /requestOrderCancel\('rf1order'\)/.test(profHtml()) && /لغو سفارش و درخواست بازگشت وجه/.test(profHtml()));
+    w.eval('requestOrderCancel(\"rf1order\")'); await flush(w);
+    t('r51 confirm modal mentions auto ticket', !!(w.state.confirmModal && /تیکت/.test(String(w.state.confirmModal.title) + String(w.state.confirmModal.message))));
+    await w.state.confirmModal.onConfirm(); await new Promise(r => setTimeout(r, 200)); await flush(w);
+    const od = (w.state.orders || []).find(o => o.id === 'rf1order');
+    t('r51 order canceled with refund request', od && od.status === 'canceled' && od.refund && od.refund.state === 'requested' && Number(od.refund.amount) === 250000);
+    const tk = (w.state.tickets || []).find(t2 => String(t2.type) === 'refund');
+    t('r51 refund ticket auto-created for user', !!tk && String(tk.order_id) === 'rf1order' && /بازگشت وجه سفارش/.test(String(tk.subject)));
+    w.eval('state.profileTab = \"tickets\"; render();'); await flush(w);
+    t('r51 ticket card shows queued refund chip', /در صف بررسی مالی/.test(profHtml()));
+    w.eval('state.profileTab = \"orders\"; render();'); await new Promise(r => setTimeout(r, 150)); await flush(w);
+    t('r51 order card shows refund queue chip', /بازگشت وجه: در صف تیکت/.test(profHtml()) && /لغو شده/.test(profHtml()));
+    await w.eval('state.user=null; state.orders=[]; state.tickets=[]; wlSync(); render();'); await flush(w);
+  }
+
+  /* ═══ ۳ — ادمین ═══ */
+  const a = await boot('admin.html', 'admin');
+  await new Promise(r => setTimeout(r, 120));
+  try { await a.startAdminPanel({ username: 'admin', role: 'admin', name: 'Admin' }); } catch (e) {}
+  await new Promise(r => setTimeout(r, 150)); if (a.render) a.render(); await flush(a);
+  const d2 = a.document;
+  t('admin boots after startAdminPanel', /داشبورد|مدیریت/.test(d2.body.textContent || ''));
+  t('confirmed wrapper survives boot', !!(a.adminLogout && a.adminLogout.__aryConfirmed));
+  a.window.__rawCalls = 0;
+  a.window.__aryAdminLogoutRaw = function () { a.window.__rawCalls++; };
+  a.state.confirmModal = null; a.adminLogout(); await flush(a);
+  t('admin logout confirm modal', !!(a.state.confirmModal && /خروج از پنل مدیریت/.test(a.state.confirmModal.title)));
+
+
+  a.state.confirmModal.onConfirm(); await new Promise(r => setTimeout(r, 80));
+  t('raw logout called once', a.window.__rawCalls === 1);
+  t('adminLogoutNow bypass (idle)', (() => { a.window.__rawCalls = 0; a.adminLogoutNow(); return a.window.__rawCalls === 1 && !a.state.confirmModal; })());
+
+  /* ═══ r51 — ادمین: اقدام بازگشت وجه از تیکت ═══ */
+  {
+    a.state.page = 'admin'; a.state.isAdmin = true; a.state.adminTab = 'support';
+    a.state.orders = [{ id: 'rf1orderXX', user_phone: '09127770009', status: 'canceled', total: 250000, cancel_reason: 'مشتری: انصراف', refund: { state: 'requested', amount: 250000 }, created_at: new Date().toISOString(), items: [] }];
+    a.state.tickets = [{ id: 'rftk1', type: 'refund', order_id: 'rf1orderXX', subject: 'بازگشت وجه سفارش #rf1orde', user_phone: '09127770009', user_name: 'آرین علوی', status: 'open', priority: 'normal', refund_state: 'requested', messages: [{ from: 'user', text: 'سلام، لطفا وجه را برگردانید', at: new Date().toISOString() }], created_at: new Date().toISOString() }];
+    a.state.supportFilter = a.state.supportFilter || { status: '', q: '' };
+    a.state.activeTicketId = 'rftk1';
+    a.render(); await flush(a);
+    const supHtml = () => a.document.body.innerHTML;
+    t('r51 admin refund panel in thread', /پروندهٔ <\/b>?.*بازگشت وجه|پروندهٔ/.test(supHtml()) && /تأیید و ثبت واریز/.test(supHtml()) && /رد درخواست/.test(supHtml()));
+    a.window.aryAdminRefundStart('rftk1', 'rejected'); await flush(a);
+    t('r51 reject requires reason', !!(a.state.confirmModal && /دلیل/.test(String(a.state.confirmModal.title) + String(a.state.confirmModal.message))));
+    a.state.confirmModal = null;
+    await a.window.aryAdminRefundApply('rftk1', 'refunded', 'حواله ساتا', 'ST-987'); await new Promise(r => setTimeout(r, 120)); await flush(a);
+    const tk = (a.state.tickets || []).find(x => x.id === 'rftk1');
+    const msgs = tk.messages || [];
+    t('r51 admin reply sent via same ticket', tk.status === 'answered' && tk.refund_state === 'refunded' && msgs.length === 2 && msgs[1].from === 'admin' && /واریز می‌گردد/.test(msgs[1].text) && /ST-987/.test(msgs[1].text));
+    const od2 = (a.state.orders || []).find(o => o.id === 'rf1orderXX');
+    t('r51 order refund synced from ticket', od2.refund.state === 'refunded' && od2.refund.ref === 'ST-987');
+    t('r51 ticket cancel still blocked for admin', (() => { const o = { id: 'zz2', status: 'pending' }; a.updateOrderStatus(o, 'canceled'); return o.status === 'pending'; })());
+    // ثبت تیکت بازگشت وجه مستقیم از کارت سفارش (حالت لغوشده بدون تیکت)
+    a.state.orders = [{ id: 'legacycancel1', user_phone: '09120000001', user_name: 'سارا', status: 'canceled', total: 90000, cancel_reason: 'مدیر: لغو اداری', created_at: new Date().toISOString(), items: [] }];
+    a.state.tickets = [];
+    a.state.adminTab = 'orders'; a.render(); await flush(a);
+    t('r51 order card offers refund ticket when none exists', /ثبت تیکت بازگشت وجه برای کاربر/.test(a.document.body.innerHTML) && /پروندهٔ بازگشت وجه ثبت نشده/.test(a.document.body.innerHTML));
+    a.window.aryAdminCreateRefundTicket('legacycancel1'); await flush(a);
+    t('r51 create-ticket modal shown', !!(a.state.confirmModal && /ثبت تیکت بازگشت وجه/.test(String(a.state.confirmModal.title))));
+    await a.state.confirmModal.onConfirm(); await new Promise(r => setTimeout(r, 150)); await flush(a);
+    const tk2 = (a.state.tickets || []).find(x => String(x.type) === 'refund' && String(x.order_id) === 'legacycancel1');
+    t('r51 admin-created ticket lands with admin message + refund meta', !!tk2 && /پروندهٔ بازگشت وجه/.test(tk2.messages[0].text) && tk2.refund_state === 'requested' && Number(tk2.refund_amount) === 90000 && !!a.state.orders.find(o => o.id === 'legacycancel1').refund);
+    a.render(); await flush(a);
+    t('r51 after ticket, order card links to it', /مشاهدهٔ تیکت بازگشت وجه/.test(a.document.body.innerHTML) && /در جریانِ تیکت/.test(a.document.body.innerHTML));
+    a.state.orders = []; a.state.tickets = [];
+    a.state.orders = []; a.state.tickets = []; a.state.activeTicketId = null; a.render();
+  }
+  /* ═══ r49 — حذف لغو سفارش (ادمین) ═══ */
+  {
+    const o = { id: 'zz-cancel-test', status: 'pending', user_name: 'ت', user_phone: '0912' };
+    a.state.orders = (a.state.orders || []).concat([o]);
+    a.updateOrderStatus(o, 'canceled'); await flush(a);
+    t('r49 admin cancel attempt blocked', String(o.status) === 'pending');
+    a.updateOrderStatus(o, 'processing'); await flush(a);
+    t('r49 other status transitions still work', String(o.status) === 'processing');
+    a.state.orders = (a.state.orders || []).filter(x => x.id !== 'zz-cancel-test');
+  }
+  /* ═══ r48 — ویرایشگر مقالهٔ محصول = همان ادیتور وبلاگ ═══ */
+  {
+    const st = a.state;
+    st.adminTab = 'products'; st.blogEdit = null; st.currentScreen = null;
+    st.editProduct = { id: 1, title: 'هدفون X', price: 100 };
+    st.productDraft = null;
+    const blogLen = (st.blog || []).length;
+    // r48b — رندر مجدد صفحهٔ لگسی نباید ادیتور قدیمی را برگرداند
+    a.eval('state.currentScreen = "article-editor"; state.blogEdit = null; render();');
+    await new Promise(r => setTimeout(r, 160)); await flush(a);
+    t('r48b legacy screen self-heals to unified editor', a.state.currentScreen === null && !/id="article-editor-content"/.test(a.document.body.innerHTML));
+    a.openArticleEditor(); await flush(a);
+    let bd = a.document.body.innerHTML;
+    t('product article opens blog-style editor', /ary-wp-root/.test(bd) && /ویرایش مقالهٔ محصول/.test(bd));
+    t('product mode: full WP toolbar', /class="ary-wp-tools" role="toolbar"/.test(bd) && /ary-wp-tbtn/.test(bd) && /ary-wp-back/.test(bd));
+    t('product mode: no blog title input', !/id="ary-wp-title"/.test(bd));
+    t('product mode: blog-only settings hidden', !/مقاله منتشرشده/.test(bd) && /رسانه‌های مقاله/.test(bd));
+    t('product mode: paper body editable', !!a.document.getElementById('ary-wp-body'));
+    a.document.getElementById('ary-wp-body').innerHTML = '<p>این یک مقالهٔ آزمایشی کافی‌طول برای تست ذخیره است.</p>';
+    await a.window.aryBlogWpSave(); await flush(a);
+    t('article saved to product draft', /آزمایشی کافی‌طول/.test(String((st.productDraft || {}).article || '')));
+    t('no blog post created by product save', (st.blog || []).length === blogLen);
+    t('editor closed back to product form', !st.blogEdit && /مقاله ثبت شده/.test(a.document.body.innerHTML));
+    a.openArticleEditor(); await flush(a);
+    a.document.getElementById('ary-wp-body').innerHTML = '<p>محتوای تغییرکردهٔ ذخیره‌نشده برای تست دیالوگ خروج الزامی است.</p>';
+    a.window.aryBlogWpCancel(); await flush(a);
+    t('dirty exit shows confirm modal', !!(st.confirmModal && /خروج از ویرایش مقالهٔ محصول/.test(String(st.confirmModal.title || ''))));
+    if (st.confirmModal) { const cb = st.confirmModal.onConfirm; st.confirmModal = null; cb(); }
+    await flush(a);
+    t('discard on confirmed exit', !st.blogEdit && !/دیالوگ خروج الزامی/.test(String((st.productDraft || {}).article || '')));
+    a.eval('state.editProduct = null; state.productDraft = null; state.blogEdit = null; render();');
+    await flush(a);
+  }
+
+  /* ═══ r50 — ویدیو در بلاگ: درج، جابه‌جایی، ذخیره؛ حذف از محصول ═══ */
+  {
+    const st = a.state;
+    // ادیتور بلاگ
+    st.adminTab = 'blog';
+    st.blogEdit = { id: null, title: 'تست ویدیو', body: '<p>متن بدنهٔ مقاله برای تست بلوک ویدیو کافی است.</p>', excerpt: '', cover: '', tags: '', author: 'Admin', status: 'published', media: [], _code: false };
+    a.render(); await new Promise(r => setTimeout(r, 160)); await flush(a);
+    a.window.aryBlogWpMediaAdd('video');
+    a.window.aryBlogWpMediaAdd('embed');
+    st.blogEdit.media[0].url = 'https://cdn.example.com/clips/intro.mp4';
+    st.blogEdit.media[0].caption = 'معرفی';
+    st.blogEdit.media[1].url = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+    a.window.aryBlogWpMediaInsert(0);
+    a.window.aryBlogWpMediaInsert(1);
+    await new Promise(r => setTimeout(r, 80)); await flush(a);
+    const body = a.document.getElementById('ary-wp-body');
+    t('r50 video figure inserted with real player', /<figure[^>]*data-ary-media[^>]*>\s*<video controls[^>]*src="https:\/\/cdn\.example\.com\/clips\/intro\.mp4"/.test(body.innerHTML));
+    t('r50 youtube embed placeholder with thumb', /class="ary-wp-embed"/.test(body.innerHTML) && /data-embed-src="https:\/\/www\.youtube\.com\/watch\?v=dQw4w9WgXcQ"/.test(body.innerHTML) && /data-embed-thumb="https:\/\/i\.ytimg\.com\/vi\//.test(body.innerHTML));
+    t('r50 media blocks decorated with move UI', body.querySelectorAll('figure[data-ary-media] .ary-wp-media-ui').length === 2 && body.innerHTML.includes('aryWpMediaMove'));
+    const figs0 = [...body.querySelectorAll('figure[data-ary-media]')];
+    const videoFirst = figs0[0].querySelector('video');
+    a.window.aryWpMediaMove(figs0[1], -1);
+    const figs1 = [...a.document.querySelectorAll('#ary-wp-body figure[data-ary-media]')];
+    t('r50 move up reorders media blocks', Boolean(figs1.length === 2 && figs1[0] !== figs0[0] && figs1[0].querySelector('.ary-wp-embed') && figs1[1].querySelector('video') && videoFirst));
+    const cleaned = a.window.aryWpCleanBody(body.innerHTML);
+    t('r50 clean body strips editor UI but keeps media', !/ary-wp-media-ui/.test(cleaned) && /<video controls/.test(cleaned) && /data-embed-src=/.test(cleaned));
+    st.blogEdit.body = cleaned;
+    a.window.aryBlogWpSave && await a.window.aryBlogWpSave(); await flush(a);
+    const saved = (st.blog || []).find(x => /تست ویدیو/.test(String(x.title)));
+    t('r50 blog save persists video + embed (sanitize keeps them)', !!saved && /<video controls[^>]*src="https:\/\/cdn\.example\.com\/clips\/intro\.mp4"/.test(saved.body) && /data-embed-src="https:\/\/www\.youtube\.com\/watch\?v=dQw4w9WgXcQ"/.test(saved.body));
+    t('r50 iframe never stored raw', !/<iframe/i.test(saved.body));
+    // هیدریت (شبیه‌سازی رندر سایت روی کانتینر)
+    const host = a.document.createElement('div');
+    host.innerHTML = saved.body; a.document.body.appendChild(host);
+    a.window.AryaHydrateMedia(host);
+    t('r50 placeholder hydrates to youtube-nocookie iframe on site', !!host.querySelector('iframe[src="https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ"]'));
+    host.remove();
+    if (saved) { try { await a.AryaDB.upsert('blog', { id: saved.id, _delete: true }); } catch (e) {} st.blog = (st.blog || []).filter(x => x !== saved); }
+    // حالت محصول: بدون ویدیو (همیشه a.state تازه — هوک‌ها ممکن است شیء state را جایگزین کنند)
+    const PROD_ART = '<p>مقالهٔ قبلی با ویدیو برای تست حذف بلوک ویدیو هنگام ذخیره</p><figure data-ary-media="1"><video controls src="https://x/y.mp4"></video></figure><figure data-ary-media="1"><div class="ary-wp-embed" data-embed-src="https://youtu.be/z"></div></figure><p><img src="https://x/pic.jpg" alt="t"></p>';
+    a.state.editProduct = { id: 2, title: 'پرز', price: 10 };
+    a.state.productDraft = { title: 'پرز', price: 10, stock: 1, category: '', description: '', mainImage: '', gallery: [], original_price: 0, article: PROD_ART, _synced: null };
+    a.state.blogEdit = null;
+    a.openArticleEditor(); await new Promise(r => setTimeout(r, 120)); await flush(a);
+    await a.window.aryBlogWpSave(); await flush(a);
+    const art = String((a.state.productDraft || {}).article || '');
+    t('r50 product save strips video+embed keeps text/img', !/video|ary-wp-embed/.test(art) && /مقالهٔ قبلی/.test(art) && /pic\.jpg/.test(art));
+    a.eval('state.editProduct=null; state.productDraft=null; state.blogEdit=null; render();');
+  }
+  for (const tab of ['products', 'orders', 'database']) {
+    a.state.adminTab = tab; if (a.render) a.render(); await flush(a);
+    t('admin tab ' + tab + ' zero emoji', hard(d2.body.innerHTML).length === 0, hard(d2.body.innerHTML).slice(0, 3).join(''));
+  }
+  // ادیتور محصول: دکمه بروزرسانی داخل کادر
+  a.state.editProduct = { id: 'x1', title: 'تست', price: 1000, original_price: 0, category: '', stock: 2, description: '', mainImage: '', gallery: [], videos: [], article: '' };
+  a.state.productDraft = null;
+  const fh = a.renderProductModal();
+  t('product form submit stacked + nowrap', /flex flex-col-reverse sm:flex-row/.test(fh) && /btn-primary w-full sm:flex-1[^"]*whitespace-nowrap/.test(fh) && /بروزرسانی/.test(fh));
+  t('r49 admin cancel entries stay removed (user-side r51 flow only)', !/\['canceled','لغو'\]/.test(A) && /String\(nextStatus\) === 'canceled'/.test(A) && !/AryaServer\.call\('order_cancel'/.test(P));
+  t('r49 cancel removed from admin status select', A.includes("if (String(nextStatus) === 'canceled')") && !/"'canceled','لغو'"/.test(A) && !/\['canceled','لغو'\]/.test(A));
+  t('r49 cancel display kept (badge + reopen)', /badge-canceled/.test(P) && /aryReopenOrder/.test(A));
+  t('r50 blog video wired: sanitize allows video+embed marker', / MARK VIDEO SOURCE'/.test(rd('assets/js/functions.js')) && /data-embed-src/.test(rd('assets/js/functions.js')));
+  t('r50 hydrate after every render', /AryaHydrateMedia\(appEl\)/.test(rd('assets/js/functions.js')));
+  t('r50 product hides video affordances', /isProd \? '' : tb\("aryBlogWpMediaAdd\('video'\)"/.test(A) && /_isProduct && String\(t\) !== 'image'/.test(A) && /isProd \? \['image'\] : \['image', 'video', 'embed'\]/.test(A));
+  t('r50 product save+submit strip video, site render strips too', /aryProductArticleHtml\(html\)/.test(A) && /aryProductArticleHtml\(state.productDraft.article\)/.test(A) && /aryStripVideoMedia\(article\)/.test(P));
+  t('r50 media UI css present', /\.ary-wp-media-ui/.test(TH) && /ary-wp-embed-live iframe/.test(TH));
+  t('r51 user cancel with refund ticket wired', /requestOrderCancel/.test(P) && /type: 'refund', order_id:/.test(P) && /بازگشت وجه سفارش #/.test(P));
+  t('r51 refund ticket meta + chips', /payload.meta/.test(P) && /order.refund.state/.test(P) && /بازگشت وجه واریز شد/.test(P));
+  t('r51 admin refund via ticket only', /aryAdminRefundApply/.test(A) && /aryAdminRefundPanel/.test(A) && /addTicketMessage\(t, \{ from: 'admin', text: msg \}\)/.test(A));
+  t('r51 admin still cannot cancel orders', /if \(String\(nextStatus\) === 'canceled'\)/.test(A));
+  t('r51 admin can open refund ticket from order card', /aryAdminCreateRefundTicket/.test(A) && /ثبت تیکت بازگشت وجه برای کاربر/.test(A) && /مشاهدهٔ تیکت بازگشت وجه/.test(A));
+  t('edit icon on category/blog rows', /aria-label="ویرایش دسته"[^>]*>\s*<svg/.test(A) && /aria-label="ویرایش مقاله"[^>]*>\s*<svg/.test(A));
+  // مودال ولش‌لیست ادمین ربطی ندارد — ادیتور چک نشد؛ تست bulk flow کوتاه:
+  a.openAryaBulkImport && a.openAryaBulkImport();
+  if (a.state.adminBulk) {
+    a.state.adminBulk.text = 'محصول الف,100000,0,5\nمحصول ب,200000,0,3';
+    a.state.adminBulk.media.image = 'https://x/y.jpg';
+    a.aryBulkParse();
+    const n0 = (a.state.products || []).length;
+    a.aryBulkApply(); await new Promise(r => setTimeout(r, 100));
+    const add = (a.state.products || []).slice(0, 2);
+    t('bulk import + shared image auto', (a.state.products || []).length === n0 + 2 && add.every(p => p.image === 'https://x/y.jpg'), 'n0=' + n0 + '→' + (a.state.products || []).length);
+  } else t('bulk import available', 'no-fn');
+
+  console.log(fails ? '\nFAILS: ' + fails : '\nALL GREEN — aria regression (r40→r46)');
+  process.exit(fails ? 1 : 0);
+})().catch(e => { console.log('FATAL', e); process.exit(1); });
